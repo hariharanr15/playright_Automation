@@ -1,0 +1,34 @@
+{
+  "name": "voyage-control-pom-tests",
+  "version": "1.0.0",
+  "description": "Playwright booking automation suite.",
+  "scripts": {
+    "setup": "npm install && npx playwright install",
+    "setup:browsers": "npx playwright install",
+    "test": "playwright test",
+    "test:chrome": "playwright test --project=\"Google Chrome\" --headed",
+    "test:smoke": "playwright test tests/smoke --project=\"Google Chrome\" --headed --workers=1",
+    "test:regression": "playwright test tests/regression --project=\"Google Chrome\" --headed --workers=1",
+    "test:suites": "node scripts/run-test-suites.js",
+    "test:suites:no-open": "node scripts/run-test-suites.js --no-open",
+    "automate:booking-list-exports": "node scripts/download-booking-list-exports.js",
+    "automate:booking-list-exports:headless": "node scripts/download-booking-list-exports.js --headless",
+    "automate:user-management": "node scripts/run-user-management-flow.js",
+    "automate:user-management:headless": "node scripts/run-user-management-flow.js --headless",
+    "automate:full-application": "node run-full-application.js --fast",
+    "automate:full-application:headless": "node run-full-application.js --fast --headless",
+    "automate:calendar": "node pages/booking/calendar.booking.page.js",
+    "automate:calendar:headless": "node pages/booking/calendar.booking.page.js --headless",
+    "test:functional:headless": "playwright test tests/smoke tests/regression --project=\"Google Chrome\" --workers=1"
+  },
+  "keywords": [
+    "playwright",
+    "booking",
+    "automation"
+  ],
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "xlsx": "^0.18.5"
+  }
+}

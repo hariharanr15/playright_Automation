@@ -1,0 +1,10 @@
+node_modules/
+auth.json
+
+test-results/
+screenshots/
+reports/playwright-html/
+
+*.log
+.env
+.env.*

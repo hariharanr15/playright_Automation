@@ -1,0 +1,1099 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Automation Flow Dashboard</title>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --panel: #fff;
+      --ink: #172033;
+      --muted: #607089;
+      --line: #dfe5ee;
+      --green: #0f9f7a;
+      --red: #d94d45;
+      --blue: #2c6fbb;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: Inter, Segoe UI, Arial, sans-serif; }
+    header { padding: 28px 40px 22px; background: #fff; border-bottom: 1px solid var(--line); }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 30px; }
+    header p { margin-top: 6px; color: var(--muted); }
+    main { padding: 28px 40px 48px; }
+    .grid { display: grid; gap: 18px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 20px; box-shadow: 0 8px 24px rgba(33, 45, 67, .07); }
+    .label { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .08em; }
+    .value { display: block; margin-top: 8px; font-size: 30px; font-weight: 750; }
+    .sub { color: var(--muted); margin-top: 4px; font-size: 14px; }
+    section { margin-top: 22px; }
+    h2 { margin-bottom: 14px; font-size: 20px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; table-layout: fixed; }
+    th, td { padding: 11px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; font-size: 14px; overflow-wrap: anywhere; }
+    th { background: #f8fafc; color: #3e4b61; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; }
+    .status { display: inline-flex; border-radius: 999px; padding: 4px 9px; font-weight: 700; font-size: 12px; text-transform: uppercase; }
+    .status.passed { background: #dff8ee; color: #04745a; }
+    .status.failed { background: #ffe3e0; color: #af2f2a; }
+    .env { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 18px; padding: 16px; border: 1px solid #8be0c4; border-radius: 8px; background: #dff8ee; }
+    .env span { color: #04745a; font-size: 12px; text-transform: uppercase; font-weight: 800; letter-spacing: .08em; }
+    .env strong { display: block; margin-top: 5px; overflow-wrap: anywhere; }
+    @media (max-width: 1000px) { .grid, .env { grid-template-columns: 1fr; } main, header { padding-left: 20px; padding-right: 20px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Automation Flow Dashboard</h1>
+    <div class="env">
+      <div><span>Environment</span><strong>Staging</strong></div>
+      <div><span>Application URL</span><strong>https://stg-app.voyagecontrol.com</strong></div>
+      <div><span>Browser</span><strong>headed / Chrome</strong></div>
+      <div><span>Viewport</span><strong>1922x945</strong></div>
+    </div>
+  </header>
+  <main>
+    <section class="grid">
+      <div class="card"><span class="label">Run Status</span><strong class="value">passed</strong><p class="sub">100% run pass rate</p></div>
+      <div class="card"><span class="label">Checks Passed</span><strong class="value">102/102</strong><p class="sub">0 failed checks</p></div>
+      <div class="card"><span class="label">Duration</span><strong class="value">18m 43s</strong><p class="sub">Latest run duration</p></div>
+      <div class="card"><span class="label">Primary Record</span><strong class="value">BK5ET10000004312</strong><p class="sub">single-session-full-application</p></div>
+    </section>
+    <section>
+      <h2>Recent Runs</h2>
+      <table>
+        <thead><tr><th>Flow</th><th>Status</th><th>Started</th><th>Duration</th><th>Checks</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td>Full Application</td><td><span class="status passed">passed</span></td><td>10 Jun 2026, 17:20</td><td>18m 43s</td><td>102/102</td><td>full-application-report-2026-06-10T12-09-27-519Z.json</td></tr>
+        </tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Testcase Wise Steps</h2>
+      <table>
+        <thead><tr><th>Case ID</th><th>Flow</th><th>Step</th><th>Status</th><th>Duration</th><th>Timestamp</th><th>Error</th></tr></thead>
+        <tbody>
+    <tr>
+      <td>TC-01</td>
+      <td>Delivery Booking</td>
+      <td>Open authenticated Booking List</td>
+      <td><span class="status passed">passed</span></td>
+      <td>17s</td>
+      <td>10 Jun 2026, 17:20</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-02</td>
+      <td>Delivery Booking</td>
+      <td>Start a new booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>3s</td>
+      <td>10 Jun 2026, 17:21</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-03</td>
+      <td>Delivery Booking</td>
+      <td>Select Delivery booking type</td>
+      <td><span class="status passed">passed</span></td>
+      <td>3s</td>
+      <td>10 Jun 2026, 17:21</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-04</td>
+      <td>Delivery Booking</td>
+      <td>Select Access point</td>
+      <td><span class="status passed">passed</span></td>
+      <td>3s</td>
+      <td>10 Jun 2026, 17:21</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-05</td>
+      <td>Delivery Booking</td>
+      <td>Select Vehicle type</td>
+      <td><span class="status passed">passed</span></td>
+      <td>4s</td>
+      <td>10 Jun 2026, 17:21</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-06</td>
+      <td>Delivery Booking</td>
+      <td>Select Fuel type</td>
+      <td><span class="status passed">passed</span></td>
+      <td>3s</td>
+      <td>10 Jun 2026, 17:21</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-07</td>
+      <td>Delivery Booking</td>
+      <td>Select Resource</td>
+      <td><span class="status passed">passed</span></td>
+      <td>6s</td>
+      <td>10 Jun 2026, 17:21</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-08</td>
+      <td>Delivery Booking</td>
+      <td>Continue from Scheduling Information</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>10 Jun 2026, 17:21</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-09</td>
+      <td>Delivery Booking</td>
+      <td>Open Booking Date calendar</td>
+      <td><span class="status passed">passed</span></td>
+      <td>6s</td>
+      <td>10 Jun 2026, 17:21</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-10</td>
+      <td>Delivery Booking</td>
+      <td>Select first available booking date</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>10 Jun 2026, 17:21</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-11</td>
+      <td>Delivery Booking</td>
+      <td>Continue from Booking Date</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>10 Jun 2026, 17:21</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-12</td>
+      <td>Delivery Booking</td>
+      <td>Load available booking time slots</td>
+      <td><span class="status passed">passed</span></td>
+      <td>12s</td>
+      <td>10 Jun 2026, 17:21</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-13</td>
+      <td>Delivery Booking</td>
+      <td>Select first available booking time</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>10 Jun 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-14</td>
+      <td>Delivery Booking</td>
+      <td>Continue from Booking Time</td>
+      <td><span class="status passed">passed</span></td>
+      <td>3s</td>
+      <td>10 Jun 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-15</td>
+      <td>Delivery Booking</td>
+      <td>Wait for Booking Details form</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>10 Jun 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-16</td>
+      <td>Delivery Booking</td>
+      <td>Use requester details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>10 Jun 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-17</td>
+      <td>Delivery Booking</td>
+      <td>Fill visible booking detail fields</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>10 Jun 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-18</td>
+      <td>Delivery Booking</td>
+      <td>Select required booking detail dropdowns</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>10 Jun 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-19</td>
+      <td>Delivery Booking</td>
+      <td>Continue from Booking Details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>10 Jun 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-20</td>
+      <td>Delivery Booking</td>
+      <td>Complete mandatory additional details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>10 Jun 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-21</td>
+      <td>Delivery Booking</td>
+      <td>Submit delivery booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>12s</td>
+      <td>10 Jun 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-22</td>
+      <td>Recurring Booking</td>
+      <td>Open authenticated Booking List</td>
+      <td><span class="status passed">passed</span></td>
+      <td>14s</td>
+      <td>10 Jun 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-23</td>
+      <td>Recurring Booking</td>
+      <td>Start a new booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>10 Jun 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-24</td>
+      <td>Recurring Booking</td>
+      <td>Select Recurring booking type</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>10 Jun 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-25</td>
+      <td>Recurring Booking</td>
+      <td>Select Access point</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>10 Jun 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-26</td>
+      <td>Recurring Booking</td>
+      <td>Select Vehicle type</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-27</td>
+      <td>Recurring Booking</td>
+      <td>Select Fuel type</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-28</td>
+      <td>Recurring Booking</td>
+      <td>Select optional resources</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-29</td>
+      <td>Recurring Booking</td>
+      <td>Continue from Scheduling Information</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-30</td>
+      <td>Recurring Booking</td>
+      <td>Wait for recurring date fields</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-31</td>
+      <td>Recurring Booking</td>
+      <td>Select recurring start date</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-32</td>
+      <td>Recurring Booking</td>
+      <td>Select recurring end date</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-33</td>
+      <td>Recurring Booking</td>
+      <td>Continue from Recurring Date Range</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-34</td>
+      <td>Recurring Booking</td>
+      <td>Wait for recurring day selector</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-35</td>
+      <td>Recurring Booking</td>
+      <td>Select recurring days</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-36</td>
+      <td>Recurring Booking</td>
+      <td>Continue from Recurring Days</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-37</td>
+      <td>Recurring Booking</td>
+      <td>Select first available recurring time</td>
+      <td><span class="status passed">passed</span></td>
+      <td>4s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-38</td>
+      <td>Recurring Booking</td>
+      <td>Wait for Booking Details form</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-39</td>
+      <td>Recurring Booking</td>
+      <td>Use requester details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-40</td>
+      <td>Recurring Booking</td>
+      <td>Continue from Booking Details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-41</td>
+      <td>Recurring Booking</td>
+      <td>Complete mandatory additional details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-42</td>
+      <td>Recurring Booking</td>
+      <td>Submit recurring booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>10s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-43</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Open authenticated Booking List</td>
+      <td><span class="status passed">passed</span></td>
+      <td>15s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-44</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Start a new booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-45</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Select Multi-Vehicle booking type</td>
+      <td><span class="status passed">passed</span></td>
+      <td>3s</td>
+      <td>10 Jun 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-46</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Select Access point</td>
+      <td><span class="status passed">passed</span></td>
+      <td>3s</td>
+      <td>10 Jun 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-47</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Select Vehicle type</td>
+      <td><span class="status passed">passed</span></td>
+      <td>3s</td>
+      <td>10 Jun 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-48</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Select Fuel type</td>
+      <td><span class="status passed">passed</span></td>
+      <td>3s</td>
+      <td>10 Jun 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-49</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Select Resource</td>
+      <td><span class="status passed">passed</span></td>
+      <td>5s</td>
+      <td>10 Jun 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-50</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Continue from Scheduling Information</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>10 Jun 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-51</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Open Booking Date calendar</td>
+      <td><span class="status passed">passed</span></td>
+      <td>6s</td>
+      <td>10 Jun 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-52</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Select first available booking date</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>10 Jun 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-53</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Continue from Booking Date</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>10 Jun 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-54</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Load available booking time slots</td>
+      <td><span class="status passed">passed</span></td>
+      <td>11s</td>
+      <td>10 Jun 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-55</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Select first available booking time</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>10 Jun 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-56</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Continue from Booking Time</td>
+      <td><span class="status passed">passed</span></td>
+      <td>3s</td>
+      <td>10 Jun 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-57</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Wait for Booking Details form</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>10 Jun 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-58</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Use requester details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>10 Jun 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-59</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Fill visible booking detail fields</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>10 Jun 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-60</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Select required booking detail dropdowns</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>10 Jun 2026, 17:25</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-61</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Continue from Booking Details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>10 Jun 2026, 17:25</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-62</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Complete mandatory additional details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>10 Jun 2026, 17:25</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-63</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Submit multi-vehicle booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>12s</td>
+      <td>10 Jun 2026, 17:25</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-64</td>
+      <td>Resource-only Booking</td>
+      <td>Open authenticated Booking List</td>
+      <td><span class="status passed">passed</span></td>
+      <td>15s</td>
+      <td>10 Jun 2026, 17:25</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-65</td>
+      <td>Resource-only Booking</td>
+      <td>Start a new booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>10 Jun 2026, 17:25</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-66</td>
+      <td>Resource-only Booking</td>
+      <td>Select Resource Only booking type</td>
+      <td><span class="status passed">passed</span></td>
+      <td>3s</td>
+      <td>10 Jun 2026, 17:25</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-67</td>
+      <td>Resource-only Booking</td>
+      <td>Select resources</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1m 8s</td>
+      <td>10 Jun 2026, 17:25</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-68</td>
+      <td>Resource-only Booking</td>
+      <td>Select first available booking date</td>
+      <td><span class="status passed">passed</span></td>
+      <td>10s</td>
+      <td>10 Jun 2026, 17:26</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-69</td>
+      <td>Resource-only Booking</td>
+      <td>Select first available booking time</td>
+      <td><span class="status passed">passed</span></td>
+      <td>8s</td>
+      <td>10 Jun 2026, 17:27</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-70</td>
+      <td>Resource-only Booking</td>
+      <td>Complete booking details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>5s</td>
+      <td>10 Jun 2026, 17:27</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-71</td>
+      <td>Resource-only Booking</td>
+      <td>Submit resource booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>12s</td>
+      <td>10 Jun 2026, 17:27</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-72</td>
+      <td>Edit Booking</td>
+      <td>Open authenticated Booking List</td>
+      <td><span class="status passed">passed</span></td>
+      <td>30s</td>
+      <td>10 Jun 2026, 17:27</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-73</td>
+      <td>Edit Booking</td>
+      <td>Select first Scheduled booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>21s</td>
+      <td>10 Jun 2026, 17:27</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-74</td>
+      <td>Edit Booking</td>
+      <td>Check in the selected booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>6s</td>
+      <td>10 Jun 2026, 17:28</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-75</td>
+      <td>Edit Booking</td>
+      <td>Check out the selected booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>8s</td>
+      <td>10 Jun 2026, 17:28</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-76</td>
+      <td>Edit Booking</td>
+      <td>Return to list and reopen the same booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>24s</td>
+      <td>10 Jun 2026, 17:28</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-77</td>
+      <td>Edit Booking</td>
+      <td>Undo checkout for this booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>9s</td>
+      <td>10 Jun 2026, 17:29</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-78</td>
+      <td>Edit Booking</td>
+      <td>Undo check-in for this booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>11s</td>
+      <td>10 Jun 2026, 17:29</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-79</td>
+      <td>Edit Booking</td>
+      <td>Cancel the booking and confirm Cancel Booking popup</td>
+      <td><span class="status passed">passed</span></td>
+      <td>16s</td>
+      <td>10 Jun 2026, 17:29</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-80</td>
+      <td>Edit Booking</td>
+      <td>Return to Booking List</td>
+      <td><span class="status passed">passed</span></td>
+      <td>20s</td>
+      <td>10 Jun 2026, 17:29</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-81</td>
+      <td>Booking List Filters</td>
+      <td>Open authenticated Booking List</td>
+      <td><span class="status passed">passed</span></td>
+      <td>16s</td>
+      <td>10 Jun 2026, 17:30</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-82</td>
+      <td>Booking List Filters</td>
+      <td>Apply date range, layout, and advanced filters</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2m 53s</td>
+      <td>10 Jun 2026, 17:30</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-83</td>
+      <td>User Management</td>
+      <td>Open authenticated User Management page</td>
+      <td><span class="status passed">passed</span></td>
+      <td>7s</td>
+      <td>10 Jun 2026, 17:33</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-84</td>
+      <td>User Management</td>
+      <td>Prepare user 1 invite data</td>
+      <td><span class="status passed">passed</span></td>
+      <td>14s</td>
+      <td>10 Jun 2026, 17:33</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-85</td>
+      <td>User Management</td>
+      <td>Open Invite Users popup for user 1</td>
+      <td><span class="status passed">passed</span></td>
+      <td>8s</td>
+      <td>10 Jun 2026, 17:33</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-86</td>
+      <td>User Management</td>
+      <td>Fill invite details for User43@yopmail.com</td>
+      <td><span class="status passed">passed</span></td>
+      <td>9s</td>
+      <td>10 Jun 2026, 17:33</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-87</td>
+      <td>User Management</td>
+      <td>Send invite for User43@yopmail.com</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>10 Jun 2026, 17:33</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-88</td>
+      <td>User Management</td>
+      <td>Verify invited user visible for User43@yopmail.com</td>
+      <td><span class="status passed">passed</span></td>
+      <td>15s</td>
+      <td>10 Jun 2026, 17:33</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-89</td>
+      <td>User Management</td>
+      <td>Prepare user 2 invite data</td>
+      <td><span class="status passed">passed</span></td>
+      <td>20s</td>
+      <td>10 Jun 2026, 17:34</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-90</td>
+      <td>User Management</td>
+      <td>Open Invite Users popup for user 2</td>
+      <td><span class="status passed">passed</span></td>
+      <td>8s</td>
+      <td>10 Jun 2026, 17:34</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-91</td>
+      <td>User Management</td>
+      <td>Fill invite details for User45@yopmail.com</td>
+      <td><span class="status passed">passed</span></td>
+      <td>9s</td>
+      <td>10 Jun 2026, 17:34</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-92</td>
+      <td>User Management</td>
+      <td>Send invite for User45@yopmail.com</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>10 Jun 2026, 17:34</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-93</td>
+      <td>User Management</td>
+      <td>Verify invited user visible for User45@yopmail.com</td>
+      <td><span class="status passed">passed</span></td>
+      <td>15s</td>
+      <td>10 Jun 2026, 17:34</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-94</td>
+      <td>User Management</td>
+      <td>Prepare user 3 invite data</td>
+      <td><span class="status passed">passed</span></td>
+      <td>14s</td>
+      <td>10 Jun 2026, 17:35</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-95</td>
+      <td>User Management</td>
+      <td>Open Invite Users popup for user 3</td>
+      <td><span class="status passed">passed</span></td>
+      <td>8s</td>
+      <td>10 Jun 2026, 17:35</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-96</td>
+      <td>User Management</td>
+      <td>Fill invite details for User46@yopmail.com</td>
+      <td><span class="status passed">passed</span></td>
+      <td>9s</td>
+      <td>10 Jun 2026, 17:35</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-97</td>
+      <td>User Management</td>
+      <td>Send invite for User46@yopmail.com</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>10 Jun 2026, 17:35</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-98</td>
+      <td>User Management</td>
+      <td>Verify invited user visible for User46@yopmail.com</td>
+      <td><span class="status passed">passed</span></td>
+      <td>15s</td>
+      <td>10 Jun 2026, 17:35</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-99</td>
+      <td>User Management</td>
+      <td>Accept invite and complete account setup for Voyagecontrol Validator 1</td>
+      <td><span class="status passed">passed</span></td>
+      <td>53s</td>
+      <td>10 Jun 2026, 17:36</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-100</td>
+      <td>User Management</td>
+      <td>Accept invite and complete account setup for Voyagecontrol Validator 2</td>
+      <td><span class="status passed">passed</span></td>
+      <td>54s</td>
+      <td>10 Jun 2026, 17:36</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-101</td>
+      <td>User Management</td>
+      <td>Accept invite and complete account setup for Voyagecontrol Validator 3</td>
+      <td><span class="status passed">passed</span></td>
+      <td>49s</td>
+      <td>10 Jun 2026, 17:37</td>
+      <td>-</td>
+    </tr>
+  
+    <tr>
+      <td>TC-102</td>
+      <td>User Management</td>
+      <td>Change organization for one completed user account</td>
+      <td><span class="status passed">passed</span></td>
+      <td>46s</td>
+      <td>10 Jun 2026, 17:38</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>
