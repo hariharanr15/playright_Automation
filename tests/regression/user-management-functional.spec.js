@@ -1,5 +1,5 @@
 const { test, expect, expectVisible, openAuthenticatedDashboard, runStep } = require('../support/test-base');
-const { UserManagementPage } = require('../../pages/user-management.page');
+const { UserManagementPage } = require('../../pages/booking/user-management.page');
 
 test.describe('Regression Tests - User Management Functional Flow', () => {
   test('Regression TC-11 - User Management invite, separate activation, filters, change organization, and own login validation', async ({ page }) => {

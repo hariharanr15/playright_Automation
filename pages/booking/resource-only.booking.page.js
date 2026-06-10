@@ -7,7 +7,7 @@ const BOOKING_COMPLETE_WAIT_MS = 10000;
 const REQUIRED_TEXT_VALUE = 'Test Value';
 const TIME_SLOT_PATTERN = /\b\d{1,2}:\d{2}\s*(?:AM|PM)?\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM)?\b/i;
 
-class ResourceBookingPage {
+class ResourceOnlyBookingPage {
   constructor(page, options = {}) {
     this.page = page;
     this.bookingTypeIndex = options.bookingTypeIndex ?? 3; // 4th booking type (index 3)
@@ -458,4 +458,4 @@ class ResourceBookingPage {
   }
 }
 
-module.exports = { ResourceBookingPage };
+module.exports = { ResourceOnlyBookingPage };

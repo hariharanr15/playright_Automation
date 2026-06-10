@@ -6,7 +6,7 @@ const {
   test
 } = require('../support/test-base');
 const { BookingListPage } = require('../../pages/booking/booking-list.page');
-const { Filter } = require('../../pages/booking/Filter');
+const { Filter } = require('../../pages/booking/filter.page');
 
 test.describe('Smoke Tests - Booking List Flow', () => {
   test('Booking List tab complete non-mutating flow', async ({ page }) => {

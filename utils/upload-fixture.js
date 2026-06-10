@@ -4,6 +4,7 @@ const path = require('path');
 function findUploadFixture() {
   const candidates = [
     process.env.VC_UPLOAD_FIXTURE,
+    path.resolve('fixtures', 'sample-upload.pdf'),
     path.resolve('PDF download', 'booking-list-filtered-1779881664763.pdf'),
     path.resolve('PDF download', 'booking-list-filtered-1779883715286.pdf'),
     path.resolve('screenshots', 'full_app_TC-01_2026-05-26T04-55-24-223Z.png')

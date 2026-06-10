@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const { Filter } = require('../pages/booking/Filter');
+const { Filter } = require('../pages/booking/filter.page');
 const { EditBookingPage } = require('../pages/booking/edit.booking.page');
 
 (async () => {

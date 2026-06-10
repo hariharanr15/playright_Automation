@@ -5,7 +5,7 @@ const TIME_SLOT_PATTERN = /\b\d{1,2}:\d{2}\s*(?:AM|PM)?\s*-\s*\d{1,2}:\d{2}\s*(?
 const { waitForBookingConfirmation } = require('../../utils/booking-confirmation');
 const { uploadRequiredFiles } = require('../../utils/upload-fixture');
 
-class ImprovedRecurringBookingPage {
+class RecurringBookingPage {
   constructor(page) {
     this.page = page;
   }
@@ -324,4 +324,4 @@ class ImprovedRecurringBookingPage {
   }
 }
 
-module.exports = { ImprovedRecurringBookingPage };
+module.exports = { RecurringBookingPage };

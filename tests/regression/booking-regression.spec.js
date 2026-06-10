@@ -9,10 +9,10 @@ const {
 const { fillHighlighted } = require('../../utils/highlight');
 const { DeliveryBookingPage } = require('../../pages/booking/delivery.booking.page');
 const { EditBookingPage } = require('../../pages/booking/edit.booking.page');
-const { Filter } = require('../../pages/booking/Filter');
-const { ImprovedRecurringBookingPage } = require('../../pages/booking/improved.recurring.booking.page');
-const { ResourceBookingPage } = require('../../pages/booking/resource.booking.page');
-const { UserManagementPage } = require('../../pages/user-management.page');
+const { Filter } = require('../../pages/booking/filter.page');
+const { RecurringBookingPage } = require('../../pages/booking/recurring.booking.page');
+const { ResourceOnlyBookingPage } = require('../../pages/booking/resource-only.booking.page');
+const { UserManagementPage } = require('../../pages/booking/user-management.page');
 
 async function ensureAdvancedPastTimeSlot(page, bookingPage) {
   const slotHeading = page.getByText(/Select a slot for your booking/i).first();
@@ -152,7 +152,7 @@ test.describe('Regression Tests - Booking Application', () => {
   test.describe.configure({ mode: 'serial' });
 
   test('Regression TC-01 - resource booking can be created', async ({ page }) => {
-    const resourceBooking = new ResourceBookingPage(page);
+    const resourceBooking = new ResourceOnlyBookingPage(page);
 
     await runStep(page, 'Open Booking List', async () => {
       await openBookingList(page);
@@ -205,7 +205,7 @@ test.describe('Regression Tests - Booking Application', () => {
   });
 
   test('Regression TC-02 - recurring booking can be created', async ({ page }) => {
-    const recurringBooking = new ImprovedRecurringBookingPage(page);
+    const recurringBooking = new RecurringBookingPage(page);
 
     await runStep(page, 'Open Booking List', async () => {
       await openBookingList(page);

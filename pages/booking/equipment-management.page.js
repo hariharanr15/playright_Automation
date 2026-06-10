@@ -1,4 +1,4 @@
-const { clickHighlighted } = require('../utils/highlight');
+const { clickHighlighted } = require('../../utils/highlight');
 
 class EquipmentManagementPage {
   constructor(page) {

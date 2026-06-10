@@ -4,7 +4,7 @@ const {
   runStep,
   test
 } = require('../support/test-base');
-const { EquipmentManagementPage } = require('../../pages/equipment-management.page');
+const { EquipmentManagementPage } = require('../../pages/booking/equipment-management.page');
 
 test.describe('Smoke Tests - Equipment Management', () => {
   test('Smoke TC-04 - Equipment Management and Equipment List tab are accessible', async ({ page }) => {

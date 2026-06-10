@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const { chromium } = require('playwright');
-const { UserManagementPage } = require('../pages/user-management.page');
+const { UserManagementPage } = require('../pages/booking/user-management.page');
 
 function getArg(name, fallback = '') {
   const prefix = `--${name}=`;

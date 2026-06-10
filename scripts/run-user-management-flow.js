@@ -3,8 +3,8 @@
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
-const { UserManagementPage } = require('../pages/user-management.page');
-const { DashboardPage } = require('../pages/dashboard.page');
+const { UserManagementPage } = require('../pages/booking/user-management.page');
+const { DashboardPage } = require('../pages/booking/dashboard.page');
 
 const AUTH_STATE_PATH = path.resolve('auth.json');
 const USER_MANAGEMENT_SEQUENCE_PATH = path.resolve('config', 'user-management-sequence.json');

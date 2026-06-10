@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { checkHighlighted, clickHighlighted, fillHighlighted, highlight } = require('../../utils/highlight');
-const { DashboardPage } = require('../dashboard.page');
+const { DashboardPage } = require('./dashboard.page');
 
 class EditBookingPage {
   constructor(page, options = {}) {

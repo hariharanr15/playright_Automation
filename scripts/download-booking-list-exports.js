@@ -3,8 +3,8 @@ const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const { chromium } = require('playwright');
-const { DashboardPage } = require('../pages/dashboard.page');
-const { Filter } = require('../pages/booking/Filter');
+const { DashboardPage } = require('../pages/booking/dashboard.page');
+const { Filter } = require('../pages/booking/filter.page');
 const { highlight } = require('../utils/highlight');
 
 function loadEnvironment() {

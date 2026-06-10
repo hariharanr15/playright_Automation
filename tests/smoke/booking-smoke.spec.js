@@ -5,9 +5,9 @@ const {
   runStep,
   test
 } = require('../support/test-base');
-const { DashboardPage } = require('../../pages/dashboard.page');
+const { DashboardPage } = require('../../pages/booking/dashboard.page');
 const { DeliveryBookingPage } = require('../../pages/booking/delivery.booking.page');
-const { Filter } = require('../../pages/booking/Filter');
+const { Filter } = require('../../pages/booking/filter.page');
 
 test.describe('Smoke Tests - Booking Application', () => {
   test.describe.configure({ mode: 'serial' });

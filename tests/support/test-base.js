@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { test: base, expect } = require('@playwright/test');
-const { DashboardPage } = require('../../pages/dashboard.page');
+const { DashboardPage } = require('../../pages/booking/dashboard.page');
 const { highlight } = require('../../utils/highlight');
 
 const STEP_WAIT_MS = Number(process.env.STEP_WAIT_MS || 1500);

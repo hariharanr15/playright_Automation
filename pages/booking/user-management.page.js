@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
-const { clickHighlighted, fillHighlighted, highlight } = require('../utils/highlight');
+const { clickHighlighted, fillHighlighted, highlight } = require('../../utils/highlight');
 const { DashboardPage } = require('./dashboard.page');
-const { loadUserAccountsFromFile } = require('../utils/user-accounts-loader');
+const { loadUserAccountsFromFile } = require('../../utils/user-accounts-loader');
 
 const USER_MANAGEMENT_SCREENSHOT_DIR = path.resolve('test-results', 'user-management-screenshots');
 const USER_MANAGEMENT_SEQUENCE_PATH = path.resolve('config', 'user-management-sequence.json');

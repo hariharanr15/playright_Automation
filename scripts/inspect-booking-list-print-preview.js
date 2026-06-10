@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
-const { DashboardPage } = require('../pages/dashboard.page');
-const { Filter } = require('../pages/booking/Filter');
+const { DashboardPage } = require('../pages/booking/dashboard.page');
+const { Filter } = require('../pages/booking/filter.page');
 
 function loadEnvironment() {
   const envPath = path.resolve('.env');

@@ -4,13 +4,14 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const { chromium } = require('playwright');
-const { DashboardPage } = require('./pages/dashboard.page');
+const { DashboardPage } = require('./pages/booking/dashboard.page');
 const { DeliveryBookingPage } = require('./pages/booking/delivery.booking.page');
-const { ResourceBookingPage } = require('./pages/booking/resource.booking.page');
-const { ImprovedRecurringBookingPage } = require('./pages/booking/improved.recurring.booking.page');
+const { ResourceOnlyBookingPage } = require('./pages/booking/resource-only.booking.page');
+const { RecurringBookingPage } = require('./pages/booking/recurring.booking.page');
+const { MultiVehicleBookingPage } = require('./pages/booking/multi-vehicle.booking.page');
 const { EditBookingPage } = require('./pages/booking/edit.booking.page');
-const { Filter } = require('./pages/booking/Filter');
-const { UserManagementPage } = require('./pages/user-management.page');
+const { Filter } = require('./pages/booking/filter.page');
+const { UserManagementPage } = require('./pages/booking/user-management.page');
 const { ScreenDetector } = require('./utils/screen-detector');
 const { clickHighlighted, fillHighlighted } = require('./utils/highlight');
 
@@ -670,7 +671,7 @@ class FullApplicationRunner {
 
   async runRecurringFlow() {
     const flowName = 'Recurring Booking';
-    const recurringBooking = new ImprovedRecurringBookingPage(this.page);
+    const recurringBooking = new RecurringBookingPage(this.page);
     await this.runStep(flowName, 'Open authenticated Booking List', async () => this.openBookingList());
     await this.runStep(flowName, 'Start a new booking', async () => recurringBooking.startNewBooking());
     await this.runStep(flowName, 'Select Recurring booking type', async () => recurringBooking.selectRecurringBookingType());
@@ -685,10 +686,7 @@ class FullApplicationRunner {
 
   async runMultiVehicleFlow() {
     const flowName = 'Multi-Vehicle Booking';
-    const multiVehicleBooking = new DeliveryBookingPage(this.page, {
-      bookingTypeIndex: 2,
-      bookingTypeLabel: 'Multi-Vehicle'
-    });
+    const multiVehicleBooking = new MultiVehicleBookingPage(this.page);
     await this.runStep(flowName, 'Open authenticated Booking List', async () => this.openBookingList());
     await this.runStep(flowName, 'Start a new booking', async () => multiVehicleBooking.startNewBooking());
     await this.runStep(flowName, 'Select Multi-Vehicle booking type', async () => multiVehicleBooking.selectBookingType());
@@ -702,7 +700,7 @@ class FullApplicationRunner {
 
   async runResourceFlow() {
     const flowName = 'Resource-only Booking';
-    const resourceBooking = new ResourceBookingPage(this.page);
+    const resourceBooking = new ResourceOnlyBookingPage(this.page);
     await this.runStep(flowName, 'Open authenticated Booking List', async () => this.openBookingList());
     await this.runStep(flowName, 'Start a new booking', async () => resourceBooking.startNewBooking());
     await this.runStep(flowName, 'Select Resource Only booking type', async () => resourceBooking.selectResourceBookingType());
