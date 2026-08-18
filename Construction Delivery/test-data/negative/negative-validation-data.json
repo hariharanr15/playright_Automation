@@ -1,0 +1,15 @@
+{
+  "booking": {
+    "invalidEmails": ["invalid-email", "missing-domain@", "@missing-local.test"],
+    "invalidPhones": ["abc", "123", "++++"],
+    "invalidDateRanges": ["end-before-start", "past-only", "beyond-configured-limit"]
+  },
+  "files": {
+    "unsupportedExtensions": [".exe", ".bat", ".txt"],
+    "oversizePolicy": "Use generated files in a temporary test-results folder only."
+  },
+  "text": {
+    "specialCharacters": ["<script>alert(1)</script>", "' OR '1'='1", "@@@###"],
+    "blank": ""
+  }
+}

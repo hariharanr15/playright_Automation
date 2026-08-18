@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Automation Flow Dashboard</title>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --panel: #fff;
+      --ink: #172033;
+      --muted: #607089;
+      --line: #dfe5ee;
+      --green: #0f9f7a;
+      --red: #d94d45;
+      --blue: #2c6fbb;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: Inter, Segoe UI, Arial, sans-serif; }
+    header { padding: 28px 40px 22px; background: #fff; border-bottom: 1px solid var(--line); }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 30px; }
+    header p { margin-top: 6px; color: var(--muted); }
+    main { padding: 28px 40px 48px; }
+    .grid { display: grid; gap: 18px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 20px; box-shadow: 0 8px 24px rgba(33, 45, 67, .07); }
+    .label { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .08em; }
+    .value { display: block; margin-top: 8px; font-size: 30px; font-weight: 750; }
+    .sub { color: var(--muted); margin-top: 4px; font-size: 14px; }
+    section { margin-top: 22px; }
+    h2 { margin-bottom: 14px; font-size: 20px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; table-layout: fixed; }
+    th, td { padding: 11px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; font-size: 14px; overflow-wrap: anywhere; }
+    th { background: #f8fafc; color: #3e4b61; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; }
+    .status { display: inline-flex; border-radius: 999px; padding: 4px 9px; font-weight: 700; font-size: 12px; text-transform: uppercase; }
+    .status.passed { background: #dff8ee; color: #04745a; }
+    .status.failed { background: #ffe3e0; color: #af2f2a; }
+    .status.skipped { background: #fff7d6; color: #8a5a00; }
+    .testcase-row.failed, .page-report-row.failed { background: #fff0ef; box-shadow: inset 6px 0 0 #e02424; }
+    .testcase-row.skipped { background: #fffaf0; box-shadow: inset 6px 0 0 #d99a00; }
+    .testcase-row.failed td { border-top: 2px solid #ff8b85; border-bottom: 2px solid #ff8b85; font-weight: 650; }
+    .page-group td { background: #eaf0f8; color: #1f4779; font-size: 15px; font-weight: 850; letter-spacing: .03em; }
+    .failure-panel { padding: 18px; border: 3px solid #e02424; border-radius: 10px; background: #fff0ef; box-shadow: 0 0 0 6px rgba(224,36,36,.10); }
+    .failure-panel h2 { color: #a11111; }
+    .failure-item { display: grid; gap: 7px; margin-top: 12px; padding: 14px; border-left: 7px solid #e02424; background: #fff; }
+    .failure-item strong { color: #a11111; font-size: 16px; }
+    .failure-item code { white-space: pre-wrap; overflow-wrap: anywhere; color: #741515; }
+    .run-status.failed { color: #b11919; text-transform: uppercase; }
+    .run-status.passed { color: #04745a; text-transform: uppercase; }
+    .env { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 18px; padding: 16px; border: 1px solid #8be0c4; border-radius: 8px; background: #dff8ee; }
+    .env span { color: #04745a; font-size: 12px; text-transform: uppercase; font-weight: 800; letter-spacing: .08em; }
+    .env strong { display: block; margin-top: 5px; overflow-wrap: anywhere; }
+    a { color: var(--blue); font-weight: 650; }
+    @media (max-width: 1000px) { .grid, .env { grid-template-columns: 1fr; } main, header { padding-left: 20px; padding-right: 20px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Automation Flow Dashboard</h1>
+    <div class="env">
+      <div><span>Environment</span><strong>Staging</strong></div>
+      <div><span>Application URL</span><strong>https://stg-app.voyagecontrol.com</strong></div>
+      <div><span>Browser</span><strong>headed / Chrome</strong></div>
+      <div><span>Viewport</span><strong>-</strong></div>
+    </div>
+  </header>
+  <main>
+    
+    <section class="grid">
+      <div class="card"><span class="label">Run Status</span><strong class="value run-status passed">passed</strong><p class="sub">100% run pass rate</p></div>
+      <div class="card"><span class="label">Checks Passed</span><strong class="value">7/7</strong><p class="sub">0 failed checks</p></div>
+      <div class="card"><span class="label">Duration</span><strong class="value">5m 46s</strong><p class="sub">Latest run duration</p></div>
+      <div class="card"><span class="label">Primary Record</span><strong class="value">-</strong><p class="sub">analytics-emissions-uom-automation</p></div>
+    </section>
+    <section>
+      <h2>Recent Runs</h2>
+      <table>
+        <thead><tr><th>Flow</th><th>Status</th><th>Started</th><th>Duration</th><th>Checks</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td>Analytics</td><td><span class="status passed">passed</span></td><td>18 Aug 2026, 20:00</td><td>5m 46s</td><td>7/7</td><td>analytics-report-2026-08-18T14-35-55-353Z.json</td></tr>
+        </tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Page-wise Automation Report</h2>
+      <table>
+        <thead><tr><th>Application Page</th><th>Status</th><th>Passed</th><th>Failed</th><th>Duration</th><th>Failed Cases</th><th>Source</th></tr></thead>
+        <tbody><tr class="page-report-row passed">
+      <td>Analytics</td>
+      <td><span class="status passed">passed</span></td>
+      <td>7/7</td>
+      <td>0</td>
+      <td>5m 39s</td>
+      <td>-</td>
+      <td>analytics-report-2026-08-18T14-35-55-353Z.json</td>
+    </tr></tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Analytics UOM Configuration Protocol</h2>
+      <table>
+        <thead><tr><th>Project Country</th><th>Project Address</th><th>Country UOM Status</th><th>Country UOM Record</th><th>Default Used</th><th>Expected Analytics Units</th><th>Issue</th><th>Source</th></tr></thead>
+        <tbody><tr>
+      <td>GB</td>
+      <td>-</td>
+      <td><span class="status skipped">not-found</span></td>
+      <td>Country: United Kingdom; Distance: Miles; Volume: Gallons; Weight: kg; Tons: US</td>
+      <td>No</td>
+      <td>Distance: Miles; Volume: Gallons; Weight: Kg; Tons: US Tons</td>
+      <td>Project Details fields were not visible; country was read from browser project storage.</td>
+      <td>analytics-report-2026-08-18T14-35-55-353Z.json</td>
+    </tr></tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Analytics Tab UOM Checks</h2>
+      <table>
+        <thead><tr><th>Analytics Tab</th><th>Metric</th><th>Expected UOM</th><th>Status</th><th>Visible Headers</th><th>Sample Values</th><th>Values With Units</th><th>Issue</th><th>Source</th></tr></thead>
+        <tbody><tr class="testcase-row passed">
+      <td>Vehicle Emissions</td>
+      <td>One Way Trip Distance</td>
+      <td>Miles</td>
+      <td><span class="status passed">passed</span></td>
+      <td>One Way Trip Distance (miles) | Roundtrip DistanceDelivered From Jobsite (miles) | 7.27 miles | 14.54 miles | 5.03 miles | 10.06 miles | 14.23 miles | 28.46 miles</td>
+      <td>7.27 miles | 5.03 miles | 14.23 miles | 14.54 miles | 10.06 miles | 28.46 miles</td>
+      <td>7.27 miles | 5.03 miles | 14.23 miles | 14.54 miles | 10.06 miles | 28.46 miles</td>
+      <td>-</td>
+      <td>analytics-report-2026-08-18T14-35-55-353Z.json</td>
+    </tr><tr class="testcase-row passed">
+      <td>Vehicle Emissions</td>
+      <td>One Way Trip CO2 Emissions</td>
+      <td>US Tons</td>
+      <td><span class="status passed">passed</span></td>
+      <td>One Way Trip CO2 Emissions (tons) | Round Trip CO2 Emissions (tons) | 0.0001 US tons | 0.0002 US tons | 0.0111 US tons | 0.0222 US tons | 0.0003 US tons</td>
+      <td>0.0001 US tons | 0.0111 US tons | 0.0002 US tons | 0.0222 US tons | 0.0003 US tons</td>
+      <td>0.0001 US tons | 0.0111 US tons | 0.0002 US tons | 0.0222 US tons | 0.0003 US tons</td>
+      <td>-</td>
+      <td>analytics-report-2026-08-18T14-35-55-353Z.json</td>
+    </tr><tr class="testcase-row passed">
+      <td>Vehicle Emissions</td>
+      <td>Roundtrip Distance Delivered From Jobsite</td>
+      <td>Miles</td>
+      <td><span class="status passed">passed</span></td>
+      <td>One Way Trip Distance (miles) | Roundtrip DistanceDelivered From Jobsite (miles) | 7.27 miles | 14.54 miles | 5.03 miles | 10.06 miles | 14.23 miles | 28.46 miles</td>
+      <td>7.27 miles | 5.03 miles | 14.23 miles | 14.54 miles | 10.06 miles | 28.46 miles</td>
+      <td>7.27 miles | 5.03 miles | 14.23 miles | 14.54 miles | 10.06 miles | 28.46 miles</td>
+      <td>-</td>
+      <td>analytics-report-2026-08-18T14-35-55-353Z.json</td>
+    </tr><tr class="testcase-row skipped">
+      <td>Equipment Emissions</td>
+      <td>Distance</td>
+      <td>Miles</td>
+      <td><span class="status skipped">not-displayed</span></td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>analytics-report-2026-08-18T14-35-55-353Z.json</td>
+    </tr><tr class="testcase-row passed">
+      <td>Equipment Emissions</td>
+      <td>Volume</td>
+      <td>Gallons</td>
+      <td><span class="status passed">passed</span></td>
+      <td>Fuel Type | Fuel Efficiency | Total Fuel Use | 2.11 gallons/hour | 52.83 gallons | 1.71 gallons/hour | 41.0 gallons | 93.83 gallons</td>
+      <td>0.5 | Fuel Type | 0.11022 US tons | 0.085539 US tons | Fuel Efficiency | 0.116834 US tons | Total Fuel Use | 1.71 gallons/hour</td>
+      <td>0.11022 US tons | 0.085539 US tons | 0.116834 US tons | 1.71 gallons/hour</td>
+      <td>-</td>
+      <td>analytics-report-2026-08-18T14-35-55-353Z.json</td>
+    </tr><tr class="testcase-row skipped">
+      <td>Equipment Emissions</td>
+      <td>Weight</td>
+      <td>Kg</td>
+      <td><span class="status skipped">not-displayed</span></td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>analytics-report-2026-08-18T14-35-55-353Z.json</td>
+    </tr><tr class="testcase-row passed">
+      <td>Equipment Emissions</td>
+      <td>Tons</td>
+      <td>US Tons</td>
+      <td><span class="status passed">passed</span></td>
+      <td>Summary Emission | Vehicle Emissions | Equipment Emissions | Emission Factor | CO2 Emissions | 0.11022 US tons | 0.085539 US tons | 0.19575900000000002 US tons | 0.116834 US tons</td>
+      <td>2 | 1 | Emission Factor | 52.83 gallons | 41.0 gallons | CO2 Emissions | 56.0 gallons | 0.085539 US tons</td>
+      <td>52.83 gallons | 41.0 gallons | 56.0 gallons | 0.085539 US tons</td>
+      <td>-</td>
+      <td>analytics-report-2026-08-18T14-35-55-353Z.json</td>
+    </tr></tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Dynamic Booking Types</h2>
+      <table>
+        <thead><tr><th>Booking Type</th><th>Available</th><th>Enabled</th><th>Result</th><th>Booking Ref</th><th>Reason / Message</th><th>Duration</th><th>Evidence</th><th>Source</th></tr></thead>
+        <tbody><tr><td colspan="9">No dynamic booking-type data found.</td></tr></tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Automatic Approval Matrix</h2>
+      <table>
+        <thead><tr><th>User Role</th><th>Booking Type</th><th>Automatic Approval</th><th>Expected Status</th><th>Actual Status</th><th>Result</th><th>Booking Ref</th><th>Reason / Message</th><th>Duration</th><th>Evidence</th><th>Source</th></tr></thead>
+        <tbody><tr><td colspan="11">No Automatic Approval matrix data found.</td></tr></tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Role-Based Left Navigation</h2>
+      <table>
+        <thead><tr><th>User Role</th><th>Username</th><th>My Account Role</th><th>Expected Tabs</th><th>Actual Tabs</th><th>Missing Tabs</th><th>Unexpected Tabs</th><th>Additional Tabs</th><th>Vehicle Tracking</th><th>Direct URL Access</th><th>Result</th><th>Failure Reason</th><th>Screenshot</th></tr></thead>
+        <tbody><tr><td colspan="13">No role-based navigation data found.</td></tr></tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Entire Testcase Report</h2>
+      <table>
+        <thead><tr><th>Case ID</th><th>Flow</th><th>Step</th><th>Status</th><th>Duration</th><th>Timestamp</th><th>Error</th></tr></thead>
+        <tbody><tr class="page-group"><td colspan="7">Analytics page</td></tr>
+    <tr class="testcase-row passed">
+      <td>TC-01</td>
+      <td>Analytics</td>
+      <td>Login from SSO page</td>
+      <td><span class="status passed">passed</span></td>
+      <td>9s</td>
+      <td>18 Aug 2026, 20:00</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-02</td>
+      <td>Analytics</td>
+      <td>Select Buckingham Palace project</td>
+      <td><span class="status passed">passed</span></td>
+      <td>13s</td>
+      <td>18 Aug 2026, 20:00</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-03</td>
+      <td>Analytics</td>
+      <td>Verify project details and derive Country UOM</td>
+      <td><span class="status passed">passed</span></td>
+      <td>15s</td>
+      <td>18 Aug 2026, 20:00</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-04</td>
+      <td>Analytics</td>
+      <td>Validate Summary Emission analytics date range and download</td>
+      <td><span class="status passed">passed</span></td>
+      <td>59s</td>
+      <td>18 Aug 2026, 20:00</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-05</td>
+      <td>Analytics</td>
+      <td>Validate Vehicle Emission analytics units and records</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1m 33s</td>
+      <td>18 Aug 2026, 20:00</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-06</td>
+      <td>Analytics</td>
+      <td>Validate Equipment Emission analytics units and records</td>
+      <td><span class="status passed">passed</span></td>
+      <td>58s</td>
+      <td>18 Aug 2026, 20:00</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-07</td>
+      <td>Analytics</td>
+      <td>Validate Environment Reports analytics date range</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1m 32s</td>
+      <td>18 Aug 2026, 20:00</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>

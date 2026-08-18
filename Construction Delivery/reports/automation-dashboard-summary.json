@@ -1,0 +1,372 @@
+{
+  "generatedAt": "2026-08-18T14:35:56.127Z",
+  "runs": [
+    {
+      "fileName": "analytics-report-2026-08-18T14-35-55-353Z.json",
+      "flowKey": "analytics",
+      "flowName": "Analytics",
+      "status": "passed",
+      "startTime": "2026-08-18T14:30:09.648Z",
+      "endTime": "2026-08-18T14:35:55.353Z",
+      "duration": 345705,
+      "total": 7,
+      "passed": 7,
+      "failed": 0,
+      "bookingId": null,
+      "inviteEmail": null,
+      "workflow": "analytics-emissions-uom-automation",
+      "environmentName": "Staging",
+      "appUrl": "https://stg-app.voyagecontrol.com",
+      "browserMode": "headed",
+      "viewport": null,
+      "bookingTypeAvailability": [],
+      "bookingTypeResults": [],
+      "approvalValidationResults": [],
+      "roleNavigationResults": [],
+      "roleNavigationSummary": null,
+      "analyticsUomProtocol": {
+        "generatedAt": "2026-08-18T14:34:12.985Z",
+        "projectConfiguration": {
+          "projectDetails": {
+            "source": "Project Management > Project Details",
+            "status": "not-found",
+            "url": "https://stg-app.voyagecontrol.com/5ET10000010/site-details",
+            "projectAddress": "",
+            "country": "GB",
+            "issue": "Project Details fields were not visible; country was read from browser project storage."
+          },
+          "countryUomPage": {
+            "source": "Project Management > Country UOMs",
+            "status": "not-found",
+            "url": "https://stg-app.voyagecontrol.com/5ET10000010/country",
+            "searchedFor": "",
+            "countryUom": "",
+            "rows": [],
+            "issue": ""
+          },
+          "expectedUnits": {
+            "configuredCountry": "United Kingdom",
+            "configuredCountryUom": "Country: United Kingdom; Distance: Miles; Volume: Gallons; Weight: kg; Tons: US",
+            "fallbackApplied": false,
+            "distanceUnit": "Miles",
+            "volumeUnit": "Gallons",
+            "weightUnit": "Kg",
+            "tonsUnit": "US Tons",
+            "defaultProtocol": {
+              "distance": "Miles",
+              "volume": "Gallons",
+              "weight": "Oz",
+              "tons": "US Tons"
+            }
+          }
+        },
+        "analyticsSections": [
+          {
+            "sectionName": "Vehicle Emissions",
+            "country": "GB",
+            "countryUom": "Country: United Kingdom; Distance: Miles; Volume: Gallons; Weight: kg; Tons: US",
+            "expectedUnits": {
+              "configuredCountry": "United Kingdom",
+              "configuredCountryUom": "Country: United Kingdom; Distance: Miles; Volume: Gallons; Weight: kg; Tons: US",
+              "fallbackApplied": false,
+              "distanceUnit": "Miles",
+              "volumeUnit": "Gallons",
+              "weightUnit": "Kg",
+              "tonsUnit": "US Tons",
+              "defaultProtocol": {
+                "distance": "Miles",
+                "volume": "Gallons",
+                "weight": "Oz",
+                "tons": "US Tons"
+              }
+            },
+            "checks": [
+              {
+                "metric": "One Way Trip Distance",
+                "expectedUnit": "Miles",
+                "status": "passed",
+                "visibleHeaders": [
+                  "One Way Trip Distance (miles)",
+                  "Roundtrip DistanceDelivered From Jobsite (miles)",
+                  "7.27 miles",
+                  "14.54 miles",
+                  "5.03 miles",
+                  "10.06 miles",
+                  "14.23 miles",
+                  "28.46 miles"
+                ],
+                "sampleValues": [
+                  "7.27 miles",
+                  "5.03 miles",
+                  "14.23 miles",
+                  "14.54 miles",
+                  "10.06 miles",
+                  "28.46 miles"
+                ],
+                "valuesWithUnits": [
+                  "7.27 miles",
+                  "5.03 miles",
+                  "14.23 miles",
+                  "14.54 miles",
+                  "10.06 miles",
+                  "28.46 miles"
+                ],
+                "issue": ""
+              },
+              {
+                "metric": "One Way Trip CO2 Emissions",
+                "expectedUnit": "US Tons",
+                "status": "passed",
+                "visibleHeaders": [
+                  "One Way Trip CO2 Emissions (tons)",
+                  "Round Trip CO2 Emissions (tons)",
+                  "0.0001 US tons",
+                  "0.0002 US tons",
+                  "0.0111 US tons",
+                  "0.0222 US tons",
+                  "0.0003 US tons"
+                ],
+                "sampleValues": [
+                  "0.0001 US tons",
+                  "0.0111 US tons",
+                  "0.0002 US tons",
+                  "0.0222 US tons",
+                  "0.0003 US tons"
+                ],
+                "valuesWithUnits": [
+                  "0.0001 US tons",
+                  "0.0111 US tons",
+                  "0.0002 US tons",
+                  "0.0222 US tons",
+                  "0.0003 US tons"
+                ],
+                "issue": ""
+              },
+              {
+                "metric": "Roundtrip Distance Delivered From Jobsite",
+                "expectedUnit": "Miles",
+                "status": "passed",
+                "visibleHeaders": [
+                  "One Way Trip Distance (miles)",
+                  "Roundtrip DistanceDelivered From Jobsite (miles)",
+                  "7.27 miles",
+                  "14.54 miles",
+                  "5.03 miles",
+                  "10.06 miles",
+                  "14.23 miles",
+                  "28.46 miles"
+                ],
+                "sampleValues": [
+                  "7.27 miles",
+                  "5.03 miles",
+                  "14.23 miles",
+                  "14.54 miles",
+                  "10.06 miles",
+                  "28.46 miles"
+                ],
+                "valuesWithUnits": [
+                  "7.27 miles",
+                  "5.03 miles",
+                  "14.23 miles",
+                  "14.54 miles",
+                  "10.06 miles",
+                  "28.46 miles"
+                ],
+                "issue": ""
+              }
+            ]
+          },
+          {
+            "sectionName": "Equipment Emissions",
+            "country": "GB",
+            "countryUom": "Country: United Kingdom; Distance: Miles; Volume: Gallons; Weight: kg; Tons: US",
+            "expectedUnits": {
+              "configuredCountry": "United Kingdom",
+              "configuredCountryUom": "Country: United Kingdom; Distance: Miles; Volume: Gallons; Weight: kg; Tons: US",
+              "fallbackApplied": false,
+              "distanceUnit": "Miles",
+              "volumeUnit": "Gallons",
+              "weightUnit": "Kg",
+              "tonsUnit": "US Tons",
+              "defaultProtocol": {
+                "distance": "Miles",
+                "volume": "Gallons",
+                "weight": "Oz",
+                "tons": "US Tons"
+              }
+            },
+            "checks": [
+              {
+                "metric": "Distance",
+                "expectedUnit": "Miles",
+                "status": "not-displayed",
+                "visibleHeaders": [],
+                "sampleValues": [],
+                "valuesWithUnits": [],
+                "issue": ""
+              },
+              {
+                "metric": "Volume",
+                "expectedUnit": "Gallons",
+                "status": "passed",
+                "visibleHeaders": [
+                  "Fuel Type",
+                  "Fuel Efficiency",
+                  "Total Fuel Use",
+                  "2.11 gallons/hour",
+                  "52.83 gallons",
+                  "1.71 gallons/hour",
+                  "41.0 gallons",
+                  "93.83 gallons"
+                ],
+                "sampleValues": [
+                  "0.5",
+                  "Fuel Type",
+                  "0.11022 US tons",
+                  "0.085539 US tons",
+                  "Fuel Efficiency",
+                  "0.116834 US tons",
+                  "Total Fuel Use",
+                  "1.71 gallons/hour"
+                ],
+                "valuesWithUnits": [
+                  "0.11022 US tons",
+                  "0.085539 US tons",
+                  "0.116834 US tons",
+                  "1.71 gallons/hour"
+                ],
+                "issue": ""
+              },
+              {
+                "metric": "Weight",
+                "expectedUnit": "Kg",
+                "status": "not-displayed",
+                "visibleHeaders": [],
+                "sampleValues": [],
+                "valuesWithUnits": [],
+                "issue": ""
+              },
+              {
+                "metric": "Tons",
+                "expectedUnit": "US Tons",
+                "status": "passed",
+                "visibleHeaders": [
+                  "Summary Emission",
+                  "Vehicle Emissions",
+                  "Equipment Emissions",
+                  "Emission Factor",
+                  "CO2 Emissions",
+                  "0.11022 US tons",
+                  "0.085539 US tons",
+                  "0.19575900000000002 US tons",
+                  "0.116834 US tons"
+                ],
+                "sampleValues": [
+                  "2",
+                  "1",
+                  "Emission Factor",
+                  "52.83 gallons",
+                  "41.0 gallons",
+                  "CO2 Emissions",
+                  "56.0 gallons",
+                  "0.085539 US tons"
+                ],
+                "valuesWithUnits": [
+                  "52.83 gallons",
+                  "41.0 gallons",
+                  "56.0 gallons",
+                  "0.085539 US tons"
+                ],
+                "issue": ""
+              }
+            ]
+          }
+        ],
+        "issues": []
+      },
+      "tests": [
+        {
+          "stepNumber": 1,
+          "id": "TC-01",
+          "flowName": "Analytics",
+          "name": "Login from SSO page",
+          "status": "passed",
+          "timestamp": "2026-08-18T14:30:09.648Z",
+          "duration": 9159,
+          "error": null
+        },
+        {
+          "stepNumber": 2,
+          "id": "TC-02",
+          "flowName": "Analytics",
+          "name": "Select Buckingham Palace project",
+          "status": "passed",
+          "timestamp": "2026-08-18T14:30:09.648Z",
+          "duration": 12992,
+          "error": null
+        },
+        {
+          "stepNumber": 3,
+          "id": "TC-03",
+          "flowName": "Analytics",
+          "name": "Verify project details and derive Country UOM",
+          "status": "passed",
+          "timestamp": "2026-08-18T14:30:09.648Z",
+          "duration": 15359,
+          "error": null
+        },
+        {
+          "stepNumber": 4,
+          "id": "TC-04",
+          "flowName": "Analytics",
+          "name": "Validate Summary Emission analytics date range and download",
+          "status": "passed",
+          "timestamp": "2026-08-18T14:30:09.648Z",
+          "duration": 58708,
+          "error": null
+        },
+        {
+          "stepNumber": 5,
+          "id": "TC-05",
+          "flowName": "Analytics",
+          "name": "Validate Vehicle Emission analytics units and records",
+          "status": "passed",
+          "timestamp": "2026-08-18T14:30:09.648Z",
+          "duration": 92930,
+          "error": null
+        },
+        {
+          "stepNumber": 6,
+          "id": "TC-06",
+          "flowName": "Analytics",
+          "name": "Validate Equipment Emission analytics units and records",
+          "status": "passed",
+          "timestamp": "2026-08-18T14:30:09.648Z",
+          "duration": 57618,
+          "error": null
+        },
+        {
+          "stepNumber": 7,
+          "id": "TC-07",
+          "flowName": "Analytics",
+          "name": "Validate Environment Reports analytics date range",
+          "status": "passed",
+          "timestamp": "2026-08-18T14:30:09.648Z",
+          "duration": 91868,
+          "error": null
+        }
+      ],
+      "pages": [
+        {
+          "pageName": "Analytics",
+          "status": "passed",
+          "total": 7,
+          "passed": 7,
+          "failed": 0,
+          "duration": 338634,
+          "failedTestCaseIds": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "project": {
+    "id": "5ET10000010",
+    "name": "Buckingham Palace"
+  },
+  "userManagement": {
+    "organization": "Neuralrays",
+    "role": "Project Admin",
+    "emailPrefix": "cucumber-smoke"
+  }
+}

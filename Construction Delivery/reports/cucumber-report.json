@@ -1,0 +1,357 @@
+[
+  {
+    "description": "  Purpose:\n  This feature is the high-level navigation checklist for the Construction Delivery application.\n  It confirms that the automation user can open each main module from the configured project\n  and see the expected screen content.\n\n  Scope:\n  The scenario covers the primary modules used by operations and project administrators:\n  Booking List, Calendar, Project Management, User Management, Equipment Management,\n  Analytics, Environment Reports, My Account, My Organization, and Notification Preferences.\n\n  Safety:\n  This feature is read-only by design. It validates navigation and page readiness only.\n  It must not create bookings, upload files, send user invitations, edit project settings,\n  update notification preferences, change account details, or delete records.\n\n  Expected outcome:\n  Every listed module should open successfully and show a stable screen marker that proves\n  the page is ready for review.",
+    "elements": [
+      {
+        "description": "    This scenario acts as an executable table of contents for Construction Delivery.\n    Each row names the module to open and the text that should be visible when the\n    module is ready. If a module fails to open or the expected marker is missing,\n    the scenario fails with the module name and current URL.",
+        "id": "construction-delivery---main-application-modules;review-every-main-construction-delivery-module-without-changing-data",
+        "keyword": "Scenario",
+        "line": 26,
+        "name": "Review every main Construction Delivery module without changing data",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 474605700
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 22,
+            "name": "I log in to the Construction Delivery application",
+            "match": {
+              "location": "features\\step-definitions\\user-management.steps.js:9"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 9687403500
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 23,
+            "name": "I select the configured Construction Delivery project",
+            "match": {
+              "location": "features\\step-definitions\\user-management.steps.js:13"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 19519811299
+            }
+          },
+          {
+            "arguments": [
+              {
+                "rows": [
+                  {
+                    "cells": [
+                      "module",
+                      "expected screen marker"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Booking List",
+                      "Booking List"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Calendar",
+                      "Calendar"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Project Management",
+                      "Project Details"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "User Management",
+                      "Invite Users"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Equipment Management",
+                      "List Of Equipment"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Analytics",
+                      "Summary Emission, Vehicle Emissions, Equipment Emissions"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Environment Reports",
+                      "Environment Reports"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "My Account",
+                      "My Details, My Preferences"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "My Organization",
+                      "Organization"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Notification Preferences",
+                      "Notification Preferences, My Bookings"
+                    ]
+                  }
+                ]
+              }
+            ],
+            "keyword": "When ",
+            "line": 32,
+            "name": "I open the following Construction Delivery modules:",
+            "match": {
+              "location": "features\\step-definitions\\construction-delivery.steps.js:169"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 27216136200
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 44,
+            "name": "each requested Construction Delivery module should be ready for review",
+            "match": {
+              "location": "features\\step-definitions\\construction-delivery.steps.js:221"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1289300
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 45,
+            "name": "no data-changing action should be performed",
+            "match": {
+              "location": "features\\step-definitions\\construction-delivery.steps.js:243"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 345800
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 350907899
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@construction-delivery",
+            "line": 25
+          },
+          {
+            "name": "@navigation",
+            "line": 25
+          },
+          {
+            "name": "@safe",
+            "line": 25
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "    This scenario opens the Project Management area for the configured\n    Construction Delivery project. It verifies the main Project Management\n    screens are ready for review and stops before editing project information,\n    settings, access points, resources, availability, emissions, or UOM data.",
+        "id": "construction-delivery---main-application-modules;review-project-management-in-chrome-without-changing-data",
+        "keyword": "Scenario",
+        "line": 48,
+        "name": "Review Project Management in Chrome without changing data",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 483434500
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 22,
+            "name": "I log in to the Construction Delivery application",
+            "match": {
+              "location": "features\\step-definitions\\user-management.steps.js:9"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 7663683600
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 23,
+            "name": "I select the configured Construction Delivery project",
+            "match": {
+              "location": "features\\step-definitions\\user-management.steps.js:13"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 16852995100
+            }
+          },
+          {
+            "arguments": [
+              {
+                "rows": [
+                  {
+                    "cells": [
+                      "area",
+                      "expected screen marker"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Project Details",
+                      "Project Details"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Environment Setting",
+                      "Environment Setting, Project Details"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Availability",
+                      "Availability"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Project Settings",
+                      "Project Settings, Core Features"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Vehicle Emissions",
+                      "Vehicle Emissions"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Equipment Master",
+                      "Equipment Master"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Global Settings",
+                      "Global Settings, Common"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Country UOMs",
+                      "Country UOMs, Country"
+                    ]
+                  }
+                ]
+              }
+            ],
+            "keyword": "When ",
+            "line": 54,
+            "name": "I review the following Project Management areas:",
+            "match": {
+              "location": "features\\step-definitions\\construction-delivery.steps.js:194"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 5262152699
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 64,
+            "name": "each requested Project Management area should be ready for review",
+            "match": {
+              "location": "features\\step-definitions\\construction-delivery.steps.js:232"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 430399
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 65,
+            "name": "no data-changing action should be performed",
+            "match": {
+              "location": "features\\step-definitions\\construction-delivery.steps.js:243"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 259399
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 322349400
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@construction-delivery",
+            "line": 47
+          },
+          {
+            "name": "@project-management",
+            "line": 47
+          },
+          {
+            "name": "@chrome",
+            "line": 47
+          },
+          {
+            "name": "@safe",
+            "line": 47
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "construction-delivery---main-application-modules",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Construction Delivery - Main Application Modules",
+    "tags": [],
+    "uri": "features\\construction-delivery.feature"
+  }
+]

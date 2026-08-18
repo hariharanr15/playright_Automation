@@ -1,0 +1,1022 @@
+[
+  {
+    "description": "  Purpose:\n  This regression inventory keeps tab-wise traceability between the Cucumber BDD suite,\n  existing Playwright automation, standalone Chrome automation flows, and documented\n  negative scenarios. It does not change application data.",
+    "elements": [
+      {
+        "description": "",
+        "id": "construction-delivery---regression-inventory;negative-regression-coverage-is-cataloged-for-safe-implementation",
+        "keyword": "Scenario Outline",
+        "line": 36,
+        "name": "Negative regression coverage is cataloged for safe implementation",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 6758499
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "the Construction Delivery automation catalog is loaded",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:17"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 20616299
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 31,
+            "name": "the \"NEG-01\" \"Invalid email, invalid password, and empty credentials\" use case for \"Login\" should be documented with \"instruction-matrix\" coverage from \"Scenario.md\"",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 5097700
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 32,
+            "name": "the catalog command \"-\" should be available when provided",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:43"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1368500
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 989599
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@regression",
+            "line": 1
+          },
+          {
+            "name": "@catalog",
+            "line": 1
+          },
+          {
+            "name": "@documentation-only",
+            "line": 1
+          },
+          {
+            "name": "@negative",
+            "line": 29
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "construction-delivery---regression-inventory;negative-regression-coverage-is-cataloged-for-safe-implementation",
+        "keyword": "Scenario Outline",
+        "line": 37,
+        "name": "Negative regression coverage is cataloged for safe implementation",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 316000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "the Construction Delivery automation catalog is loaded",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:17"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 4697999
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 31,
+            "name": "the \"NEG-02\" \"Missing mandatory booking fields and invalid date/time combinations\" use case for \"Booking Creation\" should be documented with \"instruction-matrix\" coverage from \"Scenario.md\"",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 953599
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 32,
+            "name": "the catalog command \"-\" should be available when provided",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:43"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 417599
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 358000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@regression",
+            "line": 1
+          },
+          {
+            "name": "@catalog",
+            "line": 1
+          },
+          {
+            "name": "@documentation-only",
+            "line": 1
+          },
+          {
+            "name": "@negative",
+            "line": 29
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "construction-delivery---regression-inventory;negative-regression-coverage-is-cataloged-for-safe-implementation",
+        "keyword": "Scenario Outline",
+        "line": 38,
+        "name": "Negative regression coverage is cataloged for safe implementation",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 289300
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "the Construction Delivery automation catalog is loaded",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:17"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 889499
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 31,
+            "name": "the \"NEG-03\" \"Unknown search, empty result sorting, unavailable actions, and empty export\" use case for \"Booking List\" should be documented with \"instruction-matrix\" coverage from \"Scenario.md\"",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1802600
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 32,
+            "name": "the catalog command \"-\" should be available when provided",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:43"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1906699
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 907300
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@regression",
+            "line": 1
+          },
+          {
+            "name": "@catalog",
+            "line": 1
+          },
+          {
+            "name": "@documentation-only",
+            "line": 1
+          },
+          {
+            "name": "@negative",
+            "line": 29
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "construction-delivery---regression-inventory;negative-regression-coverage-is-cataloged-for-safe-implementation",
+        "keyword": "Scenario Outline",
+        "line": 39,
+        "name": "Negative regression coverage is cataloged for safe implementation",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 232799
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "the Construction Delivery automation catalog is loaded",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:17"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 858200
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 31,
+            "name": "the \"NEG-04\" \"Empty invite, invalid email, duplicate role, missing organization, and restricted row actions\" use case for \"User Management\" should be documented with \"instruction-matrix\" coverage from \"Scenario.md\"",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 612500
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 32,
+            "name": "the catalog command \"-\" should be available when provided",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:43"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 183399
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 341500
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@regression",
+            "line": 1
+          },
+          {
+            "name": "@catalog",
+            "line": 1
+          },
+          {
+            "name": "@documentation-only",
+            "line": 1
+          },
+          {
+            "name": "@negative",
+            "line": 29
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "construction-delivery---regression-inventory;negative-regression-coverage-is-cataloged-for-safe-implementation",
+        "keyword": "Scenario Outline",
+        "line": 40,
+        "name": "Negative regression coverage is cataloged for safe implementation",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 869399
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "the Construction Delivery automation catalog is loaded",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:17"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1141500
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 31,
+            "name": "the \"NEG-05\" \"Missing upload, unsupported file, invalid columns, duplicate usage, and invalid attachments\" use case for \"Equipment Management\" should be documented with \"instruction-matrix\" coverage from \"Scenario.md\"",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 597900
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 32,
+            "name": "the catalog command \"-\" should be available when provided",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:43"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1853399
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 752800
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@regression",
+            "line": 1
+          },
+          {
+            "name": "@catalog",
+            "line": 1
+          },
+          {
+            "name": "@documentation-only",
+            "line": 1
+          },
+          {
+            "name": "@negative",
+            "line": 29
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "construction-delivery---regression-inventory;negative-regression-coverage-is-cataloged-for-safe-implementation",
+        "keyword": "Scenario Outline",
+        "line": 41,
+        "name": "Negative regression coverage is cataloged for safe implementation",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 224500
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "the Construction Delivery automation catalog is loaded",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:17"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 812399
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 31,
+            "name": "the \"NEG-06\" \"Invalid date ranges, no-record downloads, unknown search, and unit mismatch detection\" use case for \"Analytics\" should be documented with \"instruction-matrix\" coverage from \"Scenario.md\"",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 8862900
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 32,
+            "name": "the catalog command \"-\" should be available when provided",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:43"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 185299
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 275600
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@regression",
+            "line": 1
+          },
+          {
+            "name": "@catalog",
+            "line": 1
+          },
+          {
+            "name": "@documentation-only",
+            "line": 1
+          },
+          {
+            "name": "@negative",
+            "line": 29
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "construction-delivery---regression-inventory;negative-regression-coverage-is-cataloged-for-safe-implementation",
+        "keyword": "Scenario Outline",
+        "line": 42,
+        "name": "Negative regression coverage is cataloged for safe implementation",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 192399
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "the Construction Delivery automation catalog is loaded",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:17"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1550499
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 31,
+            "name": "the \"NEG-07\" \"Date ranges beyond limits, invalid date order, empty downloads, and no-result filters\" use case for \"Environment Reports\" should be documented with \"instruction-matrix\" coverage from \"Scenario.md\"",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 584899
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 32,
+            "name": "the catalog command \"-\" should be available when provided",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:43"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 654899
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 274600
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@regression",
+            "line": 1
+          },
+          {
+            "name": "@catalog",
+            "line": 1
+          },
+          {
+            "name": "@documentation-only",
+            "line": 1
+          },
+          {
+            "name": "@negative",
+            "line": 29
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "construction-delivery---regression-inventory;negative-regression-coverage-is-cataloged-for-safe-implementation",
+        "keyword": "Scenario Outline",
+        "line": 43,
+        "name": "Negative regression coverage is cataloged for safe implementation",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1424800
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "the Construction Delivery automation catalog is loaded",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:17"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 722799
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 31,
+            "name": "the \"NEG-08\" \"Blank names, invalid phone, overlong values, missing preference values, and read-only access\" use case for \"My Account\" should be documented with \"instruction-matrix\" coverage from \"Scenario.md\"",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 2019700
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 32,
+            "name": "the catalog command \"-\" should be available when provided",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:43"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 199000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 284400
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@regression",
+            "line": 1
+          },
+          {
+            "name": "@catalog",
+            "line": 1
+          },
+          {
+            "name": "@documentation-only",
+            "line": 1
+          },
+          {
+            "name": "@negative",
+            "line": 29
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "construction-delivery---regression-inventory;negative-regression-coverage-is-cataloged-for-safe-implementation",
+        "keyword": "Scenario Outline",
+        "line": 44,
+        "name": "Negative regression coverage is cataloged for safe implementation",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 221100
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "the Construction Delivery automation catalog is loaded",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:17"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 3784499
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 31,
+            "name": "the \"NEG-09\" \"Read-only organization name, blank address fields, invalid country, and invalid role change\" use case for \"My Organization\" should be documented with \"instruction-matrix\" coverage from \"Scenario.md\"",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 770300
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 32,
+            "name": "the catalog command \"-\" should be available when provided",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:43"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 285300
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1121599
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@regression",
+            "line": 1
+          },
+          {
+            "name": "@catalog",
+            "line": 1
+          },
+          {
+            "name": "@documentation-only",
+            "line": 1
+          },
+          {
+            "name": "@negative",
+            "line": 29
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "construction-delivery---regression-inventory;negative-regression-coverage-is-cataloged-for-safe-implementation",
+        "keyword": "Scenario Outline",
+        "line": 45,
+        "name": "Negative regression coverage is cataloged for safe implementation",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 403600
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "the Construction Delivery automation catalog is loaded",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:17"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 782999
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 31,
+            "name": "the \"NEG-10\" \"Permission denied, disabled push/email/mobile switches, notification timeout, and reload persistence\" use case for \"Notification Preferences\" should be documented with \"instruction-matrix\" coverage from \"Scenario.md\"",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1104600
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 32,
+            "name": "the catalog command \"-\" should be available when provided",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:43"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 2836199
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 423199
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@regression",
+            "line": 1
+          },
+          {
+            "name": "@catalog",
+            "line": 1
+          },
+          {
+            "name": "@documentation-only",
+            "line": 1
+          },
+          {
+            "name": "@negative",
+            "line": 29
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "construction-delivery---regression-inventory;negative-regression-coverage-is-cataloged-for-safe-implementation",
+        "keyword": "Scenario Outline",
+        "line": 46,
+        "name": "Negative regression coverage is cataloged for safe implementation",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 175399
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "the Construction Delivery automation catalog is loaded",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:17"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 761400
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 31,
+            "name": "the \"NEG-11\" \"Invalid project settings, unavailable resources, capacity limits, and configuration restoration\" use case for \"Project Management\" should be documented with \"instruction-matrix\" coverage from \"Scenario.md\"",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 548700
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 32,
+            "name": "the catalog command \"-\" should be available when provided",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:43"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 157199
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 398100
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@regression",
+            "line": 1
+          },
+          {
+            "name": "@catalog",
+            "line": 1
+          },
+          {
+            "name": "@documentation-only",
+            "line": 1
+          },
+          {
+            "name": "@negative",
+            "line": 29
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "construction-delivery---regression-inventory;negative-regression-coverage-is-cataloged-for-safe-implementation",
+        "keyword": "Scenario Outline",
+        "line": 47,
+        "name": "Negative regression coverage is cataloged for safe implementation",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1473099
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "the Construction Delivery automation catalog is loaded",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:17"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 728300
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 31,
+            "name": "the \"NEG-12\" \"Configuration switch validation and role-based access restrictions\" use case for \"Super Admin\" should be documented with \"instruction-matrix\" coverage from \"Scenario.md\"",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 529700
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 32,
+            "name": "the catalog command \"-\" should be available when provided",
+            "match": {
+              "location": "features\\step-definitions\\application-catalog.steps.js:43"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 155700
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 205299
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@regression",
+            "line": 1
+          },
+          {
+            "name": "@catalog",
+            "line": 1
+          },
+          {
+            "name": "@documentation-only",
+            "line": 1
+          },
+          {
+            "name": "@negative",
+            "line": 29
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "construction-delivery---regression-inventory",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Construction Delivery - Regression Inventory",
+    "tags": [
+      {
+        "name": "@regression",
+        "line": 1
+      },
+      {
+        "name": "@catalog",
+        "line": 1
+      },
+      {
+        "name": "@documentation-only",
+        "line": 1
+      }
+    ],
+    "uri": "features\\regression\\application\\application-regression-inventory.feature"
+  }
+]

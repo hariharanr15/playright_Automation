@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Tab One",
+    "description": "Replace with the first SCP tab currently in automation scope.",
+    "route": "",
+    "expectedText": ""
+  },
+  {
+    "name": "Tab Two",
+    "description": "Replace with the second SCP tab currently in automation scope.",
+    "route": "",
+    "expectedText": ""
+  }
+]

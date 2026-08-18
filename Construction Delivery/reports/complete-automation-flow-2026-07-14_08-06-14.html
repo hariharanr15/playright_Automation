@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Complete Automation Flow Report</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; color: #172033; background: #f6f8fb; }
+    header { background: #172033; color: #fff; padding: 28px 36px; }
+    main { padding: 28px 36px 48px; }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    p { margin: 0; color: #617089; }
+    header p { color: #d6deea; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 20px; }
+    .card { background: #fff; color: #172033; border-radius: 6px; padding: 14px; }
+    .card strong { display: block; font-size: 24px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; table-layout: fixed; }
+    th, td { border: 1px solid #dce3ed; padding: 10px; text-align: left; vertical-align: top; word-break: break-word; }
+    th { background: #eef3f9; }
+    .pill { border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+    .passed { background: #dff8e7; color: #126c34; }
+    .failed { background: #ffe2e2; color: #9d2020; }
+    tr.failed { background: #fff2f2; box-shadow: inset 6px 0 0 #d92d20; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Complete Automation Flow Report</h1>
+    <p>2026-07-14T02:32:55.167Z to 2026-07-14T02:36:14.035Z · headless</p>
+    <section class="grid">
+      <div class="card"><strong>PASSED</strong><span>Status</span></div>
+      <div class="card"><strong>3/3</strong><span>Passed</span></div>
+      <div class="card"><strong>0</strong><span>Failed</span></div>
+      <div class="card"><strong>3m 19s</strong><span>Duration</span></div>
+    </section>
+  </header>
+  <main>
+    <table>
+      <thead><tr><th>Order</th><th>Flow</th><th>Category</th><th>Coverage</th><th>Status</th><th>Duration</th><th>Command</th><th>Error</th></tr></thead>
+      <tbody>
+        <tr class="passed">
+          <td>1</td>
+          <td>Cucumber catalog: positive and negative traceability</td>
+          <td>safe</td>
+          <td>Positive and negative catalog validation</td>
+          <td><span class="pill passed">passed</span></td>
+          <td>6s</td>
+          <td>npm.cmd run cucumber:catalog</td>
+          <td>-</td>
+        </tr><tr class="passed">
+          <td>2</td>
+          <td>Cucumber safe application navigation</td>
+          <td>safe</td>
+          <td>Read-only module navigation</td>
+          <td><span class="pill passed">passed</span></td>
+          <td>1m 5s</td>
+          <td>node scripts/run-cucumber-suite.js --suite construction --headless --no-open</td>
+          <td>-</td>
+        </tr><tr class="passed">
+          <td>3</td>
+          <td>Role-based left navigation and restricted direct URL validation</td>
+          <td>access-control</td>
+          <td>Role-based positive and negative access validation</td>
+          <td><span class="pill passed">passed</span></td>
+          <td>2m 8s</td>
+          <td>node scripts/run-role-navigation-flow.js --headless --no-open</td>
+          <td>-</td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>

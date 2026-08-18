@@ -1,0 +1,14 @@
+{
+  "project": "Buckingham Palace",
+  "restoreRequired": true,
+  "settings": [
+    {
+      "name": "Automatic booking approval",
+      "restoreStrategy": "Capture current value before test and restore in After hook."
+    },
+    {
+      "name": "Emission menu visibility",
+      "restoreStrategy": "Capture current value before test and restore in After hook."
+    }
+  ]
+}

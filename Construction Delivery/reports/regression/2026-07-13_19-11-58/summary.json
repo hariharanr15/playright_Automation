@@ -1,0 +1,20 @@
+{
+  "applicationName": "Construction Deliveries",
+  "environment": "staging",
+  "suite": "regression",
+  "browser": "chrome",
+  "headless": false,
+  "startedAt": "2026-07-13T13:41:58.709Z",
+  "endedAt": "2026-07-13T13:42:10.918Z",
+  "durationMs": 12209,
+  "status": "passed",
+  "exitCode": 0,
+  "error": "",
+  "htmlReport": "C:\\Users\\VC\\20-04-2026\\Construction Delivery\\reports\\regression\\2026-07-13_19-11-58\\cucumber-report.html",
+  "jsonReport": "C:\\Users\\VC\\20-04-2026\\Construction Delivery\\reports\\regression\\2026-07-13_19-11-58\\cucumber-report.json",
+  "rerunFile": "C:\\Users\\VC\\20-04-2026\\Construction Delivery\\reports\\regression\\2026-07-13_19-11-58\\rerun.txt",
+  "tags": "@negative",
+  "module": "",
+  "feature": "",
+  "scenarioName": ""
+}

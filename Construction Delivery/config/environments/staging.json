@@ -1,0 +1,11 @@
+{
+  "name": "Staging",
+  "baseUrl": "https://stg-login.voyagecontrol.com",
+  "appUrl": "https://stg-app.voyagecontrol.com",
+  "projectId": "5ET10000010",
+  "projectName": "Buckingham Palace",
+  "credentials": {
+    "email": "",
+    "password": ""
+  }
+}

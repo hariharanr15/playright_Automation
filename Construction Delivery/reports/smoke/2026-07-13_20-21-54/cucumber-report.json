@@ -1,0 +1,400 @@
+[
+  {
+    "description": "  Purpose:\n  This smoke suite confirms that the Buckingham Palace Construction Delivery project is accessible\n  and that the critical application modules load without changing shared application data.",
+    "elements": [
+      {
+        "description": "",
+        "id": "construction-delivery---smoke-navigation;critical-modules-are-available-for-the-configured-project",
+        "keyword": "Scenario",
+        "line": 12,
+        "name": "Critical modules are available for the configured project",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 624494399
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "I log in to the Construction Delivery application",
+            "match": {
+              "location": "features\\step-definitions\\user-management.steps.js:9"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 11272176199
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "I select the configured Construction Delivery project",
+            "match": {
+              "location": "features\\step-definitions\\user-management.steps.js:13"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 32286892799
+            }
+          },
+          {
+            "arguments": [
+              {
+                "rows": [
+                  {
+                    "cells": [
+                      "module",
+                      "expected screen marker"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Booking List",
+                      "Booking List"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Calendar",
+                      "Calendar"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Project Management",
+                      "Project Details"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "User Management",
+                      "Invite Users"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Equipment Management",
+                      "List Of Equipment"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Analytics",
+                      "Summary Emission, Vehicle Emissions, Equipment Emissions"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Environment Reports",
+                      "Environment Reports"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "My Account",
+                      "My Details, My Preferences"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "My Organization",
+                      "Organization"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Notification Preferences",
+                      "Notification Preferences, My Bookings"
+                    ]
+                  }
+                ]
+              }
+            ],
+            "keyword": "When ",
+            "line": 13,
+            "name": "I open the following Construction Delivery modules:",
+            "match": {
+              "location": "features\\step-definitions\\construction-delivery.steps.js:131"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 38955174200
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 25,
+            "name": "each requested Construction Delivery module should be ready for review",
+            "match": {
+              "location": "features\\step-definitions\\construction-delivery.steps.js:156"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1950200
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 26,
+            "name": "no data-changing action should be performed",
+            "match": {
+              "location": "features\\step-definitions\\construction-delivery.steps.js:167"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 423299
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 285698999
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@smoke",
+            "line": 1
+          },
+          {
+            "name": "@smoke-login",
+            "line": 1
+          },
+          {
+            "name": "@smoke-dashboard",
+            "line": 1
+          },
+          {
+            "name": "@smoke-navigation",
+            "line": 1
+          },
+          {
+            "name": "@smoke-booking",
+            "line": 11
+          },
+          {
+            "name": "@smoke-equipment-management",
+            "line": 11
+          },
+          {
+            "name": "@smoke-analytics",
+            "line": 11
+          },
+          {
+            "name": "@smoke-user-management",
+            "line": 11
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "construction-delivery---smoke-navigation",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Construction Delivery - Smoke Navigation",
+    "tags": [
+      {
+        "name": "@smoke",
+        "line": 1
+      },
+      {
+        "name": "@smoke-login",
+        "line": 1
+      },
+      {
+        "name": "@smoke-dashboard",
+        "line": 1
+      },
+      {
+        "name": "@smoke-navigation",
+        "line": 1
+      }
+    ],
+    "uri": "features\\smoke\\application\\application-navigation-smoke.feature"
+  },
+  {
+    "description": "  Purpose:\n  This smoke suite validates the critical User Management entry path and invite form readiness.\n  It is a dry run and does not send invitations.",
+    "elements": [
+      {
+        "description": "",
+        "id": "construction-delivery---user-management-smoke;prepare-a-project-admin-invite-without-submitting-it",
+        "keyword": "Scenario",
+        "line": 13,
+        "name": "Prepare a Project Admin invite without submitting it",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 478259899
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "I log in to the Construction Delivery application",
+            "match": {
+              "location": "features\\step-definitions\\user-management.steps.js:9"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 9829706600
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "I select the configured Construction Delivery project",
+            "match": {
+              "location": "features\\step-definitions\\user-management.steps.js:13"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 29859137000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 10,
+            "name": "I open the User Management page from the left navigation",
+            "match": {
+              "location": "features\\step-definitions\\user-management.steps.js:17"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1795631700
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 14,
+            "name": "I open the Invite Users popup",
+            "match": {
+              "location": "features\\step-definitions\\user-management.steps.js:22"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1901205199
+            }
+          },
+          {
+            "arguments": [
+              {
+                "rows": [
+                  {
+                    "cells": [
+                      "email",
+                      "organization",
+                      "role"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "generated",
+                      "Neuralrays",
+                      "Project Admin"
+                    ]
+                  }
+                ]
+              }
+            ],
+            "keyword": "And ",
+            "line": 15,
+            "name": "I enter the following invite details:",
+            "match": {
+              "location": "features\\step-definitions\\user-management.steps.js:27"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 20859098799
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 18,
+            "name": "the Invite Users popup should show the prepared user email",
+            "match": {
+              "location": "features\\step-definitions\\user-management.steps.js:52"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 4921600
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 19,
+            "name": "the automation must stop before clicking Send Invites",
+            "match": {
+              "location": "features\\step-definitions\\user-management.steps.js:68"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 7220899
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 223928899
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@smoke",
+            "line": 1
+          },
+          {
+            "name": "@smoke-user-management",
+            "line": 1
+          },
+          {
+            "name": "@smoke-user-invite",
+            "line": 12
+          },
+          {
+            "name": "@dry-run",
+            "line": 12
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "construction-delivery---user-management-smoke",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Construction Delivery - User Management Smoke",
+    "tags": [
+      {
+        "name": "@smoke",
+        "line": 1
+      },
+      {
+        "name": "@smoke-user-management",
+        "line": 1
+      }
+    ],
+    "uri": "features\\smoke\\user-management\\user-management-smoke.feature"
+  }
+]

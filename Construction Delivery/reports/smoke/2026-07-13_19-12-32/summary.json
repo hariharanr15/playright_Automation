@@ -1,0 +1,20 @@
+{
+  "applicationName": "Construction Deliveries",
+  "environment": "staging",
+  "suite": "smoke",
+  "browser": "chrome",
+  "headless": true,
+  "startedAt": "2026-07-13T13:42:32.614Z",
+  "endedAt": "2026-07-13T13:45:46.012Z",
+  "durationMs": 193398,
+  "status": "passed",
+  "exitCode": 0,
+  "error": "",
+  "htmlReport": "C:\\Users\\VC\\20-04-2026\\Construction Delivery\\reports\\smoke\\2026-07-13_19-12-32\\cucumber-report.html",
+  "jsonReport": "C:\\Users\\VC\\20-04-2026\\Construction Delivery\\reports\\smoke\\2026-07-13_19-12-32\\cucumber-report.json",
+  "rerunFile": "C:\\Users\\VC\\20-04-2026\\Construction Delivery\\reports\\smoke\\2026-07-13_19-12-32\\rerun.txt",
+  "tags": "@smoke-user-management",
+  "module": "",
+  "feature": "",
+  "scenarioName": ""
+}

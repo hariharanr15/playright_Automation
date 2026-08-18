@@ -1,0 +1,11 @@
+{
+  "name": "UAT",
+  "baseUrl": "https://uat-login.voyagecontrol.com",
+  "appUrl": "https://uat-app.voyagecontrol.com",
+  "projectId": "",
+  "projectName": "",
+  "credentials": {
+    "email": "",
+    "password": ""
+  }
+}

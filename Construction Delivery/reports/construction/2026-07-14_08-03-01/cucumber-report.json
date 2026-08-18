@@ -1,0 +1,189 @@
+[
+  {
+    "description": "  Purpose:\n  This feature is the high-level navigation checklist for the Construction Delivery application.\n  It confirms that the automation user can open each main module from the configured project\n  and see the expected screen content.\n\n  Scope:\n  The scenario covers the primary modules used by operations and project administrators:\n  Booking List, Calendar, Project Management, User Management, Equipment Management,\n  Analytics, Environment Reports, My Account, My Organization, and Notification Preferences.\n\n  Safety:\n  This feature is read-only by design. It validates navigation and page readiness only.\n  It must not create bookings, upload files, send user invitations, edit project settings,\n  update notification preferences, change account details, or delete records.\n\n  Expected outcome:\n  Every listed module should open successfully and show a stable screen marker that proves\n  the page is ready for review.",
+    "elements": [
+      {
+        "description": "    This scenario acts as an executable table of contents for Construction Delivery.\n    Each row names the module to open and the text that should be visible when the\n    module is ready. If a module fails to open or the expected marker is missing,\n    the scenario fails with the module name and current URL.",
+        "id": "construction-delivery---main-application-modules;review-every-main-construction-delivery-module-without-changing-data",
+        "keyword": "Scenario",
+        "line": 26,
+        "name": "Review every main Construction Delivery module without changing data",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 710321200
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 22,
+            "name": "I log in to the Construction Delivery application",
+            "match": {
+              "location": "features\\step-definitions\\user-management.steps.js:9"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 6136095299
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 23,
+            "name": "I select the configured Construction Delivery project",
+            "match": {
+              "location": "features\\step-definitions\\user-management.steps.js:13"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 22046760200
+            }
+          },
+          {
+            "arguments": [
+              {
+                "rows": [
+                  {
+                    "cells": [
+                      "module",
+                      "expected screen marker"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Booking List",
+                      "Booking List"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Calendar",
+                      "Calendar"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Project Management",
+                      "Project Details"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "User Management",
+                      "Invite Users"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Equipment Management",
+                      "List Of Equipment"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Analytics",
+                      "Summary Emission, Vehicle Emissions, Equipment Emissions"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Environment Reports",
+                      "Environment Reports"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "My Account",
+                      "My Details, My Preferences"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "My Organization",
+                      "Organization"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Notification Preferences",
+                      "Notification Preferences, My Bookings"
+                    ]
+                  }
+                ]
+              }
+            ],
+            "keyword": "When ",
+            "line": 32,
+            "name": "I open the following Construction Delivery modules:",
+            "match": {
+              "location": "features\\step-definitions\\construction-delivery.steps.js:131"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 31725398799
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 44,
+            "name": "each requested Construction Delivery module should be ready for review",
+            "match": {
+              "location": "features\\step-definitions\\construction-delivery.steps.js:156"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 4633699
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 45,
+            "name": "no data-changing action should be performed",
+            "match": {
+              "location": "features\\step-definitions\\construction-delivery.steps.js:167"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1002699
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 384745900
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@construction-delivery",
+            "line": 25
+          },
+          {
+            "name": "@navigation",
+            "line": 25
+          },
+          {
+            "name": "@safe",
+            "line": 25
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "construction-delivery---main-application-modules",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Construction Delivery - Main Application Modules",
+    "tags": [],
+    "uri": "features\\construction-delivery.feature"
+  }
+]

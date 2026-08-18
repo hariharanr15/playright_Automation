@@ -1,0 +1,17 @@
+{
+  "roles": [
+    {
+      "name": "Project Admin",
+      "expectedAccess": ["booking", "user-management", "project-management", "equipment-management", "analytics"]
+    },
+    {
+      "name": "Project Manager",
+      "expectedAccess": ["booking", "equipment-management", "analytics"]
+    },
+    {
+      "name": "View Only User",
+      "expectedAccess": ["booking-list", "calendar", "reports"]
+    }
+  ],
+  "notes": "Replace or extend this matrix with environment-specific role fixtures before enabling destructive role tests."
+}

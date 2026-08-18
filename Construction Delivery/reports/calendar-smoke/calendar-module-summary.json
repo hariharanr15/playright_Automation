@@ -1,0 +1,205 @@
+{
+  "workflow": "calendar-module",
+  "suiteType": "smoke",
+  "status": "passed",
+  "startedAt": "2026-08-17T13:42:23.086Z",
+  "endedAt": "2026-08-17T13:42:59.356Z",
+  "defaultState": {
+    "scope": "All Project Bookings",
+    "allProjectBookingsSelected": true,
+    "defaultCalendarVisible": true,
+    "viewOptions": {
+      "Calendar": true,
+      "Resource": true,
+      "Access Points": true
+    }
+  },
+  "scope": {
+    "changed": false,
+    "value": "All Project Bookings"
+  },
+  "scenarios": [
+    {
+      "viewName": "Calendar",
+      "status": "passed",
+      "steps": {
+        "viewSelected": {
+          "selected": true
+        },
+        "week": {
+          "periodName": "Week",
+          "selected": true,
+          "before": {
+            "dateText": "Monthly Maintanance The system will undergo monthly maintenance for 4 Days. A monthly maintenance window of 4 days is scheduled[23 June 2026 to 26 June 2026]. Buckingham Palace Ind AA IND ​ 669 HR New Booking Booking List Calendar Vehicle Tracking User Management Project Management Equipment Management Analytics Collapse Calendar All Project Bookings Day Week Show weekends Show canceled and declined bookings Filter ​ Today Sun, 16th August 2026 Mon, 17th August 2026 Tue, 18th August 2026 Wed, 19th August 2026 Thu, 20th August 2026 Fri, 21st August 2026 Sat, 22nd August 2026 00:00 00:30 01:00 01:30 02:00 02:30 03:00 03:30 04:00 04:30 05:00 05:30 06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:30 10:00 10:30 11:00 11:30 12:00 12:30 13:00 13:30 14:00 14:30 15:00 15:30 16:00 16:30 17:00 17:30 18:00 18:30 19:00 19:30 20:00 20:30 21:00 21:30 22:00 22:30 23:00 23:30 North Gate Forklift Voyage Control Garbage Truck MINE Recurring 13:00-15:00 2hrs North Gate Forklift Voyage Control Pump Truck MINE Recurring 13:00-15:00 2hrs North Gate Forklift Voyage Control Translation.Tipper Truck MINE Recurring 13:00-15:00 2hrs North Gate Forklift Voyage Control Car MINE Recurring 13:00-15:00 2hrs Error setting up push notifications",
+            "dateMarkers": [
+              "Sun, 16th August 2026",
+              "Mon, 17th August 2026",
+              "Tue, 18th August 2026",
+              "Wed, 19th August 2026",
+              "Thu, 20th August 2026",
+              "Fri, 21st August 2026",
+              "Sat, 22nd August 2026"
+            ],
+            "dateKey": "Sun, 16th August 2026|Mon, 17th August 2026|Tue, 18th August 2026|Wed, 19th August 2026|Thu, 20th August 2026|Fri, 21st August 2026|Sat, 22nd August 2026",
+            "bookingCount": 4,
+            "weekendVisible": true,
+            "preview": "Monthly Maintanance The system will undergo monthly maintenance for 4 Days. A monthly maintenance window of 4 days is scheduled[23 June 2026 to 26 June 2026]. Buckingham Palace Ind AA IND ​ 669 HR New Booking Booking List Calendar Vehicle Tracking User Management Project Management Equipment Management Analytics Collapse Calendar All Project Bookings Day Week Show weekends Show canceled and declined bookings Filter ​ Today Sun, 16th August 2026 Mon, 17th August 2026 Tue, 18th August 2026 Wed, 19th August 2026 Thu, 20th August 2026 Fri, 21st August 2026 Sat, 22nd August 2026 00:00 00:30 01:00 01:30 02:00 02:30 03:00 03:30 04:00 04:30 05:00 05:30 06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:30"
+          },
+          "after": {
+            "dateText": "Monthly Maintanance The system will undergo monthly maintenance for 4 Days. A monthly maintenance window of 4 days is scheduled[23 June 2026 to 26 June 2026]. Buckingham Palace Ind AA IND ​ 669 HR New Booking Booking List Calendar Vehicle Tracking User Management Project Management Equipment Management Analytics Collapse Calendar All Project Bookings Day Week Show weekends Show canceled and declined bookings Filter ​ Today Mon, 17th August 2026 Tue, 18th August 2026 Wed, 19th August 2026 Thu, 20th August 2026 Fri, 21st August 2026 00:00 00:30 01:00 01:30 02:00 02:30 03:00 03:30 04:00 04:30 05:00 05:30 06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:30 10:00 10:30 11:00 11:30 12:00 12:30 13:00 13:30 14:00 14:30 15:00 15:30 16:00 16:30 17:00 17:30 18:00 18:30 19:00 19:30 20:00 20:30 21:00 21:30 22:00 22:30 23:00 23:30 North Gate Forklift Voyage Control Garbage Truck MINE Recurring 13:00-15:00 2hrs North Gate Forklift Voyage Control Pump Truck MINE Recurring 13:00-15:00 2hrs North Gate Forklift Voyage Control Translation.Tipper Truck MINE Recurring 13:00-15:00 2hrs North Gate Forklift Voyage Control Car MINE Recurring 13:00-15:00 2hrs Error setting up push notifications",
+            "dateMarkers": [
+              "Mon, 17th August 2026",
+              "Tue, 18th August 2026",
+              "Wed, 19th August 2026",
+              "Thu, 20th August 2026",
+              "Fri, 21st August 2026"
+            ],
+            "dateKey": "Mon, 17th August 2026|Tue, 18th August 2026|Wed, 19th August 2026|Thu, 20th August 2026|Fri, 21st August 2026",
+            "bookingCount": 4,
+            "weekendVisible": false,
+            "preview": "Monthly Maintanance The system will undergo monthly maintenance for 4 Days. A monthly maintenance window of 4 days is scheduled[23 June 2026 to 26 June 2026]. Buckingham Palace Ind AA IND ​ 669 HR New Booking Booking List Calendar Vehicle Tracking User Management Project Management Equipment Management Analytics Collapse Calendar All Project Bookings Day Week Show weekends Show canceled and declined bookings Filter ​ Today Mon, 17th August 2026 Tue, 18th August 2026 Wed, 19th August 2026 Thu, 20th August 2026 Fri, 21st August 2026 00:00 00:30 01:00 01:30 02:00 02:30 03:00 03:30 04:00 04:30 05:00 05:30 06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:30 10:00 10:30 11:00 11:30 12:00 12:30 13:00 1"
+          },
+          "recordCount": 4
+        },
+        "day": {
+          "periodName": "Day",
+          "selected": true,
+          "before": {
+            "dateText": "Monthly Maintanance The system will undergo monthly maintenance for 4 Days. A monthly maintenance window of 4 days is scheduled[23 June 2026 to 26 June 2026]. Buckingham Palace Ind AA IND ​ 669 HR New Booking Booking List Calendar Vehicle Tracking User Management Project Management Equipment Management Analytics Collapse Calendar All Project Bookings Day Week Show weekends Show canceled and declined bookings Filter ​ Today Mon, 17th August 2026 Tue, 18th August 2026 Wed, 19th August 2026 Thu, 20th August 2026 Fri, 21st August 2026 00:00 00:30 01:00 01:30 02:00 02:30 03:00 03:30 04:00 04:30 05:00 05:30 06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:30 10:00 10:30 11:00 11:30 12:00 12:30 13:00 13:30 14:00 14:30 15:00 15:30 16:00 16:30 17:00 17:30 18:00 18:30 19:00 19:30 20:00 20:30 21:00 21:30 22:00 22:30 23:00 23:30 North Gate Forklift Voyage Control Garbage Truck MINE Recurring 13:00-15:00 2hrs North Gate Forklift Voyage Control Pump Truck MINE Recurring 13:00-15:00 2hrs North Gate Forklift Voyage Control Translation.Tipper Truck MINE Recurring 13:00-15:00 2hrs North Gate Forklift Voyage Control Car MINE Recurring 13:00-15:00 2hrs Error setting up push notifications",
+            "dateMarkers": [
+              "Mon, 17th August 2026",
+              "Tue, 18th August 2026",
+              "Wed, 19th August 2026",
+              "Thu, 20th August 2026",
+              "Fri, 21st August 2026"
+            ],
+            "dateKey": "Mon, 17th August 2026|Tue, 18th August 2026|Wed, 19th August 2026|Thu, 20th August 2026|Fri, 21st August 2026",
+            "bookingCount": 4,
+            "weekendVisible": false,
+            "preview": "Monthly Maintanance The system will undergo monthly maintenance for 4 Days. A monthly maintenance window of 4 days is scheduled[23 June 2026 to 26 June 2026]. Buckingham Palace Ind AA IND ​ 669 HR New Booking Booking List Calendar Vehicle Tracking User Management Project Management Equipment Management Analytics Collapse Calendar All Project Bookings Day Week Show weekends Show canceled and declined bookings Filter ​ Today Mon, 17th August 2026 Tue, 18th August 2026 Wed, 19th August 2026 Thu, 20th August 2026 Fri, 21st August 2026 00:00 00:30 01:00 01:30 02:00 02:30 03:00 03:30 04:00 04:30 05:00 05:30 06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:30 10:00 10:30 11:00 11:30 12:00 12:30 13:00 1"
+          },
+          "after": {
+            "dateText": "Monthly Maintanance The system will undergo monthly maintenance for 4 Days. A monthly maintenance window of 4 days is scheduled[23 June 2026 to 26 June 2026]. Buckingham Palace Ind AA IND ​ 669 HR New Booking Booking List Calendar Vehicle Tracking User Management Project Management Equipment Management Analytics Collapse Calendar All Project Bookings Day Week Show weekends Show canceled and declined bookings Filter Sun, 16th August 2026 ​ Today Sun, 16th August 2026 00:00 00:30 01:00 01:30 02:00 02:30 03:00 03:30 04:00 04:30 05:00 05:30 06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:30 10:00 10:30 11:00 11:30 12:00 12:30 13:00 13:30 14:00 14:30 15:00 15:30 16:00 16:30 17:00 17:30 18:00 18:30 19:00 19:30 20:00 20:30 21:00 21:30 22:00 22:30 23:00 23:30 Error setting up push notifications",
+            "dateMarkers": [
+              "Sun, 16th August 2026"
+            ],
+            "dateKey": "Sun, 16th August 2026",
+            "bookingCount": 0,
+            "weekendVisible": false,
+            "preview": "Monthly Maintanance The system will undergo monthly maintenance for 4 Days. A monthly maintenance window of 4 days is scheduled[23 June 2026 to 26 June 2026]. Buckingham Palace Ind AA IND ​ 669 HR New Booking Booking List Calendar Vehicle Tracking User Management Project Management Equipment Management Analytics Collapse Calendar All Project Bookings Day Week Show weekends Show canceled and declined bookings Filter Sun, 16th August 2026 ​ Today Sun, 16th August 2026 00:00 00:30 01:00 01:30 02:00 02:30 03:00 03:30 04:00 04:30 05:00 05:30 06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:30 10:00 10:30 11:00 11:30 12:00 12:30 13:00 13:30 14:00 14:30 15:00 15:30 16:00 16:30 17:00 17:30 18:00 18:30 1"
+          },
+          "recordCount": 0
+        },
+        "quickCheckboxes": {
+          "weekends": false,
+          "cancelledDeclined": false,
+          "weekendVisible": false,
+          "recordCount": 0
+        },
+        "navigation": {
+          "before": {
+            "dateText": "Monthly Maintanance The system will undergo monthly maintenance for 4 Days. A monthly maintenance window of 4 days is scheduled[23 June 2026 to 26 June 2026]. Buckingham Palace Ind AA IND ​ 669 HR New Booking Booking List Calendar Vehicle Tracking User Management Project Management Equipment Management Analytics Collapse Calendar All Project Bookings Day Week Show weekends Show canceled and declined bookings Filter Sun, 16th August 2026 ​ Today Sun, 16th August 2026 00:00 00:30 01:00 01:30 02:00 02:30 03:00 03:30 04:00 04:30 05:00 05:30 06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:30 10:00 10:30 11:00 11:30 12:00 12:30 13:00 13:30 14:00 14:30 15:00 15:30 16:00 16:30 17:00 17:30 18:00 18:30 19:00 19:30 20:00 20:30 21:00 21:30 22:00 22:30 23:00 23:30 Error setting up push notifications",
+            "dateMarkers": [
+              "Sun, 16th August 2026"
+            ],
+            "dateKey": "Sun, 16th August 2026",
+            "bookingCount": 0,
+            "weekendVisible": false,
+            "preview": "Monthly Maintanance The system will undergo monthly maintenance for 4 Days. A monthly maintenance window of 4 days is scheduled[23 June 2026 to 26 June 2026]. Buckingham Palace Ind AA IND ​ 669 HR New Booking Booking List Calendar Vehicle Tracking User Management Project Management Equipment Management Analytics Collapse Calendar All Project Bookings Day Week Show weekends Show canceled and declined bookings Filter Sun, 16th August 2026 ​ Today Sun, 16th August 2026 00:00 00:30 01:00 01:30 02:00 02:30 03:00 03:30 04:00 04:30 05:00 05:30 06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:30 10:00 10:30 11:00 11:30 12:00 12:30 13:00 13:30 14:00 14:30 15:00 15:30 16:00 16:30 17:00 17:30 18:00 18:30 1"
+          },
+          "afterPrevious": {
+            "dateText": "Monthly Maintanance The system will undergo monthly maintenance for 4 Days. A monthly maintenance window of 4 days is scheduled[23 June 2026 to 26 June 2026]. Buckingham Palace Ind AA IND ​ 669 HR New Booking Booking List Calendar Vehicle Tracking User Management Project Management Equipment Management Analytics Collapse Calendar - By Access Point All Project Bookings Only Booked Filter Sun, 16th August 2026 ​ Today No Access Point Found Sun, 16th August 2026 00:00 00:30 01:00 01:30 02:00 02:30 03:00 03:30 04:00 04:30 05:00 05:30 06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:30 10:00 10:30 11:00 11:30 12:00 12:30 13:00 13:30 14:00 14:30 15:00 15:30 16:00 16:30 17:00 17:30 18:00 18:30 19:00 19:30 20:00 20:30 21:00 21:30 22:00 22:30 23:00 23:30 Error setting up push notifications",
+            "dateMarkers": [
+              "Sun, 16th August 2026"
+            ],
+            "dateKey": "Sun, 16th August 2026",
+            "bookingCount": 0,
+            "weekendVisible": false,
+            "preview": "Monthly Maintanance The system will undergo monthly maintenance for 4 Days. A monthly maintenance window of 4 days is scheduled[23 June 2026 to 26 June 2026]. Buckingham Palace Ind AA IND ​ 669 HR New Booking Booking List Calendar Vehicle Tracking User Management Project Management Equipment Management Analytics Collapse Calendar - By Access Point All Project Bookings Only Booked Filter Sun, 16th August 2026 ​ Today No Access Point Found Sun, 16th August 2026 00:00 00:30 01:00 01:30 02:00 02:30 03:00 03:30 04:00 04:30 05:00 05:30 06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:30 10:00 10:30 11:00 11:30 12:00 12:30 13:00 13:30 14:00 14:30 15:00 15:30 16:00 16:30 17:00 17:30 18:00 18:30 19:00 19"
+          },
+          "afterNext": {
+            "dateText": "Monthly Maintanance The system will undergo monthly maintenance for 4 Days. A monthly maintenance window of 4 days is scheduled[23 June 2026 to 26 June 2026]. Buckingham Palace Ind AA IND ​ 669 HR New Booking Booking List Calendar Vehicle Tracking User Management Project Management Equipment Management Analytics Collapse Calendar - By Access Point All Project Bookings Only Booked Filter Mon, 17th August 2026 ​ Today No Access Point Found Mon, 17th August 2026 00:00 00:30 01:00 01:30 02:00 02:30 03:00 03:30 04:00 04:30 05:00 05:30 06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:30 10:00 10:30 11:00 11:30 12:00 12:30 13:00 13:30 14:00 14:30 15:00 15:30 16:00 16:30 17:00 17:30 18:00 18:30 19:00 19:30 20:00 20:30 21:00 21:30 22:00 22:30 23:00 23:30 Error setting up push notifications",
+            "dateMarkers": [
+              "Mon, 17th August 2026"
+            ],
+            "dateKey": "Mon, 17th August 2026",
+            "bookingCount": 0,
+            "weekendVisible": false,
+            "preview": "Monthly Maintanance The system will undergo monthly maintenance for 4 Days. A monthly maintenance window of 4 days is scheduled[23 June 2026 to 26 June 2026]. Buckingham Palace Ind AA IND ​ 669 HR New Booking Booking List Calendar Vehicle Tracking User Management Project Management Equipment Management Analytics Collapse Calendar - By Access Point All Project Bookings Only Booked Filter Mon, 17th August 2026 ​ Today No Access Point Found Mon, 17th August 2026 00:00 00:30 01:00 01:30 02:00 02:30 03:00 03:30 04:00 04:30 05:00 05:30 06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:30 10:00 10:30 11:00 11:30 12:00 12:30 13:00 13:30 14:00 14:30 15:00 15:30 16:00 16:30 17:00 17:30 18:00 18:30 19:00 19"
+          },
+          "changed": true,
+          "previousChanged": false,
+          "nextReturnedOrChanged": true
+        },
+        "print": {
+          "triggered": true,
+          "mode": "click-accepted"
+        },
+        "bookingInteraction": {
+          "skipped": false,
+          "bookingText": "North GateMon, 17th August 202600:0000:3001:0001:3002:0002:3003:0003:3004:0004:3005:0005:3006:0006:3007:0007:3008:0008:3009:0009:3010:0010:3011:0011:3012:0012:3013:0013:3014:0014:3015:0015:3016:0016:3",
+          "tooltipVisible": false,
+          "openedDetails": false,
+          "safeEdit": {
+            "attempted": false,
+            "skipped": true,
+            "reason": "Standalone Calendar module verifies opening details; destructive edit is left to the existing Edit Booking flow."
+          }
+        },
+        "dragDrop": {
+          "skipped": false,
+          "attempted": true,
+          "confirmationVisible": false,
+          "changed": false,
+          "note": "Drag distance targets the next 30-minute row when the rendered grid allows drag/drop."
+        },
+        "filters": {
+          "skipped": false,
+          "selectedCount": 3,
+          "selections": [
+            {
+              "tabName": "Booking Type",
+              "selected": true,
+              "index": 0
+            },
+            {
+              "tabName": "Trade Types",
+              "selected": true,
+              "index": 0
+            },
+            {
+              "tabName": "Access Point",
+              "selected": true,
+              "index": 0
+            }
+          ],
+          "afterApply": {
+            "dateText": "Monthly Maintanance The system will undergo monthly maintenance for 4 Days. A monthly maintenance window of 4 days is scheduled[23 June 2026 to 26 June 2026]. Buckingham Palace Ind AA IND ​ 669 HR New Booking Booking List Calendar Vehicle Tracking User Management Project Management Equipment Management Analytics Collapse Calendar - By Access Point All Project Bookings Only Booked Filter Mon, 17th August 2026 ​ Today Filters: 3 Clear All Booking Types : recurring Trade Types : Equipment construction Access Points : North Gate North Gate Mon, 17th August 2026 00:00 00:30 01:00 01:30 02:00 02:30 03:00 03:30 04:00 04:30 05:00 05:30 06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:30 10:00 10:30 11:00 11:30 12:00 12:30 13:00 13:30 14:00 14:30 15:00 15:30 16:00 16:30 17:00 17:30 18:00 18:30 19:00 19:30 20:00 20:30 21:00 21:30 22:00 22:30 23:00 23:30 North Gate Forklift Voyage Control Garbage Truck MINE Recurring 13:00-15:00 2hrs",
+            "dateMarkers": [
+              "Mon, 17th August 2026"
+            ],
+            "dateKey": "Mon, 17th August 2026",
+            "bookingCount": 1,
+            "weekendVisible": false,
+            "preview": "Monthly Maintanance The system will undergo monthly maintenance for 4 Days. A monthly maintenance window of 4 days is scheduled[23 June 2026 to 26 June 2026]. Buckingham Palace Ind AA IND ​ 669 HR New Booking Booking List Calendar Vehicle Tracking User Management Project Management Equipment Management Analytics Collapse Calendar - By Access Point All Project Bookings Only Booked Filter Mon, 17th August 2026 ​ Today Filters: 3 Clear All Booking Types : recurring Trade Types : Equipment construction Access Points : North Gate North Gate Mon, 17th August 2026 00:00 00:30 01:00 01:30 02:00 02:30 03:00 03:30 04:00 04:30 05:00 05:30 06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:30 10:00 10:30 11:0"
+          },
+          "clearResult": {
+            "cleared": true,
+            "mode": "clear-all"
+          },
+          "afterClear": {
+            "dateText": "Monthly Maintanance The system will undergo monthly maintenance for 4 Days. A monthly maintenance window of 4 days is scheduled[23 June 2026 to 26 June 2026]. Buckingham Palace Ind AA IND ​ 669 HR New Booking Booking List Calendar Vehicle Tracking User Management Project Management Equipment Management Analytics Collapse Calendar - By Access Point All Project Bookings Only Booked Filter Mon, 17th August 2026 ​ Today North Gate Mon, 17th August 2026 00:00 00:30 01:00 01:30 02:00 02:30 03:00 03:30 04:00 04:30 05:00 05:30 06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:30 10:00 10:30 11:00 11:30 12:00 12:30 13:00 13:30 14:00 14:30 15:00 15:30 16:00 16:30 17:00 17:30 18:00 18:30 19:00 19:30 20:00 20:30 21:00 21:30 22:00 22:30 23:00 23:30 North Gate Forklift Voyage Control Garbage Truck MINE Recurring 13:00-15:00 2hrs",
+            "dateMarkers": [
+              "Mon, 17th August 2026"
+            ],
+            "dateKey": "Mon, 17th August 2026",
+            "bookingCount": 1,
+            "weekendVisible": false,
+            "preview": "Monthly Maintanance The system will undergo monthly maintenance for 4 Days. A monthly maintenance window of 4 days is scheduled[23 June 2026 to 26 June 2026]. Buckingham Palace Ind AA IND ​ 669 HR New Booking Booking List Calendar Vehicle Tracking User Management Project Management Equipment Management Analytics Collapse Calendar - By Access Point All Project Bookings Only Booked Filter Mon, 17th August 2026 ​ Today North Gate Mon, 17th August 2026 00:00 00:30 01:00 01:30 02:00 02:30 03:00 03:30 04:00 04:30 05:00 05:30 06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:30 10:00 10:30 11:00 11:30 12:00 12:30 13:00 13:30 14:00 14:30 15:00 15:30 16:00 16:30 17:00 17:30 18:00 18:30 19:00 19:30 20:00 2"
+          }
+        }
+      },
+      "screenshot": "screenshots\\calendar-module\\calendar-scenario-complete-1786974178447.png"
+    }
+  ]
+}

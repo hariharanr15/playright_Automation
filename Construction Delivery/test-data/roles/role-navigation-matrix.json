@@ -1,0 +1,84 @@
+{
+  "roles": [
+    {
+      "name": "Super Project User",
+      "rolePattern": "Super\\s+Project\\s+User",
+      "emailEnv": "ROLE_SUPER_PROJECT_USER_EMAIL",
+      "passwordEnv": "ROLE_SUPER_PROJECT_USER_PASSWORD",
+      "expectedTabs": ["New Booking", "Booking List", "Calendar"],
+      "restrictedTabs": ["User Management", "Project Management", "Equipment Management", "Analytics"]
+    },
+    {
+      "name": "Project User",
+      "rolePattern": "Project\\s+User",
+      "emailEnv": "ROLE_PROJECT_USER_EMAIL",
+      "passwordEnv": "ROLE_PROJECT_USER_PASSWORD",
+      "expectedTabs": ["New Booking", "Booking List", "Calendar"],
+      "restrictedTabs": ["User Management", "Project Management", "Equipment Management", "Analytics"]
+    },
+    {
+      "name": "Security Guard",
+      "rolePattern": "Security\\s+Guard",
+      "emailEnv": "ROLE_SECURITY_GUARD_EMAIL",
+      "passwordEnv": "ROLE_SECURITY_GUARD_PASSWORD",
+      "expectedTabs": ["Booking List", "Calendar"],
+      "restrictedTabs": ["New Booking", "User Management", "Project Management", "Equipment Management", "Analytics"]
+    },
+    {
+      "name": "View-Only User",
+      "rolePattern": "View\\s*-?\\s*Only(?:\\s+User)?",
+      "emailEnv": "ROLE_VIEW_ONLY_USER_EMAIL",
+      "passwordEnv": "ROLE_VIEW_ONLY_USER_PASSWORD",
+      "expectedTabs": ["Booking List", "Calendar"],
+      "restrictedTabs": ["New Booking", "User Management", "Project Management", "Equipment Management", "Analytics"]
+    },
+    {
+      "name": "Project Admin",
+      "rolePattern": "Project\\s+Admin",
+      "emailEnv": "ROLE_PROJECT_ADMIN_EMAIL",
+      "passwordEnv": "ROLE_PROJECT_ADMIN_PASSWORD",
+      "expectedTabs": ["New Booking", "Booking List", "Calendar", "User Management", "Project Management", "Equipment Management", "Analytics"],
+      "restrictedTabs": []
+    },
+    {
+      "name": "Project Manager",
+      "rolePattern": "Project\\s+Manager",
+      "emailEnv": "ROLE_PROJECT_MANAGER_EMAIL",
+      "passwordEnv": "ROLE_PROJECT_MANAGER_PASSWORD",
+      "expectedTabs": ["New Booking", "Booking List", "Calendar", "User Management", "Project Management", "Equipment Management", "Analytics"],
+      "restrictedTabs": []
+    },
+    {
+      "name": "Project Owner",
+      "rolePattern": "Project\\s+Owner",
+      "emailEnv": "ROLE_PROJECT_OWNER_EMAIL",
+      "passwordEnv": "ROLE_PROJECT_OWNER_PASSWORD",
+      "expectedTabs": ["New Booking", "Booking List", "Calendar", "User Management", "Project Management", "Equipment Management", "Analytics"],
+      "restrictedTabs": []
+    },
+    {
+      "name": "All Role Access",
+      "rolePattern": "All\\s+Role\\s+Access",
+      "emailEnv": "ROLE_ALL_ROLE_ACCESS_EMAIL",
+      "passwordEnv": "ROLE_ALL_ROLE_ACCESS_PASSWORD",
+      "expectedTabs": ["New Booking", "Booking List", "Calendar", "User Management", "Project Management", "Equipment Management", "Analytics"],
+      "restrictedTabs": []
+    },
+    {
+      "name": "All User Access",
+      "rolePattern": "All\\s+User\\s+Access",
+      "emailEnv": "ROLE_ALL_USER_ACCESS_EMAIL",
+      "passwordEnv": "ROLE_ALL_USER_ACCESS_PASSWORD",
+      "expectedTabs": ["New Booking", "Booking List", "Calendar", "User Management", "Project Management", "Equipment Management", "Analytics"],
+      "restrictedTabs": []
+    },
+    {
+      "name": "Project Senior User",
+      "rolePattern": "Project\\s+Senior\\s+User",
+      "emailEnv": "ROLE_PROJECT_SENIOR_USER_EMAIL",
+      "passwordEnv": "ROLE_PROJECT_SENIOR_USER_PASSWORD",
+      "expectedTabs": ["New Booking", "Booking List", "Calendar", "User Management", "Equipment Management", "Analytics"],
+      "restrictedTabs": ["Project Management"]
+    }
+  ]
+}
