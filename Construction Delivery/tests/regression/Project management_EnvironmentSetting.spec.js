@@ -53,7 +53,6 @@ const PAGE_API_AUTH_HEADERS = new WeakMap();
 const PAGES_WITH_API_AUTH_CAPTURE = new WeakSet();
 
 test.use({
-  storageState: AUTH_STATE_PATH,
   permissions: ['notifications']
 });
 
@@ -919,6 +918,12 @@ async function gotoProjectPath(page, pathName) {
     await page.waitForTimeout(ROUTE_RETRY_WAIT_MS);
   }
 
+  if (/\/api\/sso\/platforms\/choose/i.test(page.url())) {
+    console.log(`SSO platform chooser appeared while opening ${pathName}; opening V3 platform before retrying project route.`);
+    await openV3PlatformFromChooser(page);
+    await recoverProjectRouteWithoutChooser(page, pathName);
+  }
+
   if (await isProjectChooserPage(page)) {
     console.log(`Project chooser appeared while opening ${pathName}; recovering directly to project ${PROJECT_ID} route without selecting a project card.`);
     await recoverProjectRouteWithoutChooser(page, pathName);
@@ -1695,6 +1700,52 @@ async function fillUpcomingDateRange(page, scope = page.locator('body')) {
   }
 }
 
+function projectDetailsTabContentLocator(page, tabName) {
+  const contentPatterns = {
+    'Project Information': /Project Name|Images & Home Screen/i,
+    'Access Point': /Access Points/i,
+    Resources: /Resources/i,
+    Vehicles: /Vehicles/i
+  };
+  const pattern = contentPatterns[tabName] || new RegExp(escapeRegex(tabName), 'i');
+  return page.getByText(pattern).first();
+}
+
+async function waitForProjectDetailsTabContent(page, tabName, timeout = 12000) {
+  await waitForAppToSettle(page);
+  return projectDetailsTabContentLocator(page, tabName)
+    .isVisible({ timeout })
+    .catch(() => false);
+}
+
+async function clickProjectDetailsTabByDom(page, tabName) {
+  return page.evaluate((name) => {
+    const normalize = (value = '') => String(value).replace(/\s+/g, ' ').trim();
+    const visible = (element) => {
+      if (!element) return false;
+      const box = element.getBoundingClientRect();
+      const style = window.getComputedStyle(element);
+      return box.width > 0 &&
+        box.height > 0 &&
+        style.visibility !== 'hidden' &&
+        style.display !== 'none';
+    };
+    const tab = Array.from(document.querySelectorAll('[role="tab"]'))
+      .find((element) => visible(element) && normalize(element.innerText || element.textContent) === name);
+    if (!tab) {
+      return false;
+    }
+
+    window.scrollTo(0, 0);
+    tab.scrollIntoView({ block: 'center', inline: 'center' });
+    tab.focus?.();
+    tab.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+    tab.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+    tab.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+    return true;
+  }, tabName).catch(() => false);
+}
+
 async function openProjectDetailsTab(page, tabName) {
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     await waitForAppToSettle(page);
@@ -1726,14 +1777,30 @@ async function openProjectDetailsTab(page, tabName) {
       throw new Error(`Automation left project ${PROJECT_ID} and reached project selection while opening ${tabName}.`);
     }
 
+    await page.evaluate(() => window.scrollTo(0, 0)).catch(() => null);
+    await page.waitForTimeout(ACTION_GAP_MS);
+
+    if (await clickProjectDetailsTabByDom(page, tabName)) {
+      await waitBetweenActions(page, `${tabName} tab DOM selection`);
+      if (await waitForProjectDetailsTabContent(page, tabName)) {
+        return;
+      }
+      console.log(`${tabName} tab DOM click did not load content on attempt ${attempt}; trying locator click.`);
+    }
+
     const tabPattern = new RegExp(`^${escapeRegex(tabName)}$`, 'i');
     const tab = page.getByRole('tab', { name: tabPattern }).first()
       .or(page.locator('[role="tab"]').filter({ hasText: tabPattern }).first())
       .or(page.getByText(tabPattern).first());
     if (await tab.isVisible({ timeout: 10000 }).catch(() => false)) {
-      await tab.click({ timeout: 15000, force: true });
+      await tab.scrollIntoViewIfNeeded().catch(() => null);
+      await tab.click({ timeout: 15000 });
       await waitBetweenActions(page, `${tabName} tab selection`);
-      return;
+      if (await waitForProjectDetailsTabContent(page, tabName)) {
+        return;
+      }
+      console.log(`${tabName} tab was clicked on attempt ${attempt}, but its content did not load; retrying.`);
+      continue;
     }
 
     const clickedTabByText = await page.evaluate((name) => {
@@ -1760,7 +1827,11 @@ async function openProjectDetailsTab(page, tabName) {
 
     if (clickedTabByText) {
       await waitBetweenActions(page, `${tabName} tab selection by text`);
-      return;
+      if (await waitForProjectDetailsTabContent(page, tabName)) {
+        return;
+      }
+      console.log(`${tabName} tab was clicked by text on attempt ${attempt}, but its content did not load; retrying.`);
+      continue;
     }
 
     console.log(`${tabName} tab was not visible on attempt ${attempt}; retrying Project Details navigation.`);

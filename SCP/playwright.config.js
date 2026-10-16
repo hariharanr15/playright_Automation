@@ -16,7 +16,8 @@ module.exports = defineConfig({
   workers: 1,
   reporter: [
     ['list'],
-    ['html', { outputFolder: 'reports/playwright-html', open: 'never' }]
+    ['html', { outputFolder: 'reports/playwright-html', open: 'never' }],
+    ['json', { outputFile: 'test-results/scp-results.json' }]
   ],
   outputDir: 'test-results/playwright-artifacts',
   use: {

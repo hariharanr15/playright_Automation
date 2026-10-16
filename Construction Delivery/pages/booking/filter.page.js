@@ -95,13 +95,61 @@ class Filter {
 
     await clickHighlighted(scopeControl, 'Booking scope');
 
-    const option = this.page.getByRole('option', { name: scopeName, exact: true });
+    const option = this.page.getByRole('option', { name: scopeName, exact: true }).first();
     if (await option.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await clickHighlighted(option, scopeName);
+      await this.clickVisibleOption(option, scopeName);
       await this.waitForBookingList();
     } else {
       await this.page.keyboard.press('Escape').catch(() => null);
     }
+  }
+
+  async clickVisibleOption(option, label) {
+    await option.scrollIntoViewIfNeeded().catch(() => null);
+
+    try {
+      await clickHighlighted(option, label);
+      return true;
+    } catch (error) {
+      console.log(`${label} option normal click failed, trying force click: ${error.message}`);
+    }
+
+    try {
+      await option.click({ force: true, timeout: 5000 });
+      return true;
+    } catch (error) {
+      console.log(`${label} option force click failed, trying DOM click: ${error.message}`);
+    }
+
+    const clicked = await this.page.evaluate((targetLabel) => {
+      const normalize = (value = '') => String(value).replace(/\s+/g, ' ').trim();
+      const visible = (element) => {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        return rect.width > 0 &&
+          rect.height > 0 &&
+          style.visibility !== 'hidden' &&
+          style.display !== 'none' &&
+          style.opacity !== '0';
+      };
+      const options = Array.from(document.querySelectorAll('[role="option"], li, [data-value]'));
+      const match = options.find((candidate) =>
+        visible(candidate) && normalize(candidate.innerText || candidate.textContent) === targetLabel
+      );
+
+      if (!match) return false;
+
+      match.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+      match.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+      match.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+      return true;
+    }, label).catch(() => false);
+
+    if (clicked) {
+      return true;
+    }
+
+    throw new Error(`${label} option could not be clicked with standard, force, or DOM fallback.`);
   }
 
   async applyDefaultDateRange(referenceDate = new Date()) {

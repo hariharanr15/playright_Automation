@@ -134,7 +134,7 @@ class UserManagementPage {
         mobile: '9988776656',
         address: 'First Main Road',
         organization,
-        role: 'Project Manager',
+        role: 'Project User',
         password,
         setupMissingFields: []
       },
@@ -1014,15 +1014,29 @@ class UserManagementPage {
 
   async openYopmailInbox(email, targetPage) {
     console.log(`Opening Yopmail inbox for ${email}`);
-    await targetPage.goto('https://yopmail.com/', { waitUntil: 'domcontentloaded' });
-    await targetPage.getByRole('textbox', { name: /Login/i }).fill(email);
-    await targetPage.getByTitle(/Check Inbox/i).click();
+    const mailbox = String(email || '').replace(/@yopmail\.com$/i, '');
+
+    await targetPage.goto(`https://yopmail.com/en/?login=${encodeURIComponent(mailbox)}`, {
+      waitUntil: 'domcontentloaded'
+    }).catch(() => null);
+
+    const inboxLoaded = await targetPage.frameLocator('iframe[name="ifinbox"]')
+      .locator('body')
+      .isVisible({ timeout: 5000 })
+      .catch(() => false);
+
+    if (!inboxLoaded) {
+      await targetPage.goto('https://yopmail.com/', { waitUntil: 'domcontentloaded' });
+      await targetPage.getByRole('textbox', { name: /Login/i }).fill(mailbox);
+      await targetPage.getByTitle(/Check Inbox/i).click();
+    }
+
     await targetPage.waitForLoadState('domcontentloaded').catch(() => null);
     await targetPage.waitForTimeout(2000);
   }
 
   async clickLatestInvitationEmail(mailPage, email) {
-    for (let attempt = 1; attempt <= 20; attempt += 1) {
+    for (let attempt = 1; attempt <= 30; attempt += 1) {
       const inboxFrame = mailPage.frameLocator('iframe[name="ifinbox"]');
       const invitationCandidates = [
         inboxFrame.getByRole('button', { name: /voyagecontrol|noreply/i }).first(),

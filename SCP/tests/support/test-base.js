@@ -3,16 +3,28 @@ const path = require('path');
 const { expect } = require('@playwright/test');
 const { test } = require('../../fixtures/baseTest');
 const { highlight } = require('../../utils/highlight');
+const { redactUrl } = require('../../utils/evidence');
+const { captureEvidence } = require('../../utils/evidence');
 
 const STEP_WAIT_MS = Number(process.env.STEP_WAIT_MS || 700);
 
-test.afterEach(async ({ page }, testInfo) => {
+test.afterEach(async ({ page, runData }, testInfo) => {
+  if (runData?.dataUsage?.length) {
+    await testInfo.attach('automation-data-usage', {
+      body: Buffer.from(JSON.stringify({
+        runId: runData.runId,
+        dataUsage: runData.dataUsage
+      }, null, 2)),
+      contentType: 'application/json'
+    });
+  }
+
   if (testInfo.status === testInfo.expectedStatus) {
     return;
   }
 
   await testInfo.attach('failed-page-url', {
-    body: page.url(),
+    body: redactUrl(page.url()),
     contentType: 'text/plain'
   });
 
@@ -41,6 +53,7 @@ async function showStepBanner(page, title) {
       'left: 50%',
       'transform: translateX(-50%)',
       'z-index: 2147483647',
+      'pointer-events: none',
       'background: #111827',
       'color: #fff',
       'border: 3px solid #2563eb',
@@ -55,17 +68,44 @@ async function showStepBanner(page, title) {
   }, title).catch(() => null);
 }
 
-async function runStep(page, title, action, validate) {
+async function hideStepBanner(page) {
+  await page.evaluate(() => document.getElementById('scp-automation-step-banner')?.remove()).catch(() => null);
+}
+
+async function runStep(page, title, action, validate, timing = {}) {
+  const waitMs = timing.waitMs ?? STEP_WAIT_MS;
+  const afterActionWaitMs = timing.afterActionWaitMs ?? 0;
   await test.step(title, async () => {
     await showStepBanner(page, title);
-    await page.waitForTimeout(STEP_WAIT_MS);
-    await action();
+    await page.waitForTimeout(waitMs);
+    await hideStepBanner(page);
+    try {
+      await action();
 
-    if (validate) {
-      await validate();
+      if (afterActionWaitMs > 0) {
+        await page.waitForTimeout(afterActionWaitMs);
+      }
+
+      if (validate) {
+        await validate();
+      }
+
+      const info = test.info();
+      const stepNumber = info.attachments.filter((item) => item.name.startsWith('step-')).length + 1;
+      const screenshotPath = await captureEvidence(
+        page,
+        null,
+        `${info.title}_Step_${String(stepNumber).padStart(2, '0')}_${title}`
+      );
+      await info.attach(`step-${String(stepNumber).padStart(2, '0')}-${title}`, {
+        path: screenshotPath,
+        contentType: 'image/png'
+      });
+
+      await page.waitForTimeout(waitMs);
+    } finally {
+      await hideStepBanner(page);
     }
-
-    await page.waitForTimeout(STEP_WAIT_MS);
   });
 }
 

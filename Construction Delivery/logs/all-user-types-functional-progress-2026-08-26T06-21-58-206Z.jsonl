@@ -1,0 +1,9 @@
+{"timestamp":"2026-08-26T06:22:11.821Z","event":"role-functional-suite-start","roles":["Project Admin"]}
+{"timestamp":"2026-08-26T06:22:11.826Z","event":"role-start","role":"Project Admin","username":"hariharan.r@neuralrays.ai"}
+{"timestamp":"2026-08-26T06:22:40.969Z","event":"role-tabs-collected","role":"Project Admin","tabs":["Analytics","Booking List","Calendar","Equipment Management","New Booking","Project Management","User Management","Vehicle Tracking"]}
+{"timestamp":"2026-08-26T06:22:40.976Z","event":"role-flow-start","role":"Project Admin","tab":"Project Management","flow":"Project Management setup validation"}
+{"timestamp":"2026-08-26T06:22:41.085Z","event":"role-flow-finished","role":"Project Admin","tab":"Project Management","flow":"Project Management setup validation","status":"passed","durationMs":109}
+{"timestamp":"2026-08-26T06:22:41.089Z","event":"role-flow-start","role":"Project Admin","tab":"Analytics","flow":"Analytics and Environment Reports flow"}
+{"timestamp":"2026-08-26T06:24:25.837Z","event":"role-flow-finished","role":"Project Admin","tab":"Analytics","flow":"Analytics and Environment Reports flow","status":"passed","durationMs":104748}
+{"timestamp":"2026-08-26T06:24:25.841Z","event":"role-finished","role":"Project Admin","status":"completed"}
+{"timestamp":"2026-08-26T06:24:25.844Z","event":"role-functional-suite-finished","passed":3,"failed":0,"skipped":10,"roles":{"Project Admin":{"passed":3,"failed":0,"skipped":10}}}

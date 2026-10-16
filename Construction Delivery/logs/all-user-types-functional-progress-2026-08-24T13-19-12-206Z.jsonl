@@ -1,0 +1,6 @@
+{"timestamp":"2026-08-24T13:19:26.213Z","event":"role-functional-suite-start","roles":["Project Admin","Project User","View-Only User"]}
+{"timestamp":"2026-08-24T13:19:26.219Z","event":"role-start","role":"Project Admin","username":"hariharan.r@neuralrays.ai"}
+{"timestamp":"2026-08-24T13:19:54.250Z","event":"role-tabs-collected","role":"Project Admin","tabs":["Analytics","Booking List","Calendar","Equipment Management","New Booking","Project Management","User Management","Vehicle Tracking"]}
+{"timestamp":"2026-08-24T13:19:54.255Z","event":"role-flow-start","role":"Project Admin","tab":"Project Management","flow":"Project Management setup validation"}
+{"timestamp":"2026-08-24T13:19:54.368Z","event":"role-flow-finished","role":"Project Admin","tab":"Project Management","flow":"Project Management setup validation","status":"passed","durationMs":113}
+{"timestamp":"2026-08-24T13:19:54.371Z","event":"role-flow-start","role":"Project Admin","tab":"New Booking","flow":"All available booking creation flows"}

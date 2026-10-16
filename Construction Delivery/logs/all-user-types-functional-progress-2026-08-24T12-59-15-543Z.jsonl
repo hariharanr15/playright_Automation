@@ -1,0 +1,6 @@
+{"timestamp":"2026-08-24T12:59:22.527Z","event":"role-functional-suite-start","roles":["Project User"]}
+{"timestamp":"2026-08-24T12:59:22.532Z","event":"role-start","role":"Project User","username":"hari@yopmail.com"}
+{"timestamp":"2026-08-24T12:59:50.285Z","event":"role-tabs-collected","role":"Project User","tabs":["Booking List","Calendar","New Booking"]}
+{"timestamp":"2026-08-24T12:59:50.313Z","event":"role-flow-start","role":"Project User","tab":"New Booking","flow":"All available booking creation flows"}
+{"timestamp":"2026-08-24T13:06:48.848Z","event":"role-flow-finished","role":"Project User","tab":"New Booking","flow":"All available booking creation flows","status":"failed","durationMs":418535,"reason":"TC-34 Continue from Recurring Date Range failed: page.waitForFunction: Timeout 30000ms exceeded."}
+{"timestamp":"2026-08-24T13:06:48.878Z","event":"role-flow-start","role":"Project User","tab":"Booking List","flow":"Booking List filters"}

@@ -1,9 +1,19 @@
 node_modules/
 .env
 .env.*
+!.env.example
 
 test-results/
 screenshots/
 reports/playwright-html/
+reports/*.html
+reports/*.pdf
+reports/cucumber-report.json
+reports/html/*.html
+reports/pdf/*.pdf
+reports/screenshots/*.png
+reports/execution-*/
+reports/validation-*/
+auth/*.json
 
 *.log

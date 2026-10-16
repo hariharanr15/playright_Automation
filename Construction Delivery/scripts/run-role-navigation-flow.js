@@ -61,8 +61,18 @@ function strictDuplicateFailuresEnabled() {
 }
 
 class RoleNavigationRunner {
-  constructor(options) {
-    this.options = options;
+  constructor(options = {}) {
+    const vehicleTrackingRoles = Array.isArray(options.vehicleTrackingRoles)
+      ? options.vehicleTrackingRoles
+      : String(options.vehicleTrackingRoles || process.env.VEHICLE_TRACKING_ROLES || '').split(',');
+
+    this.options = {
+      ...options,
+      vehicleTrackingEnabled: options.vehicleTrackingEnabled || process.env.VEHICLE_TRACKING_ENABLED || 'unknown',
+      vehicleTrackingRoles: vehicleTrackingRoles
+        .map((role) => String(role || '').trim())
+        .filter(Boolean)
+    };
     this.browser = null;
     this.results = [];
     this.steps = [];
@@ -124,6 +134,15 @@ class RoleNavigationRunner {
   }
 
   credentialsFor(roleConfig) {
+    const injected = this.options.roleCredentials?.[roleConfig.name] ||
+      this.options.roleCredentials?.[String(roleConfig.name || '').toLowerCase()];
+    if (injected?.email && injected?.password) {
+      return {
+        email: injected.email,
+        password: injected.password
+      };
+    }
+
     const email = process.env[roleConfig.emailEnv || ''];
     const password = process.env[roleConfig.passwordEnv || ''];
     return { email, password };
@@ -292,7 +311,7 @@ class RoleNavigationRunner {
     };
   }
 
-  evaluateRole(roleConfig, actualTabs, directAccess, vehicleTracking, screenshot, accountRole) {
+  evaluateRole(roleConfig, actualTabs, directAccess, permittedAccess, vehicleTracking, screenshot, accountRole, credentials = {}) {
     const actualNames = actualTabs.map((tab) => tab.name);
     const optionalNames = ['Vehicle Tracking'].filter((tab) => actualNames.includes(tab));
     const expectedTabs = [...roleConfig.expectedTabs];
@@ -304,6 +323,7 @@ class RoleNavigationRunner {
     const disabledTabs = actualTabs.filter((tab) => !tab.enabled || !tab.clickable).map((tab) => tab.name);
     const duplicates = duplicateNames(actualTabs);
     const failedDirectAccess = directAccess.filter((check) => check.status === 'failed').map((check) => check.tabName);
+    const failedPermittedAccess = permittedAccess.filter((check) => check.status === 'failed').map((check) => check.tabName);
     const rolePattern = new RegExp(roleConfig.rolePattern || roleConfig.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
     const roleMismatch = Boolean(accountRole.projectRole || accountRole.organizationRole) &&
       !rolePattern.test(accountRole.projectRole || '') &&
@@ -322,12 +342,13 @@ class RoleNavigationRunner {
       disabledTabs.length ? `Visible but disabled/not clickable: ${disabledTabs.join(', ')}` : '',
       strictDuplicateFailuresEnabled() && duplicates.length ? `Duplicate tabs: ${duplicates.join(', ')}` : '',
       failedDirectAccess.length ? `Restricted direct URL access succeeded: ${failedDirectAccess.join(', ')}` : '',
+      failedPermittedAccess.length ? `Permitted tab access failed: ${failedPermittedAccess.join(', ')}` : '',
       roleMismatch ? `My Account project role mismatch: expected ${roleConfig.name}, actual ${accountRole.projectRole}` : ''
     ].filter(Boolean);
 
     return {
       userRole: roleConfig.name,
-      username: roleConfig.emailEnv ? process.env[roleConfig.emailEnv] || '' : '',
+      username: credentials.email || (roleConfig.emailEnv ? process.env[roleConfig.emailEnv] || '' : ''),
       myAccountProjectRole: accountRole.projectRole || '',
       myAccountOrganizationRole: accountRole.organizationRole || '',
       expectedTabs,
@@ -341,6 +362,7 @@ class RoleNavigationRunner {
       duplicateTabs: duplicates,
       vehicleTracking,
       directAccess,
+      permittedAccess,
       screenshot,
       status: failures.length ? 'failed' : 'passed',
       reason: failures.join(' | ') || null
@@ -367,6 +389,7 @@ class RoleNavigationRunner {
         duplicateTabs: [],
         vehicleTracking: this.vehicleTrackingExpectation(roleConfig),
         directAccess: [],
+        permittedAccess: [],
         status: 'skipped',
         reason: `Credentials not configured. Set ${roleConfig.emailEnv}/${roleConfig.passwordEnv}.`,
         duration: 0
@@ -385,6 +408,11 @@ class RoleNavigationRunner {
       const screenshot = await this.captureScreenshot(page, `${roleConfig.name}-left-navigation`);
       const vehicleTracking = this.vehicleTrackingExpectation(roleConfig);
       const directAccess = [];
+      const permittedAccess = [];
+
+      for (const tab of roleConfig.expectedTabs) {
+        permittedAccess.push(await roleNavigation.attemptPermittedAccess(tab));
+      }
 
       for (const tab of roleConfig.restrictedTabs) {
         directAccess.push(await roleNavigation.attemptDirectAccess(tab));
@@ -396,7 +424,7 @@ class RoleNavigationRunner {
         company: '',
         error: error.message
       }));
-      const result = this.evaluateRole(roleConfig, actualTabs, directAccess, vehicleTracking, screenshot, accountRole);
+      const result = this.evaluateRole(roleConfig, actualTabs, directAccess, permittedAccess, vehicleTracking, screenshot, accountRole, credentials);
       result.duration = Date.now() - startedAt;
       this.results.push(result);
       this.addStep(flowName, 'Validate expected and restricted left navigation tabs', result.status, result.duration, result.reason);
@@ -416,6 +444,7 @@ class RoleNavigationRunner {
         duplicateTabs: [],
         vehicleTracking: this.vehicleTrackingExpectation(roleConfig),
         directAccess: [],
+        permittedAccess: [],
         screenshot,
         status: 'failed',
         reason: error.message,
@@ -499,7 +528,14 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(`Role navigation automation failed: ${error.message}`);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(`Role navigation automation failed: ${error.message}`);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  RoleNavigationRunner,
+  readRoleMatrix
+};

@@ -1,6 +1,6 @@
-const { test, expect, runStep, expectVisible } = require('../support/test-base');
-const { PlatformChooserPage } = require('../../pages/platform-chooser.page');
-const { ManagementDashboardPage } = require('../../pages/management-dashboard.page');
+const { test, expect, runStep, expectVisible } = require('../../support/test-base');
+const { PlatformChooserPage } = require('../../../pages/platform-chooser.page');
+const { ManagementDashboardPage } = require('../../../pages/management-dashboard/management-dashboard.page');
 
 test.describe('Smoke Tests - SCP Management Dashboard', () => {
   test('Smoke TC-01 - login and land on Management Dashboard', async ({ scpApp }) => {

@@ -808,6 +808,24 @@ class EditBookingPage {
     return true;
   }
 
+  async hasBookingDetailsAction(actionName, aliases = [], options = {}) {
+    await this.waitForBookingDetailsReady();
+
+    let actionButton = await this.findBookingDetailsActionButton(actionName, aliases, {
+      timeout: options.timeout ?? 1500
+    });
+
+    if (!actionButton) {
+      await this.openBookingDetailsMoreMenu();
+      actionButton = await this.findOpenMenuActionButton(actionName, aliases, {
+        timeout: options.menuTimeout ?? 1500
+      });
+    }
+
+    await this.page.keyboard.press('Escape').catch(() => null);
+    return Boolean(actionButton);
+  }
+
   async completeBookingDetailsAction(actionName, aliases = [], options = {}) {
     const maxClicks = options.maxClicks ?? 5;
     let clickCount = 0;

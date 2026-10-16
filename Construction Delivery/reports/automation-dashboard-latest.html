@@ -61,23 +61,45 @@
       <div><span>Environment</span><strong>Staging</strong></div>
       <div><span>Application URL</span><strong>https://stg-app.voyagecontrol.com</strong></div>
       <div><span>Browser</span><strong>headed / Chrome</strong></div>
-      <div><span>Viewport</span><strong>-</strong></div>
+      <div><span>Viewport</span><strong>1922x945</strong></div>
     </div>
   </header>
   <main>
-    
+    <section class="failure-panel" id="failed-testcases">
+    <h2>Failed Testcases — Action Required</h2>
+    <article class="failure-item">
+      <strong>TC-112 — User Management</strong>
+      <span>Change organization for one completed user account</span>
+      <code>Change Organization popup did not open for User18420321071@yopmail.com. Visible actions: Invite Sent at 05:44 Mon, 31st August 2026 | Re-send Invite | Cancel Invite | Change Associated Organization</code>
+    </article><article class="failure-item">
+      <strong>TC-118 — My Organization</strong>
+      <span>Open and validate My Organization details</span>
+      <code>locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator(&#039;body&#039;) to be visible[22m
+[2m    63 × locator resolved to hidden &lt;body&gt;…&lt;/body&gt;[22m
+</code>
+    </article><article class="failure-item">
+      <strong>TC-119 — My Organization</strong>
+      <span>Validate organization users and role controls</span>
+      <code>locator.waitFor: Timeout 60000ms exceeded.
+Call log:
+[2m  - waiting for getByRole(&#039;tab&#039;, { name: /Users/i }).first().or(getByRole(&#039;button&#039;, { name: /^Users$/i }).first()).or(getByText(/^Users$/i).first()) to be visible[22m
+</code>
+    </article>
+  </section>
     <section class="grid">
-      <div class="card"><span class="label">Run Status</span><strong class="value run-status passed">passed</strong><p class="sub">100% run pass rate</p></div>
-      <div class="card"><span class="label">Checks Passed</span><strong class="value">7/7</strong><p class="sub">0 failed checks</p></div>
-      <div class="card"><span class="label">Duration</span><strong class="value">5m 46s</strong><p class="sub">Latest run duration</p></div>
-      <div class="card"><span class="label">Primary Record</span><strong class="value">-</strong><p class="sub">analytics-emissions-uom-automation</p></div>
+      <div class="card"><span class="label">Run Status</span><strong class="value run-status failed">failed</strong><p class="sub">0% run pass rate</p></div>
+      <div class="card"><span class="label">Checks Passed</span><strong class="value">117/123</strong><p class="sub">3 failed checks</p></div>
+      <div class="card"><span class="label">Duration</span><strong class="value">26m 56s</strong><p class="sub">Latest run duration</p></div>
+      <div class="card"><span class="label">Primary Record</span><strong class="value">BK5ET10000005071</strong><p class="sub">single-session-full-application</p></div>
     </section>
     <section>
       <h2>Recent Runs</h2>
       <table>
         <thead><tr><th>Flow</th><th>Status</th><th>Started</th><th>Duration</th><th>Checks</th><th>Source</th></tr></thead>
         <tbody>
-          <tr><td>Analytics</td><td><span class="status passed">passed</span></td><td>18 Aug 2026, 20:00</td><td>5m 46s</td><td>7/7</td><td>analytics-report-2026-08-18T14-35-55-353Z.json</td></tr>
+          <tr><td>Full Application</td><td><span class="status failed">failed</span></td><td>31 Aug 2026, 17:21</td><td>26m 56s</td><td>117/123</td><td>full-application-report-2026-08-31T12-18-29-062Z.json</td></tr>
         </tbody>
       </table>
     </section>
@@ -86,114 +108,218 @@
       <table>
         <thead><tr><th>Application Page</th><th>Status</th><th>Passed</th><th>Failed</th><th>Duration</th><th>Failed Cases</th><th>Source</th></tr></thead>
         <tbody><tr class="page-report-row passed">
+      <td>Booking Creation</td>
+      <td><span class="status passed">passed</span></td>
+      <td>71/71</td>
+      <td>0</td>
+      <td>2m 57s</td>
+      <td>-</td>
+      <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
+    </tr><tr class="page-report-row passed">
+      <td>Booking List</td>
+      <td><span class="status passed">passed</span></td>
+      <td>13/13</td>
+      <td>0</td>
+      <td>3m 46s</td>
+      <td>-</td>
+      <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
+    </tr><tr class="page-report-row passed">
+      <td>Calendar</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1/1</td>
+      <td>0</td>
+      <td>6s</td>
+      <td>-</td>
+      <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
+    </tr><tr class="page-report-row passed">
       <td>Analytics</td>
       <td><span class="status passed">passed</span></td>
-      <td>7/7</td>
+      <td>1/1</td>
       <td>0</td>
-      <td>5m 39s</td>
+      <td>1m 23s</td>
       <td>-</td>
-      <td>analytics-report-2026-08-18T14-35-55-353Z.json</td>
+      <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
+    </tr><tr class="page-report-row passed">
+      <td>Equipment Management</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2/2</td>
+      <td>0</td>
+      <td>2m 49s</td>
+      <td>-</td>
+      <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
+    </tr><tr class="page-report-row failed">
+      <td>User Management</td>
+      <td><span class="status failed">failed</span></td>
+      <td>20/24</td>
+      <td>1</td>
+      <td>12m 27s</td>
+      <td>TC-112</td>
+      <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
+    </tr><tr class="page-report-row passed">
+      <td>My Account</td>
+      <td><span class="status passed">passed</span></td>
+      <td>3/3</td>
+      <td>0</td>
+      <td>16s</td>
+      <td>-</td>
+      <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
+    </tr><tr class="page-report-row passed">
+      <td>Notification Preferences</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2/2</td>
+      <td>0</td>
+      <td>52s</td>
+      <td>-</td>
+      <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
+    </tr><tr class="page-report-row failed">
+      <td>My Organization</td>
+      <td><span class="status failed">failed</span></td>
+      <td>0/2</td>
+      <td>2</td>
+      <td>1m 32s</td>
+      <td>TC-118, TC-119</td>
+      <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
     </tr></tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Generated Project Management Data</h2>
+      <table>
+        <thead><tr><th>Project ID</th><th>Access Point</th><th>Access Point ID</th><th>Resource</th><th>Availability Resource</th><th>Vehicle</th><th>Fuel Type</th><th>Equipment</th><th>Source</th></tr></thead>
+        <tbody><tr><td colspan="9">No dynamic Project Management data references found.</td></tr></tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Generated Role Users</h2>
+      <table>
+        <thead><tr><th>Created By Role</th><th>User Role</th><th>Name</th><th>Email</th><th>Password</th><th>Setup Status</th><th>Missing Setup Fields</th><th>Updated Organization</th><th>Source</th></tr></thead>
+        <tbody><tr class="testcase-row skipped">
+      <td>-</td>
+      <td>Project Admin</td>
+      <td>Voyagecontrol Validator 1</td>
+      <td>User18420321071@yopmail.com</td>
+      <td>Master@15</td>
+      <td><span class="status skipped">skipped</span></td>
+      <td>activation email</td>
+      <td>-</td>
+      <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
+    </tr><tr class="testcase-row skipped">
+      <td>-</td>
+      <td>Project User</td>
+      <td>Voyagecontrol Validator 2</td>
+      <td>User18520321071@yopmail.com</td>
+      <td>Master@15</td>
+      <td><span class="status skipped">skipped</span></td>
+      <td>activation email</td>
+      <td>-</td>
+      <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
+    </tr><tr class="testcase-row skipped">
+      <td>-</td>
+      <td>View Only</td>
+      <td>Voyagecontrol Validator 3</td>
+      <td>User18620321071@yopmail.com</td>
+      <td>Master@15</td>
+      <td><span class="status skipped">skipped</span></td>
+      <td>activation email</td>
+      <td>-</td>
+      <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
+    </tr></tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Blocked / Skipped Dependencies</h2>
+      <table>
+        <thead><tr><th>Case ID</th><th>Flow</th><th>Scenario</th><th>Status</th><th>Depends On</th><th>Reason</th><th>Source</th></tr></thead>
+        <tbody><tr class="testcase-row skipped">
+    <td>TC-107</td>
+    <td>User Management</td>
+    <td>Activate account for User18420321071@yopmail.com</td>
+    <td><span class="status skipped">skipped</span></td>
+    <td>Yopmail invitation email</td>
+    <td>Invitation email was not received in Yopmail for User18420321071@yopmail.com. Account activation skipped so downstream role validation will not use this unactivated credential.</td>
+    <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
+  </tr><tr class="testcase-row skipped">
+    <td>TC-109</td>
+    <td>User Management</td>
+    <td>Activate account for User18520321071@yopmail.com</td>
+    <td><span class="status skipped">skipped</span></td>
+    <td>Yopmail invitation email</td>
+    <td>Invitation email was not received in Yopmail for User18520321071@yopmail.com. Account activation skipped so downstream role validation will not use this unactivated credential.</td>
+    <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
+  </tr><tr class="testcase-row skipped">
+    <td>TC-111</td>
+    <td>User Management</td>
+    <td>Activate account for User18620321071@yopmail.com</td>
+    <td><span class="status skipped">skipped</span></td>
+    <td>Yopmail invitation email</td>
+    <td>Invitation email was not received in Yopmail for User18620321071@yopmail.com. Account activation skipped so downstream role validation will not use this unactivated credential.</td>
+    <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
+  </tr></tbody>
       </table>
     </section>
     <section>
       <h2>Analytics UOM Configuration Protocol</h2>
       <table>
         <thead><tr><th>Project Country</th><th>Project Address</th><th>Country UOM Status</th><th>Country UOM Record</th><th>Default Used</th><th>Expected Analytics Units</th><th>Issue</th><th>Source</th></tr></thead>
-        <tbody><tr>
-      <td>GB</td>
-      <td>-</td>
-      <td><span class="status skipped">not-found</span></td>
-      <td>Country: United Kingdom; Distance: Miles; Volume: Gallons; Weight: kg; Tons: US</td>
-      <td>No</td>
-      <td>Distance: Miles; Volume: Gallons; Weight: Kg; Tons: US Tons</td>
-      <td>Project Details fields were not visible; country was read from browser project storage.</td>
-      <td>analytics-report-2026-08-18T14-35-55-353Z.json</td>
-    </tr></tbody>
+        <tbody><tr><td colspan="8">No Analytics UOM protocol evidence found.</td></tr></tbody>
       </table>
     </section>
     <section>
       <h2>Analytics Tab UOM Checks</h2>
       <table>
         <thead><tr><th>Analytics Tab</th><th>Metric</th><th>Expected UOM</th><th>Status</th><th>Visible Headers</th><th>Sample Values</th><th>Values With Units</th><th>Issue</th><th>Source</th></tr></thead>
-        <tbody><tr class="testcase-row passed">
-      <td>Vehicle Emissions</td>
-      <td>One Way Trip Distance</td>
-      <td>Miles</td>
-      <td><span class="status passed">passed</span></td>
-      <td>One Way Trip Distance (miles) | Roundtrip DistanceDelivered From Jobsite (miles) | 7.27 miles | 14.54 miles | 5.03 miles | 10.06 miles | 14.23 miles | 28.46 miles</td>
-      <td>7.27 miles | 5.03 miles | 14.23 miles | 14.54 miles | 10.06 miles | 28.46 miles</td>
-      <td>7.27 miles | 5.03 miles | 14.23 miles | 14.54 miles | 10.06 miles | 28.46 miles</td>
-      <td>-</td>
-      <td>analytics-report-2026-08-18T14-35-55-353Z.json</td>
-    </tr><tr class="testcase-row passed">
-      <td>Vehicle Emissions</td>
-      <td>One Way Trip CO2 Emissions</td>
-      <td>US Tons</td>
-      <td><span class="status passed">passed</span></td>
-      <td>One Way Trip CO2 Emissions (tons) | Round Trip CO2 Emissions (tons) | 0.0001 US tons | 0.0002 US tons | 0.0111 US tons | 0.0222 US tons | 0.0003 US tons</td>
-      <td>0.0001 US tons | 0.0111 US tons | 0.0002 US tons | 0.0222 US tons | 0.0003 US tons</td>
-      <td>0.0001 US tons | 0.0111 US tons | 0.0002 US tons | 0.0222 US tons | 0.0003 US tons</td>
-      <td>-</td>
-      <td>analytics-report-2026-08-18T14-35-55-353Z.json</td>
-    </tr><tr class="testcase-row passed">
-      <td>Vehicle Emissions</td>
-      <td>Roundtrip Distance Delivered From Jobsite</td>
-      <td>Miles</td>
-      <td><span class="status passed">passed</span></td>
-      <td>One Way Trip Distance (miles) | Roundtrip DistanceDelivered From Jobsite (miles) | 7.27 miles | 14.54 miles | 5.03 miles | 10.06 miles | 14.23 miles | 28.46 miles</td>
-      <td>7.27 miles | 5.03 miles | 14.23 miles | 14.54 miles | 10.06 miles | 28.46 miles</td>
-      <td>7.27 miles | 5.03 miles | 14.23 miles | 14.54 miles | 10.06 miles | 28.46 miles</td>
-      <td>-</td>
-      <td>analytics-report-2026-08-18T14-35-55-353Z.json</td>
-    </tr><tr class="testcase-row skipped">
-      <td>Equipment Emissions</td>
-      <td>Distance</td>
-      <td>Miles</td>
-      <td><span class="status skipped">not-displayed</span></td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>analytics-report-2026-08-18T14-35-55-353Z.json</td>
-    </tr><tr class="testcase-row passed">
-      <td>Equipment Emissions</td>
-      <td>Volume</td>
-      <td>Gallons</td>
-      <td><span class="status passed">passed</span></td>
-      <td>Fuel Type | Fuel Efficiency | Total Fuel Use | 2.11 gallons/hour | 52.83 gallons | 1.71 gallons/hour | 41.0 gallons | 93.83 gallons</td>
-      <td>0.5 | Fuel Type | 0.11022 US tons | 0.085539 US tons | Fuel Efficiency | 0.116834 US tons | Total Fuel Use | 1.71 gallons/hour</td>
-      <td>0.11022 US tons | 0.085539 US tons | 0.116834 US tons | 1.71 gallons/hour</td>
-      <td>-</td>
-      <td>analytics-report-2026-08-18T14-35-55-353Z.json</td>
-    </tr><tr class="testcase-row skipped">
-      <td>Equipment Emissions</td>
-      <td>Weight</td>
-      <td>Kg</td>
-      <td><span class="status skipped">not-displayed</span></td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>analytics-report-2026-08-18T14-35-55-353Z.json</td>
-    </tr><tr class="testcase-row passed">
-      <td>Equipment Emissions</td>
-      <td>Tons</td>
-      <td>US Tons</td>
-      <td><span class="status passed">passed</span></td>
-      <td>Summary Emission | Vehicle Emissions | Equipment Emissions | Emission Factor | CO2 Emissions | 0.11022 US tons | 0.085539 US tons | 0.19575900000000002 US tons | 0.116834 US tons</td>
-      <td>2 | 1 | Emission Factor | 52.83 gallons | 41.0 gallons | CO2 Emissions | 56.0 gallons | 0.085539 US tons</td>
-      <td>52.83 gallons | 41.0 gallons | 56.0 gallons | 0.085539 US tons</td>
-      <td>-</td>
-      <td>analytics-report-2026-08-18T14-35-55-353Z.json</td>
-    </tr></tbody>
+        <tbody><tr><td colspan="9">No Analytics tab UOM checks found.</td></tr></tbody>
       </table>
     </section>
     <section>
       <h2>Dynamic Booking Types</h2>
       <table>
-        <thead><tr><th>Booking Type</th><th>Available</th><th>Enabled</th><th>Result</th><th>Booking Ref</th><th>Reason / Message</th><th>Duration</th><th>Evidence</th><th>Source</th></tr></thead>
-        <tbody><tr><td colspan="9">No dynamic booking-type data found.</td></tr></tbody>
+        <thead><tr><th>User Role</th><th>Booking Type</th><th>Available</th><th>Enabled</th><th>Result</th><th>Booking Ref</th><th>Reason / Message</th><th>Duration</th><th>Evidence</th><th>Source</th></tr></thead>
+        <tbody><tr class="testcase-row passed">
+      <td>-</td>
+      <td>Delivery</td>
+      <td>Yes</td>
+      <td>Yes</td>
+      <td><span class="status passed">passed</span></td>
+      <td>BK5ET10000005192</td>
+      <td>oject Management Equipment Management Analytics Collapse New Booking - Delivery Booking Created Thank you for booking your delivery at Buckingham Palace IND. Please note your delivery may be subject to approval by the site team and is only confirmed when </td>
+      <td>46s</td>
+      <td><a href="../screenshots\full_app_delivery-booking-type-passed_2026-08-31T11-52-56-274Z.png">screenshots\full_app_delivery-booking-type-passed_2026-08-31T11-52-56-274Z.png</a></td>
+      <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
+    </tr><tr class="testcase-row passed">
+      <td>-</td>
+      <td>Recurring</td>
+      <td>Yes</td>
+      <td>Yes</td>
+      <td><span class="status passed">passed</span></td>
+      <td>BK5ET10000005202</td>
+      <td>ject Management Equipment Management Analytics Collapse New Booking - Recurring Booking Created Thank you for booking your delivery at Buckingham Palace IND. Please note your delivery may be subject to approval by the site team and is only confirmed when </td>
+      <td>51s</td>
+      <td><a href="../screenshots\full_app_recurring-booking-type-passed_2026-08-31T11-53-47-450Z.png">screenshots\full_app_recurring-booking-type-passed_2026-08-31T11-53-47-450Z.png</a></td>
+      <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
+    </tr><tr class="testcase-row passed">
+      <td>-</td>
+      <td>Multi-Vehicle</td>
+      <td>Yes</td>
+      <td>Yes</td>
+      <td><span class="status passed">passed</span></td>
+      <td>BK5ET10000005203</td>
+      <td> Management Equipment Management Analytics Collapse New Booking - Multi-Vehicle Booking Created Thank you for booking your delivery at Buckingham Palace IND. Please note your delivery may be subject to approval by the site team and is only confirmed when </td>
+      <td>46s</td>
+      <td><a href="../screenshots\full_app_multi-vehicle-booking-type-passed_2026-08-31T11-54-33-448Z.png">screenshots\full_app_multi-vehicle-booking-type-passed_2026-08-31T11-54-33-448Z.png</a></td>
+      <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
+    </tr><tr class="testcase-row passed">
+      <td>-</td>
+      <td>Resource-Only</td>
+      <td>Yes</td>
+      <td>Yes</td>
+      <td><span class="status passed">passed</span></td>
+      <td>BK5ET10000005204</td>
+      <td> Management Equipment Management Analytics Collapse New Booking - Resource-Only Booking Created Thank you for booking your delivery at Buckingham Palace IND. Please note your delivery may be subject to approval by the site team and is only confirmed when </td>
+      <td>35s</td>
+      <td><a href="../screenshots\full_app_resource-only-booking-type-passed_2026-08-31T11-55-08-465Z.png">screenshots\full_app_resource-only-booking-type-passed_2026-08-31T11-55-08-465Z.png</a></td>
+      <td>full-application-report-2026-08-31T12-18-29-062Z.json</td>
+    </tr></tbody>
       </table>
     </section>
     <section>
@@ -206,83 +332,1336 @@
     <section>
       <h2>Role-Based Left Navigation</h2>
       <table>
-        <thead><tr><th>User Role</th><th>Username</th><th>My Account Role</th><th>Expected Tabs</th><th>Actual Tabs</th><th>Missing Tabs</th><th>Unexpected Tabs</th><th>Additional Tabs</th><th>Vehicle Tracking</th><th>Direct URL Access</th><th>Result</th><th>Failure Reason</th><th>Screenshot</th></tr></thead>
-        <tbody><tr><td colspan="13">No role-based navigation data found.</td></tr></tbody>
+        <thead><tr><th>User Role</th><th>Username</th><th>My Account Role</th><th>Expected Tabs</th><th>Actual Tabs</th><th>Missing Tabs</th><th>Unexpected Tabs</th><th>Additional Tabs</th><th>Vehicle Tracking</th><th>Permitted Actions</th><th>Direct URL Access</th><th>Result</th><th>Failure Reason</th><th>Screenshot</th></tr></thead>
+        <tbody><tr><td colspan="14">No role-based navigation data found.</td></tr></tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Role-Based Functional Flows</h2>
+      <table>
+        <thead><tr><th>User Role</th><th>Username</th><th>Available Tab</th><th>Functional Flow</th><th>Result</th><th>Duration</th><th>Visible Tabs</th><th>Reason</th><th>Evidence / Source</th></tr></thead>
+        <tbody><tr><td colspan="9">No role-based functional flow data found.</td></tr></tbody>
       </table>
     </section>
     <section>
       <h2>Entire Testcase Report</h2>
       <table>
-        <thead><tr><th>Case ID</th><th>Flow</th><th>Step</th><th>Status</th><th>Duration</th><th>Timestamp</th><th>Error</th></tr></thead>
-        <tbody><tr class="page-group"><td colspan="7">Analytics page</td></tr>
+        <thead><tr><th>Case ID</th><th>User Role</th><th>Flow</th><th>Step</th><th>Status</th><th>Duration</th><th>Timestamp</th><th>Error</th></tr></thead>
+        <tbody><tr class="page-group"><td colspan="8">Booking Creation page</td></tr>
     <tr class="testcase-row passed">
       <td>TC-01</td>
-      <td>Analytics</td>
-      <td>Login from SSO page</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Open authenticated Booking List</td>
       <td><span class="status passed">passed</span></td>
-      <td>9s</td>
-      <td>18 Aug 2026, 20:00</td>
+      <td>7s</td>
+      <td>31 Aug 2026, 17:22</td>
       <td>-</td>
     </tr>
   
     <tr class="testcase-row passed">
       <td>TC-02</td>
-      <td>Analytics</td>
-      <td>Select Buckingham Palace project</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Start a new booking</td>
       <td><span class="status passed">passed</span></td>
-      <td>13s</td>
-      <td>18 Aug 2026, 20:00</td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:22</td>
       <td>-</td>
     </tr>
   
     <tr class="testcase-row passed">
       <td>TC-03</td>
-      <td>Analytics</td>
-      <td>Verify project details and derive Country UOM</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Select Delivery booking type</td>
       <td><span class="status passed">passed</span></td>
-      <td>15s</td>
-      <td>18 Aug 2026, 20:00</td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:22</td>
       <td>-</td>
     </tr>
   
     <tr class="testcase-row passed">
       <td>TC-04</td>
-      <td>Analytics</td>
-      <td>Validate Summary Emission analytics date range and download</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Select Access point</td>
       <td><span class="status passed">passed</span></td>
-      <td>59s</td>
-      <td>18 Aug 2026, 20:00</td>
+      <td>4s</td>
+      <td>31 Aug 2026, 17:22</td>
       <td>-</td>
     </tr>
   
     <tr class="testcase-row passed">
       <td>TC-05</td>
-      <td>Analytics</td>
-      <td>Validate Vehicle Emission analytics units and records</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Select Vehicle type</td>
       <td><span class="status passed">passed</span></td>
-      <td>1m 33s</td>
-      <td>18 Aug 2026, 20:00</td>
+      <td>2s</td>
+      <td>31 Aug 2026, 17:22</td>
       <td>-</td>
     </tr>
   
     <tr class="testcase-row passed">
       <td>TC-06</td>
-      <td>Analytics</td>
-      <td>Validate Equipment Emission analytics units and records</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Select Fuel type</td>
       <td><span class="status passed">passed</span></td>
-      <td>58s</td>
-      <td>18 Aug 2026, 20:00</td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:22</td>
       <td>-</td>
     </tr>
   
     <tr class="testcase-row passed">
       <td>TC-07</td>
-      <td>Analytics</td>
-      <td>Validate Environment Reports analytics date range</td>
-      <td><span class="status passed">passed</span></td>
-      <td>1m 32s</td>
-      <td>18 Aug 2026, 20:00</td>
       <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Select Resource</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-08</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Continue from Scheduling Information</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-09</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Open Booking Date calendar</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-10</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Select first available booking date</td>
+      <td><span class="status passed">passed</span></td>
+      <td>6s</td>
+      <td>31 Aug 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-11</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Continue from Booking Date</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-12</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Load available booking time slots</td>
+      <td><span class="status passed">passed</span></td>
+      <td>8s</td>
+      <td>31 Aug 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-13</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Select first available booking time</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>31 Aug 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-14</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Continue from Booking Time</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-15</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Wait for Booking Details form</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>31 Aug 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-16</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Use requester details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-17</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Fill visible booking detail fields</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-18</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Select required booking detail dropdowns</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-19</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Continue from Booking Details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-20</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Complete mandatory additional details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-21</td>
+      <td>-</td>
+      <td>Delivery Booking</td>
+      <td>Submit delivery booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>10s</td>
+      <td>31 Aug 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-22</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Open authenticated Booking List</td>
+      <td><span class="status passed">passed</span></td>
+      <td>7s</td>
+      <td>31 Aug 2026, 17:22</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-23</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Start a new booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-24</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Select Recurring booking type</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-25</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Select Access point</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-26</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Select Vehicle type</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-27</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Select Fuel type</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-28</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Skip optional resources</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-29</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Continue from Scheduling Information</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-30</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Wait for recurring date fields</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-31</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Select recurring start date</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-32</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Select recurring end date</td>
+      <td><span class="status passed">passed</span></td>
+      <td>3s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-33</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Continue from Recurring Date Range</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-34</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Wait for recurring day selector</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-35</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Select recurring days</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-36</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Continue from Recurring Days</td>
+      <td><span class="status passed">passed</span></td>
+      <td>4s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-37</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Select first available recurring time</td>
+      <td><span class="status passed">passed</span></td>
+      <td>7s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-38</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Wait for Booking Details form</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-39</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Use requester details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-40</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Continue from Booking Details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-41</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Complete mandatory additional details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-42</td>
+      <td>-</td>
+      <td>Recurring Booking</td>
+      <td>Submit recurring booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>13s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-43</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Open authenticated Booking List</td>
+      <td><span class="status passed">passed</span></td>
+      <td>6s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-44</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Start a new booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-45</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Select Multi-Vehicle booking type</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-46</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Select Access point</td>
+      <td><span class="status passed">passed</span></td>
+      <td>4s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-47</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Select Vehicle type</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>31 Aug 2026, 17:23</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-48</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Select Fuel type</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-49</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Select Resource</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-50</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Continue from Scheduling Information</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-51</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Open Booking Date calendar</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-52</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Select first available booking date</td>
+      <td><span class="status passed">passed</span></td>
+      <td>6s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-53</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Continue from Booking Date</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-54</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Load available booking time slots</td>
+      <td><span class="status passed">passed</span></td>
+      <td>8s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-55</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Select first available booking time</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-56</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Continue from Booking Time</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-57</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Wait for Booking Details form</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-58</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Use requester details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-59</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Fill visible booking detail fields</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-60</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Select required booking detail dropdowns</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-61</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Continue from Booking Details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-62</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Complete mandatory additional details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-63</td>
+      <td>-</td>
+      <td>Multi-Vehicle Booking</td>
+      <td>Submit multi-vehicle booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>10s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-64</td>
+      <td>-</td>
+      <td>Resource-only Booking</td>
+      <td>Open authenticated Booking List</td>
+      <td><span class="status passed">passed</span></td>
+      <td>7s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-65</td>
+      <td>-</td>
+      <td>Resource-only Booking</td>
+      <td>Start a new booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-66</td>
+      <td>-</td>
+      <td>Resource-only Booking</td>
+      <td>Select Resource Only booking type</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-67</td>
+      <td>-</td>
+      <td>Resource-only Booking</td>
+      <td>Select resources</td>
+      <td><span class="status passed">passed</span></td>
+      <td>4s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-68</td>
+      <td>-</td>
+      <td>Resource-only Booking</td>
+      <td>Select first available booking date</td>
+      <td><span class="status passed">passed</span></td>
+      <td>4s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-69</td>
+      <td>-</td>
+      <td>Resource-only Booking</td>
+      <td>Select first available booking time</td>
+      <td><span class="status passed">passed</span></td>
+      <td>5s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-70</td>
+      <td>-</td>
+      <td>Resource-only Booking</td>
+      <td>Complete booking details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-71</td>
+      <td>-</td>
+      <td>Resource-only Booking</td>
+      <td>Submit resource booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>11s</td>
+      <td>31 Aug 2026, 17:24</td>
+      <td>-</td>
+    </tr>
+  <tr class="page-group"><td colspan="8">Booking List page</td></tr>
+    <tr class="testcase-row passed">
+      <td>TC-72</td>
+      <td>-</td>
+      <td>Edit Booking</td>
+      <td>Open authenticated Booking List</td>
+      <td><span class="status passed">passed</span></td>
+      <td>11s</td>
+      <td>31 Aug 2026, 17:25</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-73</td>
+      <td>-</td>
+      <td>Edit Booking</td>
+      <td>Select first Scheduled booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:25</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-74</td>
+      <td>-</td>
+      <td>Edit Booking</td>
+      <td>Check in the selected booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>5s</td>
+      <td>31 Aug 2026, 17:25</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-75</td>
+      <td>-</td>
+      <td>Edit Booking</td>
+      <td>Check out the selected booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>7s</td>
+      <td>31 Aug 2026, 17:25</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-76</td>
+      <td>-</td>
+      <td>Edit Booking</td>
+      <td>Return to list and reopen the same booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>10s</td>
+      <td>31 Aug 2026, 17:25</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-77</td>
+      <td>-</td>
+      <td>Edit Booking</td>
+      <td>Undo checkout for this booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>6s</td>
+      <td>31 Aug 2026, 17:25</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-78</td>
+      <td>-</td>
+      <td>Edit Booking</td>
+      <td>Undo check-in for this booking</td>
+      <td><span class="status passed">passed</span></td>
+      <td>8s</td>
+      <td>31 Aug 2026, 17:25</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-79</td>
+      <td>-</td>
+      <td>Edit Booking</td>
+      <td>Cancel the booking and confirm Cancel Booking popup</td>
+      <td><span class="status passed">passed</span></td>
+      <td>16s</td>
+      <td>31 Aug 2026, 17:26</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-80</td>
+      <td>-</td>
+      <td>Edit Booking</td>
+      <td>Return to Booking List</td>
+      <td><span class="status passed">passed</span></td>
+      <td>8s</td>
+      <td>31 Aug 2026, 17:26</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-81</td>
+      <td>-</td>
+      <td>Booking List Filters</td>
+      <td>Open authenticated Booking List</td>
+      <td><span class="status passed">passed</span></td>
+      <td>7s</td>
+      <td>31 Aug 2026, 17:26</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-82</td>
+      <td>-</td>
+      <td>Booking List Filters</td>
+      <td>Apply date range, layout, and advanced filters</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1m 47s</td>
+      <td>31 Aug 2026, 17:26</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-83</td>
+      <td>-</td>
+      <td>Booking List</td>
+      <td>Validate status counts and Booking Ref sorting</td>
+      <td><span class="status passed">passed</span></td>
+      <td>17s</td>
+      <td>31 Aug 2026, 17:28</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-84</td>
+      <td>-</td>
+      <td>Booking List</td>
+      <td>Visit every Booking List status tab</td>
+      <td><span class="status passed">passed</span></td>
+      <td>25s</td>
+      <td>31 Aug 2026, 17:28</td>
+      <td>-</td>
+    </tr>
+  <tr class="page-group"><td colspan="8">Calendar page</td></tr>
+    <tr class="testcase-row passed">
+      <td>TC-85</td>
+      <td>-</td>
+      <td>Calendar</td>
+      <td>Validate calendar scope, filters, dates, and navigation</td>
+      <td><span class="status passed">passed</span></td>
+      <td>6s</td>
+      <td>31 Aug 2026, 17:29</td>
+      <td>-</td>
+    </tr>
+  <tr class="page-group"><td colspan="8">Analytics page</td></tr>
+    <tr class="testcase-row passed">
+      <td>TC-86</td>
+      <td>-</td>
+      <td>Analytics</td>
+      <td>Validate emissions date ranges and UOM labels</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1m 23s</td>
+      <td>31 Aug 2026, 17:29</td>
+      <td>-</td>
+    </tr>
+  <tr class="page-group"><td colspan="8">Equipment Management page</td></tr>
+    <tr class="testcase-row passed">
+      <td>TC-87</td>
+      <td>-</td>
+      <td>Equipment Management</td>
+      <td>Open authenticated Equipment List</td>
+      <td><span class="status passed">passed</span></td>
+      <td>7s</td>
+      <td>31 Aug 2026, 17:30</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-88</td>
+      <td>-</td>
+      <td>Equipment Management</td>
+      <td>Run Equipment List and Usage automation</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2m 42s</td>
+      <td>31 Aug 2026, 17:30</td>
+      <td>-</td>
+    </tr>
+  <tr class="page-group"><td colspan="8">User Management page</td></tr>
+    <tr class="testcase-row passed">
+      <td>TC-89</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Open authenticated User Management page</td>
+      <td><span class="status passed">passed</span></td>
+      <td>6s</td>
+      <td>31 Aug 2026, 17:33</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-90</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Negative: reject duplicate roles and invalid invite details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>8s</td>
+      <td>31 Aug 2026, 17:33</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-91</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Prepare user 1 invite data</td>
+      <td><span class="status passed">passed</span></td>
+      <td>12s</td>
+      <td>31 Aug 2026, 17:33</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-92</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Open Invite Users popup for user 1</td>
+      <td><span class="status passed">passed</span></td>
+      <td>6s</td>
+      <td>31 Aug 2026, 17:33</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-93</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Fill invite details for User18420321071@yopmail.com</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>31 Aug 2026, 17:33</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-94</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Send invite for User18420321071@yopmail.com</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:33</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-95</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Verify invited user visible for User18420321071@yopmail.com</td>
+      <td><span class="status passed">passed</span></td>
+      <td>11s</td>
+      <td>31 Aug 2026, 17:33</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-96</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Prepare user 2 invite data</td>
+      <td><span class="status passed">passed</span></td>
+      <td>12s</td>
+      <td>31 Aug 2026, 17:34</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-97</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Open Invite Users popup for user 2</td>
+      <td><span class="status passed">passed</span></td>
+      <td>6s</td>
+      <td>31 Aug 2026, 17:34</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-98</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Fill invite details for User18520321071@yopmail.com</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1m 2s</td>
+      <td>31 Aug 2026, 17:34</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-99</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Send invite for User18520321071@yopmail.com</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:35</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-100</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Verify invited user visible for User18520321071@yopmail.com</td>
+      <td><span class="status passed">passed</span></td>
+      <td>11s</td>
+      <td>31 Aug 2026, 17:35</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-101</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Prepare user 3 invite data</td>
+      <td><span class="status passed">passed</span></td>
+      <td>12s</td>
+      <td>31 Aug 2026, 17:35</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-102</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Open Invite Users popup for user 3</td>
+      <td><span class="status passed">passed</span></td>
+      <td>6s</td>
+      <td>31 Aug 2026, 17:35</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-103</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Fill invite details for User18620321071@yopmail.com</td>
+      <td><span class="status passed">passed</span></td>
+      <td>3s</td>
+      <td>31 Aug 2026, 17:35</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-104</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Send invite for User18620321071@yopmail.com</td>
+      <td><span class="status passed">passed</span></td>
+      <td>1s</td>
+      <td>31 Aug 2026, 17:36</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-105</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Verify invited user visible for User18620321071@yopmail.com</td>
+      <td><span class="status passed">passed</span></td>
+      <td>11s</td>
+      <td>31 Aug 2026, 17:36</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-106</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Accept invite and complete account setup for Voyagecontrol Validator 1</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2m 37s</td>
+      <td>31 Aug 2026, 17:36</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row skipped">
+      <td>TC-107</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Activate account for User18420321071@yopmail.com</td>
+      <td><span class="status skipped">skipped</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:38</td>
+      <td>Invitation email was not received in Yopmail for User18420321071@yopmail.com. Account activation skipped so downstream role validation will not use this unactivated credential.</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-108</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Accept invite and complete account setup for Voyagecontrol Validator 2</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2m 36s</td>
+      <td>31 Aug 2026, 17:38</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row skipped">
+      <td>TC-109</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Activate account for User18520321071@yopmail.com</td>
+      <td><span class="status skipped">skipped</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:41</td>
+      <td>Invitation email was not received in Yopmail for User18520321071@yopmail.com. Account activation skipped so downstream role validation will not use this unactivated credential.</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-110</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Accept invite and complete account setup for Voyagecontrol Validator 3</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2m 36s</td>
+      <td>31 Aug 2026, 17:41</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row skipped">
+      <td>TC-111</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Activate account for User18620321071@yopmail.com</td>
+      <td><span class="status skipped">skipped</span></td>
+      <td>0s</td>
+      <td>31 Aug 2026, 17:44</td>
+      <td>Invitation email was not received in Yopmail for User18620321071@yopmail.com. Account activation skipped so downstream role validation will not use this unactivated credential.</td>
+    </tr>
+  
+    <tr class="testcase-row failed">
+      <td>TC-112</td>
+      <td>-</td>
+      <td>User Management</td>
+      <td>Change organization for one completed user account</td>
+      <td><span class="status failed">failed</span></td>
+      <td>1m 47s</td>
+      <td>31 Aug 2026, 17:44</td>
+      <td>Change Organization popup did not open for User18420321071@yopmail.com. Visible actions: Invite Sent at 05:44 Mon, 31st August 2026 | Re-send Invite | Cancel Invite | Change Associated Organization</td>
+    </tr>
+  <tr class="page-group"><td colspan="8">My Account page</td></tr>
+    <tr class="testcase-row passed">
+      <td>TC-113</td>
+      <td>-</td>
+      <td>My Account</td>
+      <td>Open My Account and update editable details</td>
+      <td><span class="status passed">passed</span></td>
+      <td>3s</td>
+      <td>31 Aug 2026, 17:45</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-114</td>
+      <td>-</td>
+      <td>My Account</td>
+      <td>Validate and persist account preferences</td>
+      <td><span class="status passed">passed</span></td>
+      <td>12s</td>
+      <td>31 Aug 2026, 17:45</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-115</td>
+      <td>-</td>
+      <td>My Account</td>
+      <td>Validate company, roles, and password dialog</td>
+      <td><span class="status passed">passed</span></td>
+      <td>2s</td>
+      <td>31 Aug 2026, 17:46</td>
+      <td>-</td>
+    </tr>
+  <tr class="page-group"><td colspan="8">Notification Preferences page</td></tr>
+    <tr class="testcase-row passed">
+      <td>TC-116</td>
+      <td>-</td>
+      <td>Notification Preferences</td>
+      <td>Open Notification Preferences with Chrome permission</td>
+      <td><span class="status passed">passed</span></td>
+      <td>45s</td>
+      <td>31 Aug 2026, 17:46</td>
+      <td>-</td>
+    </tr>
+  
+    <tr class="testcase-row passed">
+      <td>TC-117</td>
+      <td>-</td>
+      <td>Notification Preferences</td>
+      <td>Enable push and My Bookings notification preferences</td>
+      <td><span class="status passed">passed</span></td>
+      <td>7s</td>
+      <td>31 Aug 2026, 17:46</td>
+      <td>-</td>
+    </tr>
+  <tr class="page-group"><td colspan="8">My Organization page</td></tr>
+    <tr class="testcase-row failed">
+      <td>TC-118</td>
+      <td>-</td>
+      <td>My Organization</td>
+      <td>Open and validate My Organization details</td>
+      <td><span class="status failed">failed</span></td>
+      <td>32s</td>
+      <td>31 Aug 2026, 17:46</td>
+      <td>locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator(&#039;body&#039;) to be visible[22m
+[2m    63 × locator resolved to hidden &lt;body&gt;…&lt;/body&gt;[22m
+</td>
+    </tr>
+  
+    <tr class="testcase-row failed">
+      <td>TC-119</td>
+      <td>-</td>
+      <td>My Organization</td>
+      <td>Validate organization users and role controls</td>
+      <td><span class="status failed">failed</span></td>
+      <td>1m 0s</td>
+      <td>31 Aug 2026, 17:47</td>
+      <td>locator.waitFor: Timeout 60000ms exceeded.
+Call log:
+[2m  - waiting for getByRole(&#039;tab&#039;, { name: /Users/i }).first().or(getByRole(&#039;button&#039;, { name: /^Users$/i }).first()).or(getByText(/^Users$/i).first()) to be visible[22m
+</td>
     </tr>
   </tbody>
       </table>

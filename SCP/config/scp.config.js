@@ -31,18 +31,40 @@ function buildConfiguredTabs() {
 }
 
 function getScpConfig() {
+  const username = process.env.SCP_USERNAME || process.env.SCP_EMAIL || '';
+  const password = process.env.SCP_PASSWORD || '';
+
   return {
     baseUrl: process.env.SCP_BASE_URL || 'https://stg-supplychain-app.voyagecontrol.com',
     loginUrl: process.env.SCP_LOGIN_URL || 'https://stg-login.voyagecontrol.com/api/sso/users/login/',
     managementDashboardUrl: process.env.SCP_MANAGEMENT_DASHBOARD_URL || 'https://stg-supplychain-app.voyagecontrol.com/management-dashboard',
-    username: process.env.SCP_USERNAME || process.env.SCP_EMAIL || '',
-    password: process.env.SCP_PASSWORD || '',
+    username,
+    password,
+    defaultRole: (process.env.SCP_DEFAULT_ROLE || 'admin').toLowerCase(),
+    accounts: {
+      admin: {
+        username: process.env.SCP_ADMIN_USERNAME || username,
+        password: process.env.SCP_ADMIN_PASSWORD || password
+      },
+      subcontractor: {
+        username: process.env.SCP_SUBCONTRACTOR_USERNAME || '',
+        password: process.env.SCP_SUBCONTRACTOR_PASSWORD || ''
+      },
+      supplier: {
+        username: process.env.SCP_SUPPLIER_USERNAME || '',
+        password: process.env.SCP_SUPPLIER_PASSWORD || ''
+      }
+    },
     platformName: process.env.SCP_PLATFORM_NAME || 'Supply Chain Planner',
     platformCardName: process.env.SCP_PLATFORM_CARD_NAME || 'Supply Chain Planner Supply',
+    projectName: process.env.SCP_PROJECT_NAME || 'NRVC_Hall',
     projectManagementName: process.env.SCP_PROJECT_MANAGEMENT_NAME || 'Project Management',
     firstDeliveryInspectionConfigName: process.env.SCP_FIRST_DELIVERY_INSPECTION_CONFIG_NAME || 'First Delivery Inspection Config',
     firstDeliveryInspectionConfigUrl: process.env.SCP_FIRST_DELIVERY_INSPECTION_CONFIG_URL ||
       'https://stg-supplychain-app.voyagecontrol.com/first-delivery-inspection-config',
+    firstDeliveryInspectionsUrl: process.env.SCP_FIRST_DELIVERY_INSPECTIONS_URL ||
+      'https://stg-supplychain-app.voyagecontrol.com/first-delivery-inspections',
+    yopmailUrl: process.env.SCP_YOPMAIL_URL || 'https://yopmail.com/en/',
     tabs: buildConfiguredTabs()
   };
 }

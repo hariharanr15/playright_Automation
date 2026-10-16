@@ -1,0 +1,10 @@
+{"timestamp":"2026-08-24T11:10:59.301Z","event":"role-functional-suite-start","roles":["Project Admin","Project User","View-Only User"]}
+{"timestamp":"2026-08-24T11:17:16.539Z","event":"role-start","role":"Project Admin","username":"User17311059309@yopmail.com"}
+{"timestamp":"2026-08-24T11:17:45.734Z","event":"role-tabs-collected","role":"Project Admin","tabs":["Analytics","Booking List","Calendar","Equipment Management","New Booking","Project Management","User Management","Vehicle Tracking"]}
+{"timestamp":"2026-08-24T11:17:45.763Z","event":"role-flow-start","role":"Project Admin","tab":"Project Management","flow":"Project Management setup validation"}
+{"timestamp":"2026-08-24T11:17:45.800Z","event":"role-flow-finished","role":"Project Admin","tab":"Project Management","flow":"Project Management setup validation","status":"passed","durationMs":37}
+{"timestamp":"2026-08-24T11:17:45.803Z","event":"role-flow-start","role":"Project Admin","tab":"New Booking","flow":"All available booking creation flows"}
+{"timestamp":"2026-08-24T11:21:52.928Z","event":"role-flow-finished","role":"Project Admin","tab":"New Booking","flow":"All available booking creation flows","status":"failed","durationMs":247125,"reason":"TC-65 Submit recurring booking failed: locator.click: Timeout 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /Submit Booking|Submit/i }).last()\u001b[22m\n"}
+{"timestamp":"2026-08-24T11:21:52.954Z","event":"role-flow-start","role":"Project Admin","tab":"Booking List","flow":"Booking lifecycle edit flow"}
+{"timestamp":"2026-08-24T11:23:25.794Z","event":"role-flow-finished","role":"Project Admin","tab":"Booking List","flow":"Booking lifecycle edit flow","status":"passed","durationMs":92839}
+{"timestamp":"2026-08-24T11:23:25.797Z","event":"role-flow-start","role":"Project Admin","tab":"Booking List","flow":"Booking List filters"}
