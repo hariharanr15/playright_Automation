@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Responsible user outside Supplier Organisation has View but cannot Fill",
+    "usernameEnv": "SCP_FDI_RESPONSIBLE_USERNAME",
+    "passwordEnv": "SCP_FDI_RESPONSIBLE_PASSWORD",
+    "project": "REPLACE_WITH_TEST_PROJECT",
+    "procurement": [
+      { "submittal": "REPLACE_WITH_RESPONSIBLE_SUBMITTAL", "visible": true, "edit": true, "assignResponsible": false },
+      { "submittal": "REPLACE_WITH_OTHER_ORGANISATION_SUBMITTAL", "visible": false },
+      { "submittal": "REPLACE_WITH_NO_SUPPLIER_SUBMITTAL", "visible": false }
+    ],
+    "inspections": [
+      {
+        "material": "REPLACE_WITH_MATERIAL",
+        "supplier": "REPLACE_WITH_SUPPLIER",
+        "submittal": "REPLACE_WITH_RESPONSIBLE_SUBMITTAL",
+        "visible": true, "view": true, "fill": false,
+        "unassign": false, "selfAssign": false, "assign": false
+      }
+    ]
+  }
+]

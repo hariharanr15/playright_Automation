@@ -4,8 +4,8 @@ const { SecondTabPage } = require('../../pages/tabs/second-tab.page');
 const { ScpTabPage } = require('../../pages/tabs/scp-tab.page');
 
 test.describe('Regression Tests - SCP Configured Tabs', () => {
-  test('Regression TC-01 - first two SCP tabs load through their page objects', async ({ scpApp }) => {
-    const { page, appShell, config } = scpApp;
+  test('Regression TC-01 - first two SCP tabs load through their page objects', async ({ scpProject }) => {
+    const { page, appShell, config } = scpProject;
     requireMinimumTabs(config.tabs, 2);
 
     await runStep(page, `Validate ${config.tabs[0].name}`, async () => {
@@ -21,8 +21,8 @@ test.describe('Regression Tests - SCP Configured Tabs', () => {
     });
   });
 
-  test('Regression TC-02 - every configured SCP tab remains reachable', async ({ scpApp }) => {
-    const { page, appShell, config } = scpApp;
+  test('Regression TC-02 - every configured SCP tab remains reachable', async ({ scpProject }) => {
+    const { page, appShell, config } = scpProject;
     requireMinimumTabs(config.tabs, 2);
 
     for (const tab of config.tabs) {

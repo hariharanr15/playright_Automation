@@ -1,0 +1,46 @@
+{
+  "accounts": [
+    {
+      "label": "Primary account",
+      "usernameEnv": "SCP_USERNAME",
+      "passwordEnv": "SCP_PASSWORD",
+      "projects": [
+        {
+          "project": "REPLACE_WITH_PROJECT_A",
+          "expectedRole": "Project Manager",
+          "source": "REPLACE_WITH_ORGANIZATION_ADMIN_CONFIGURATION_REFERENCE",
+          "modules": {
+            "project-management": true,
+            "user-management": true,
+            "supplier-list": true,
+            "procurement-log": true,
+            "inventory-management": true,
+            "first-delivery-inspection": true,
+            "international-shipment": true,
+            "management-dashboard": true,
+            "analytics": true,
+            "enterprise": false,
+            "document-management": true
+          },
+          "actions": {
+            "supplier-list": { "Add Supplier": true },
+            "procurement-log": { "Add Submittal": true }
+          }
+        },
+        {
+          "project": "REPLACE_WITH_PROJECT_B",
+          "expectedRole": "Subcontractor",
+          "source": "REPLACE_WITH_ORGANIZATION_ADMIN_CONFIGURATION_REFERENCE",
+          "modules": { "project-management": false, "user-management": false, "procurement-log": true, "management-dashboard": true },
+          "actions": { "procurement-log": { "Add Submittal": false } }
+        }
+      ]
+    },
+    {
+      "label": "Supplier account",
+      "usernameEnv": "SCP_SUPPLIER_USERNAME",
+      "passwordEnv": "SCP_SUPPLIER_PASSWORD",
+      "projects": [{ "project": "REPLACE_WITH_PROJECT_A" }]
+    }
+  ]
+}

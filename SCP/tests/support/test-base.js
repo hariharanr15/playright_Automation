@@ -3,21 +3,32 @@ const path = require('path');
 const { expect } = require('@playwright/test');
 const { test } = require('../../fixtures/baseTest');
 const { highlight } = require('../../utils/highlight');
+const { redactUrl } = require('../../utils/evidence');
+const { captureEvidence } = require('../../utils/evidence');
+const { getScreenshotOptions, getStepDelayMs } = require('../../utils/execution-mode');
 
-const STEP_WAIT_MS = Number(process.env.STEP_WAIT_MS || 700);
+test.afterEach(async ({ page, runData }, testInfo) => {
+  if (runData?.dataUsage?.length) {
+    await testInfo.attach('automation-data-usage', {
+      body: Buffer.from(JSON.stringify({
+        runId: runData.runId,
+        dataUsage: runData.dataUsage
+      }, null, 2)),
+      contentType: 'application/json'
+    });
+  }
 
-test.afterEach(async ({ page }, testInfo) => {
   if (testInfo.status === testInfo.expectedStatus) {
     return;
   }
 
   await testInfo.attach('failed-page-url', {
-    body: page.url(),
+    body: redactUrl(page.url()),
     contentType: 'text/plain'
   });
 
   const screenshotPath = testInfo.outputPath('failure.png');
-  await page.screenshot({ path: screenshotPath, fullPage: true }).catch(() => null);
+  await page.screenshot(getScreenshotOptions({ path: screenshotPath })).catch(() => null);
 
   if (fs.existsSync(screenshotPath)) {
     await testInfo.attach('failure-screenshot', {
@@ -41,6 +52,7 @@ async function showStepBanner(page, title) {
       'left: 50%',
       'transform: translateX(-50%)',
       'z-index: 2147483647',
+      'pointer-events: none',
       'background: #111827',
       'color: #fff',
       'border: 3px solid #2563eb',
@@ -55,18 +67,47 @@ async function showStepBanner(page, title) {
   }, title).catch(() => null);
 }
 
-async function runStep(page, title, action, validate) {
+async function hideStepBanner(page) {
+  await page.evaluate(() => document.getElementById('scp-automation-step-banner')?.remove()).catch(() => null);
+}
+
+async function runStep(page, title, action, validate, timing = {}) {
+  // Fast mode ignores per-step pacing overrides; synchronisation comes from the step's own waits.
+  const waitMs = getStepDelayMs() > 0 ? (timing.waitMs ?? getStepDelayMs()) : 0;
+  const afterActionWaitMs = getStepDelayMs() > 0 ? (timing.afterActionWaitMs ?? 0) : 0;
+  // timing.scp passes step-policy options (mutation, verify) to the managed step.
   await test.step(title, async () => {
     await showStepBanner(page, title);
-    await page.waitForTimeout(STEP_WAIT_MS);
-    await action();
+    if (waitMs > 0) await page.waitForTimeout(waitMs);
+    await hideStepBanner(page);
+    try {
+      await action();
 
-    if (validate) {
-      await validate();
+      if (afterActionWaitMs > 0) {
+        await page.waitForTimeout(afterActionWaitMs);
+      }
+
+      if (validate) {
+        await validate();
+      }
+
+      const info = test.info();
+      const stepNumber = info.attachments.filter((item) => item.name.startsWith('step-')).length + 1;
+      const screenshotPath = await captureEvidence(
+        page,
+        null,
+        `${info.title}_Step_${String(stepNumber).padStart(2, '0')}_${title}`
+      );
+      await info.attach(`step-${String(stepNumber).padStart(2, '0')}-${title}`, {
+        path: screenshotPath,
+        contentType: 'image/png'
+      });
+
+      if (waitMs > 0) await page.waitForTimeout(waitMs);
+    } finally {
+      await hideStepBanner(page);
     }
-
-    await page.waitForTimeout(STEP_WAIT_MS);
-  });
+  }, timing.scp ? { scp: timing.scp } : undefined);
 }
 
 async function expectVisible(locator, label, timeout = 20000) {

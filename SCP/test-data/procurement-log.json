@@ -1,0 +1,21 @@
+{
+  "supplier": "LG",
+  "material": "43 Inches",
+  "leadTime": "50",
+  "lotQuantity": "250",
+  "componentItem": "43 Inches",
+  "componentQuantity": "100",
+  "componentValue": "100000",
+  "deliverySite": "Warehoust _NR",
+  "deliveryLocation": "Gate 4",
+  "deliveryQuantity": "10",
+  "preShipping": {
+    "textValues": ["10000", "1", "23", "34", "45", "56"],
+    "booleanValue": "66",
+    "supplierNote": "Approved by supplier",
+    "approverNote": "Approved by sub contractor"
+  },
+  "shippingMode": "Vc Booking System",
+  "shippingReference": "1",
+  "deliveryConditions": ["011", "010"]
+}

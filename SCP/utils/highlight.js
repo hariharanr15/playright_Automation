@@ -1,7 +1,17 @@
-const DEFAULT_HIGHLIGHT_MS = Number(process.env.HIGHLIGHT_MS || 500);
-const DEFAULT_ACTION_PAUSE_MS = Number(process.env.ACTION_PAUSE_MS || 300);
+const { getActionDelayMs, getHighlightDurationMs, isDemoMode } = require('./execution-mode');
+
+async function demoPause() {
+  const delayMs = getActionDelayMs();
+  if (delayMs > 0) {
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+}
 
 async function highlight(locator, label = 'interaction') {
+  if (!isDemoMode()) {
+    return;
+  }
+
   try {
     await locator.scrollIntoViewIfNeeded({ timeout: 5000 });
     await locator.evaluate((element, interactionLabel) => {
@@ -15,7 +25,7 @@ async function highlight(locator, label = 'interaction') {
       element.style.boxShadow = '0 0 0 8px rgba(37, 99, 235, 0.28)';
     }, label);
 
-    await new Promise((resolve) => setTimeout(resolve, DEFAULT_HIGHLIGHT_MS));
+    await new Promise((resolve) => setTimeout(resolve, getHighlightDurationMs()));
 
     await locator.evaluate((element) => {
       element.style.outline = element.dataset.previousOutline || '';
@@ -33,14 +43,42 @@ async function clickHighlighted(locator, label, clickOptions = {}) {
   await locator.waitFor({ state: 'visible' });
   await highlight(locator, label);
   await locator.click(clickOptions);
-  await new Promise((resolve) => setTimeout(resolve, DEFAULT_ACTION_PAUSE_MS));
+  await demoPause();
 }
 
 async function fillHighlighted(locator, value, label) {
   await locator.waitFor({ state: 'visible' });
   await highlight(locator, label);
   await locator.fill(value);
-  await new Promise((resolve) => setTimeout(resolve, DEFAULT_ACTION_PAUSE_MS));
+  await demoPause();
 }
 
-module.exports = { clickHighlighted, fillHighlighted, highlight };
+async function selectHighlighted(locator, value, label) {
+  await locator.waitFor({ state: 'visible' });
+  await highlight(locator, label);
+  await locator.selectOption(value);
+  await demoPause();
+}
+
+async function checkHighlighted(locator, checked, label) {
+  await locator.waitFor({ state: 'visible' });
+  await highlight(locator, label);
+  await locator.setChecked(checked);
+  await demoPause();
+}
+
+async function uploadHighlighted(locator, filePaths, label) {
+  await locator.waitFor({ state: 'attached' });
+  await highlight(locator, label);
+  await locator.setInputFiles(filePaths);
+  await demoPause();
+}
+
+module.exports = {
+  checkHighlighted,
+  clickHighlighted,
+  fillHighlighted,
+  highlight,
+  selectHighlighted,
+  uploadHighlighted
+};

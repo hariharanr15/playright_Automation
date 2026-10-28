@@ -1,0 +1,13 @@
+{
+  "enterprise": {
+    "sourceFile": "path/to/independent-enterprise-source.json",
+    "dateBasis": null
+  },
+  "dashboard": {
+    "archiveSourceFile": "path/to/raw-personal-archive-source.json"
+  },
+  "analytics": {
+    "inventory": null
+  },
+  "businessSources": {}
+}

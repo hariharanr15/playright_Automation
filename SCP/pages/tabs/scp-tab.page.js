@@ -8,7 +8,7 @@ class ScpTabPage extends BasePage {
   }
 
   async open(appShell) {
-    await appShell.navigateToTab(this.tab);
+    await appShell.navigateToTab({ ...this.tab, route: '' });
     await this.expectLoaded();
   }
 

@@ -1,9 +1,23 @@
 node_modules/
 .env
 .env.*
+!.env.example
 
 test-results/
 screenshots/
 reports/playwright-html/
+reports/*.html
+reports/*.pdf
+reports/cucumber-report.json
+reports/html/*.html
+reports/pdf/*.pdf
+reports/screenshots/*.png
+reports/execution-*/
+reports/validation-*/
+# Run output and environment allocations stay local; files committed earlier remain tracked.
+reports/*
+# Recovery checkpoints of executed scenarios
+.state/
+auth/*.json
 
 *.log
