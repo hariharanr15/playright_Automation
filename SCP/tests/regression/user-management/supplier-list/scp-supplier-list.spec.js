@@ -2,23 +2,24 @@ const { test, expect, runStep: baseRunStep } = require('../../../support/test-ba
 const { SupplierListPage } = require('../../../../pages/user-management/supplier-list/supplier-list.page');
 
 const pause = Number(process.env.SCP_MODULE_OPERATION_PAUSE_MS || 1500);
-const runStep = (page, title, action, validate) => baseRunStep(page, title, action, validate,
-  { waitMs: pause, afterActionWaitMs: pause });
+const runStep = (page, title, action, validate, scp) => baseRunStep(page, title, action, validate,
+  { waitMs: pause, afterActionWaitMs: pause, scp });
 
 test('Supplier List: create, find, map, filter, and export', async ({ scpProject, runData }) => {
   const { page } = scpProject;
   const suppliers = new SupplierListPage(page);
-  const n = runData.nextSequence();
-  const supplier = {
-    name: `supplier${n}`,
-    contact: `test user${n}`,
-    email: `supplier${n}@yopmail.com`,
-    phone: `9${String(Math.floor(Math.random() * 1e9)).padStart(9, '0')}`
-  };
+  let supplier;
   await runStep(page, 'Open Supplier List', () => suppliers.open());
+  // Existing project suppliers are read first; numbers already used by earlier runs are skipped.
+  await runStep(page, 'Choose an unused supplier name', async () => {
+    const chosen = await suppliers.uniqueSupplier(() => runData.nextSequence());
+    supplier = chosen.supplier;
+    runData.captureData('supplier', { name: supplier.name, email: supplier.email }, 'Supplier List');
+    await test.info().attach('supplier-name-selection', { body: Buffer.from(JSON.stringify({ chosen: supplier.name, skippedExisting: chosen.skipped, existingSuppliers: chosen.existingCount }, null, 2)), contentType: 'application/json' });
+  });
   await runStep(page, 'Create unique supplier', () => suppliers.create(supplier), async () => {
     await expect(page.getByRole('row').filter({ hasText: supplier.email })).toContainText(supplier.name);
-  });
+  }, { mutation: true, verify: () => suppliers.verifySupplier(supplier) });
   await runStep(page, 'Export supplier list', async () => {
     const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export', exact: true }).click();

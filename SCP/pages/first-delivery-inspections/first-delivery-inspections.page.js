@@ -24,7 +24,7 @@ class FirstDeliveryInspectionsPage extends BasePage {
       await response.finished();
     });
     listReady.catch(() => {});
-    await this.page.goto(this.config.firstDeliveryInspectionsUrl, { waitUntil: 'domcontentloaded' });
+    await menu.first().click();
     await this.page.waitForURL(this.config.firstDeliveryInspectionsUrl, { timeout: 30000 });
     await listReady;
     await expect(this.heading).toBeVisible();
@@ -63,6 +63,9 @@ class FirstDeliveryInspectionsPage extends BasePage {
       exact: true
     })).toBeVisible();
 
+    // The form renders its sections progressively; assert only after it settles so a hidden check cannot pass on an unrendered form.
+    await this.page.getByRole('button', { name: 'PASS', exact: true }).first().waitFor({ state: 'visible', timeout: 30000 }).catch(() => null);
+    await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => null);
     const overallNotes = this.page.getByPlaceholder('Add overall observations or notes for this inspection...');
     const photos = this.page.getByText(/^Photos(?: \(\d+\))?$/);
     const photoInput = this.page.locator('input[type="file"]');
@@ -94,9 +97,9 @@ class FirstDeliveryInspectionsPage extends BasePage {
 
   async expectConfiguredControl(locator, enabled, label) {
     if (enabled) {
-      await expect(locator, `${label} should be available when enabled`).toBeVisible();
+      await expect(locator, `${label} should be available when enabled`).toBeVisible({ timeout: 15000 });
     } else {
-      await expect(locator, `${label} should be hidden when disabled`).toBeHidden();
+      await expect(locator, `${label} should be hidden when disabled`).toBeHidden({ timeout: 15000 });
     }
   }
 

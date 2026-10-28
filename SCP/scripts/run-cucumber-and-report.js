@@ -27,9 +27,11 @@ if (fs.existsSync(STEP_REPORT_PATH)) {
 
 const env = {
   ...process.env,
-  SCP_EXECUTION_MODE: demo ? 'demo' : 'normal',
   HEADLESS: headless || (!demo && !headed) ? 'true' : 'false'
 };
+
+env.SCP_EXECUTION_MODE = demo ? 'demo' : ['normal', 'fast'].includes(process.env.SCP_EXECUTION_MODE) ? process.env.SCP_EXECUTION_MODE
+  : env.HEADLESS === 'true' ? 'fast' : 'normal';
 
 const cucumber = spawnSync(process.execPath, [CUCUMBER_BIN, ...cucumberArgs], {
   cwd: ROOT,

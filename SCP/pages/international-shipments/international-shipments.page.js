@@ -4,7 +4,7 @@ const { BasePage } = require('../base.page');
 class InternationalShipmentsPage extends BasePage {
   constructor(page) {
     super(page);
-    this.navigation = page.getByRole('button', { name: /^International Shipments(?:\s+\d+)?$/i });
+    this.navigation = page.getByRole('button', { name: /^International Shipments(?:\s+\d+\+?)?$/i });
   }
 
   async open() {
@@ -31,7 +31,8 @@ class InternationalShipmentsPage extends BasePage {
 
   async flagProcurementRecord(submittalNumber, country, city) {
     await this.page.getByRole('button', { name: 'Procurement Log', exact: true }).click();
-    const row = this.row(submittalNumber);
+    const { ProcurementLogPage } = require('../procurement-log/procurement-log.page');
+    const row = await new ProcurementLogPage(this.page).searchExactSubmittal(submittalNumber);
     await expect(row).toBeVisible({ timeout: 30000 });
     // The menu handler is on the action icon, not the surrounding table cell.
     await row.locator('td').last().locator('svg, img').first().click();
@@ -66,7 +67,7 @@ class InternationalShipmentsPage extends BasePage {
 
   async openShipmentsTab() {
     await expect(this.page.getByText('Loading international shipments...')).toBeHidden({ timeout: 45000 });
-    await this.page.getByRole('button', { name: /^Shipments\d+$/ }).click();
+    await this.page.getByRole('button', { name: /^Shipments(?:\s*\d+\+?)?$/i }).click();
     await expect(this.page.getByText('Add Shipment Details', { exact: false })).toBeVisible({ timeout: 30000 });
   }
 
@@ -109,8 +110,8 @@ class InternationalShipmentsPage extends BasePage {
     await fields.nth(3).fill(`BL-${runId}`);
     await fields.nth(4).fill('Automation Shipping Line');
     await fields.nth(5).fill('Automation Vessel');
-    await fields.nth(6).fill(record.city);
-    await fields.nth(7).fill('Chennai');
+    await fields.nth(6).fill(record.loadingPort || record.city);
+    await fields.nth(7).fill(record.dischargePort || 'Chennai');
     await modal.getByRole('button', { name: 'Log shipment', exact: true }).click();
     await expect(modal).toBeHidden({ timeout: 30000 });
     return container;

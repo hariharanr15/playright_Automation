@@ -20,23 +20,30 @@ class InvitedUserActivationPage extends BasePage {
     const context = this.page.context();
     let activationUrl = null;
 
-    for (let attempt = 1; attempt <= 18 && !activationUrl; attempt += 1) {
+    // The mailbox is reopened until the invitation arrives (about 3 minutes); the newest message is shown first.
+    let latestSubject = null;
+    const deadline = Date.now() + Number(process.env.SCP_INVITE_DELIVERY_MS || 180000);
+    while (!activationUrl && Date.now() < deadline) {
       if (this.page.isClosed()) this.page = await context.newPage();
       await this.goto(mailboxUrl.toString());
       const mailboxReady = await this.page.locator('iframe#ifmail')
         .waitFor({ state: 'attached', timeout: 15000 }).then(() => true).catch(() => false);
-      if (!mailboxReady) continue;
-      const acceptInvite = this.page.frameLocator('iframe#ifmail')
-        .getByRole('link', { name: 'Accept Invite', exact: true });
-      if (await acceptInvite.isVisible({ timeout: 8000 }).catch(() => false)) {
+      if (!mailboxReady) throw new Error('Invitation mailbox frame was unavailable within 15 seconds.');
+      const mail = this.page.frameLocator('iframe#ifmail');
+      const acceptInvite = mail.getByRole('link', { name: 'Accept Invite', exact: true });
+      if (await acceptInvite.waitFor({ state: 'visible', timeout: 15000 }).then(() => true).catch(() => false)) {
         activationUrl = await acceptInvite.getAttribute('href');
         break;
       }
-      await this.page.waitForTimeout(2000);
+      latestSubject = await mail.locator('body').innerText({ timeout: 5000 }).then(text => text.match(/PROJECT ROLE ASSIGNED|You have been invited[^\n]*/i)?.[0] || null).catch(() => null);
+      if (/PROJECT ROLE ASSIGNED/i.test(latestSubject || '')) {
+        throw new Error(`${email} is already a registered user: the newest email is "Project Role Assigned", not an invitation. Use an address that has not been invited before.`);
+      }
+      await this.page.waitForTimeout(15000);
     }
 
     if (!activationUrl) {
-      throw new Error(`YOPmail did not receive an invitation for ${email} within the delivery window.`);
+      throw new Error(`YOPmail did not receive an invitation for ${email} within the delivery window${latestSubject ? ` (newest message: ${latestSubject})` : ''}.`);
     }
 
     if (this.page.isClosed()) this.page = await context.newPage();
@@ -50,6 +57,11 @@ class InvitedUserActivationPage extends BasePage {
   }
 
   async setInvitationPassword(password) {
+    // The invited user's password comes only from SCP_INVITED_USER_PASSWORD in the local .env; it is never hardcoded.
+    if (!password) {
+      const { ScpBlocked } = require('../../utils/scp-readonly');
+      throw new ScpBlocked('Set SCP_INVITED_USER_PASSWORD in SCP/.env for users invited by the tests');
+    }
     await this.fillVisible(
       this.page.locator('input[name="password"]'),
       password,
@@ -219,10 +231,11 @@ class InvitedUserActivationPage extends BasePage {
       locator: userMenu,
       label: 'Invited user menu'
     }], 'Invited user menu', 10000);
-    await this.clickFirstVisible([{
-      locator: this.page.getByRole('menuitem', { name: 'Logout', exact: true }),
-      label: 'Logout invited user'
-    }], 'Logout invited user', 10000);
+    await this.clickFirstVisible([
+      { locator: this.page.getByRole('menuitem', { name: 'Logout', exact: true }), label: 'Logout invited user' },
+      { locator: this.page.getByRole('button', { name: /^Log ?out$/i }), label: 'Logout invited user' },
+      { locator: this.page.getByRole('link', { name: /^Log ?out$/i }), label: 'Logout invited user' }
+    ], 'Logout invited user', 10000);
     await this.page.waitForURL(/stg-login\.voyagecontrol\.com|\/api\/sso\/platforms\/choose\//i, {
       timeout: 30000
     });

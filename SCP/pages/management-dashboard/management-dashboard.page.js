@@ -64,6 +64,15 @@ class ManagementDashboardPage extends BasePage {
   async openProjectManagementModule(name, route, heading = name) {
     await this.openProjectManagement();
     const menu = this.leftNavigation.getByRole('button', { name, exact: true });
+    // Access is verified as it is: a menu entry the account does not have is Blocked, with the page's own message as evidence.
+    if (!(await menu.first().isVisible({ timeout: 20000 }).catch(() => false))) {
+      const visibleMenus = await this.getVisibleLeftMenuItems();
+      await this.page.goto(new URL(`/${route}`, this.page.url()).href, { waitUntil: 'domcontentloaded' });
+      await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => null);
+      const shown = (await this.page.locator('main').innerText({ timeout: 10000 }).catch(() => '')).replace(/\s+/g, ' ').trim().slice(0, 200);
+      const { ScpBlocked } = require('../../utils/scp-readonly');
+      throw new ScpBlocked(`${name} is not in this account's Project Management menu (visible: ${visibleMenus.join(', ') || 'none'}); /${route} shows "${shown || 'no content'}"`);
+    }
     await this.clickLeftMenu(menu, name);
     await this.page.waitForURL(new RegExp(`/${this.escapeForRegex(route)}/?$`, 'i'), { timeout: 30000 });
     if (heading) {

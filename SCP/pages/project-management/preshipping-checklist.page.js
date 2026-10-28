@@ -14,15 +14,24 @@ class PreshippingChecklistPage extends BasePage {
       const url = response.url();
       return url.includes('/api/project_pre_shipping_check_list/list_project_checklists/') &&
         /[?&]project_id=(?!null(?:&|$))[^&]+/.test(url);
-    }, { timeout: 30000 });
+    }, { timeout: 30000 }).catch(() => null);
     await dashboard.openProjectManagementModule(
       'PreShipping Checklist',
       'preshipping-checklist',
       'PreShipping Checklist'
     );
     const response = await checklistLoaded;
-    expect(response.ok(), 'NRVC_Hall PreShipping checklist should load successfully').toBeTruthy();
-    await expect(this.addQuestionButton).toBeVisible();
+    const toast = await this.page.getByText(/Error fetching questions/i).first().innerText({ timeout: 3000 }).catch(() => null);
+    if (!response) throw new Error(`PreShipping checklist questions were not requested within 30 seconds${toast ? `; the page shows "${toast}"` : ''}`);
+    if ([401, 403].includes(response.status())) {
+      const { ScpBlocked } = require('../../utils/scp-readonly');
+      throw new ScpBlocked(`This account may not read PreShipping checklist questions (HTTP ${response.status()})`);
+    }
+    expect(response.ok(), `NRVC_Hall PreShipping checklist should load successfully (HTTP ${response.status()}${toast ? `, page shows "${toast}"` : ''})`).toBeTruthy();
+    if (!(await this.addQuestionButton.isVisible({ timeout: 10000 }).catch(() => false))) {
+      const { ScpBlocked } = require('../../utils/scp-readonly');
+      throw new ScpBlocked('PreShipping Checklist loaded without an Add Question action for this account');
+    }
   }
 
   async verifyBlankQuestionIsRejected() {

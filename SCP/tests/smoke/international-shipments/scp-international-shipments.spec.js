@@ -9,7 +9,7 @@ const runStep = (page, title, action, validate) => baseRunStep(page, title, acti
 test('International Shipments opens as a separate SCP module', async ({ scpProject }) => {
   const { page } = scpProject;
   await runStep(page, 'Open International Shipments', async () => {
-    await page.getByRole('button', { name: /^International Shipments(?:\s+\d+)?$/i }).click();
+    await page.getByRole('button', { name: /^International Shipments(?:\s+\d+\+?)?$/i }).click();
     await expect(page).toHaveURL(/\/international-shipments\/?$/);
     await expect(page.getByText('International Shipments', { exact: true }).last()).toBeVisible();
   });

@@ -78,9 +78,8 @@ npm run cucumber:project-management:demo
 uses headed Chrome, action highlighting, and a short visual delay. Both commands
 execute Project Management scenarios sequentially.
 
-`test:full:chrome` and `test:full:chrome:headed` run the Project Management and
-Playwright suites even when one module fails. Standard test commands also write
-the page-wise result to `reports/scp-page-report.html`, with links to failure evidence.
+Full-suite commands use the ordered regression runner and continue independent
+modules after failures. Direct file selection remains available through `test:scenarios`.
 
 ## Entire SCP Application Automation
 
@@ -91,15 +90,28 @@ npm.cmd run test:application
 ```
 
 Use `test:application:headed` to watch it in Chrome, or `test:application:demo`
-for headed execution with demo highlighting. The full application runner executes
-smoke navigation for every configured SCP tab, the Project Management Cucumber
-regression, and the Playwright module regression. It continues through later
-suites when one suite fails and archives suite-level evidence plus consolidated
-HTML/PDF reports under:
+for headed execution with demo highlighting. The runner discovers current project
+access, executes qualified scenarios in the mandatory module order, and reports
+unqualified mutations as Skipped with their missing inputs. Evidence and consolidated
+HTML/PDF reports are archived under:
 
 ```text
-reports/execution-YYYY-MM-DD_HHMMSS-entire-scp/
+reports/scp-full-regression-<timestamp>-<id>/
 ```
+
+## Full Regression with Dynamic Access
+
+`npm run test:scp:full` runs the 11-module hierarchy (Project Management through
+Document Management). It first discovers the account's project-specific navigation,
+page and action access, and runs each module only when access exists. See
+[docs/SCP_FULL_REGRESSION.md](docs/SCP_FULL_REGRESSION.md). Use
+`npm run test:scp:full:plan` to list the stages without opening a browser.
+
+Use `npm run test:scp:full:owned` with an approved `SCP_INVENTORY_DATA` allocation
+to include the owned Material → Supplier → Submittal → Delivery → Inventory → FDI
+chain and the dedicated International Shipment flow. Passed prerequisite records
+and qualified route data are handed to later modules automatically; shared
+configuration and invitation workflows retain their documented fixture requirements.
 
 ## Complete SCP Regression
 
@@ -109,28 +121,26 @@ Run the client-visible sequential regression with one command:
 npm.cmd run test:scp:regression:chrome
 ```
 
-The command runs headless in the installed Google Chrome channel, initializes SCP
-and `NRVC_Hall` once per browser session, runs the full Project Management Cucumber
-regression followed by every Playwright test under `tests/regression`, and generates
-consolidated HTML/PDF reports. It continues to the next suite when one fails so the
-run captures the complete regression result.
+The command uses installed Google Chrome and the configured project. It executes
+the same 11-module hierarchy as `test:scp:full`, with fresh access discovery,
+two attempts per managed step, dependency blocking and HTML/PDF reporting.
 
 Use `test:scp:regression:chrome:headed` to watch the run or
 `test:scp:regression:chrome:demo` for highlighted, slowed-down execution. Every run
 is archived under a unique directory:
 
 ```text
-reports/execution-YYYY-MM-DD_HHMMSS-full-scp-regression-chrome/
-  suites/
-  screenshots/
-  html/
-  pdf/
-  logs/
-  artifacts/
+reports/scp-full-regression-<timestamp>-<id>/
+  manifest.json
+  execution.json
+  access-matrix.json
+  <ordered-module>/<stage>/
+  SCP_Full_Regression_Report.html
+  SCP_Full_Regression_Report.pdf
 ```
 
-Smoke remains separate and reuses eligible existing records. Regression creates
-fresh prerequisite records where downstream behavior depends on them.
+Smoke remains separate. Inventory mutations require `test:scp:full:inventory`;
+valid checkpointed prerequisites are verified and reused before any creation.
 
 ## Procurement Log Module
 

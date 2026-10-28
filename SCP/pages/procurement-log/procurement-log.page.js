@@ -1,5 +1,6 @@
 const { expect } = require('@playwright/test');
 const { BasePage } = require('../base.page');
+const { isHeadless } = require('../../utils/execution-mode');
 
 class ProcurementLogPage extends BasePage {
   constructor(page) {
@@ -18,6 +19,33 @@ class ProcurementLogPage extends BasePage {
 
   submittalRow(submittalNumber) {
     return this.page.getByRole('row').filter({ hasText: submittalNumber }).first();
+  }
+
+  // Explicit Search for Inventory integration; existing callers retain their behavior.
+  async searchExactSubmittal(submittalNumber) {
+    const search = this.page.locator('input[placeholder^="Search submittals"]');
+    await expect(search).toHaveCount(1);
+    if (await search.inputValue()) {
+      const cleared = this.page.waitForResponse(response => response.request().method() === 'GET' &&
+        new URL(response.url()).pathname.includes('/submittal_master/list_submittals_by_project_id') &&
+        !new URL(response.url()).searchParams.get('search'));
+      await search.fill('');
+      expect((await cleared).ok(), 'Clearing Procurement Search must refresh its results').toBe(true);
+    }
+    const loaded = this.page.waitForResponse(response => response.request().method() === 'GET' &&
+      new URL(response.url()).pathname.startsWith('/api/') &&
+      [...new URL(response.url()).searchParams.values()].some(value => value === submittalNumber));
+    await search.fill(submittalNumber);
+    await search.press('Enter');
+    const response = await loaded;
+    expect(response.ok(), 'Filtered Procurement request must succeed').toBe(true);
+    await response.finished();
+    await expect(search).toHaveValue(submittalNumber);
+    const row = this.page.getByRole('row').filter({ has: this.page.getByRole('cell', { name: submittalNumber, exact: true }) });
+    await expect(row, 'Procurement Search must return one exact submittal').toHaveCount(1);
+    await expect(row).toBeVisible();
+    await expect(this.page.locator('main table tbody tr').filter({ has: this.page.locator('td:nth-child(2)') })).toHaveCount(1);
+    return row;
   }
 
   async assignResponsible(submittalNumber, identity, { eligible = [], excluded = [] } = {}) {
@@ -63,12 +91,14 @@ class ProcurementLogPage extends BasePage {
     ], 'Add Submittal', 10000);
 
     const textboxes = this.page.getByRole('textbox');
-    await this.fillVisible(textboxes.nth(3), data.specificationNumber, 'Specification number');
-    await this.fillVisible(textboxes.nth(4), data.description, 'Specification description');
-    await this.fillVisible(textboxes.nth(5), data.scheduleNumber, 'Schedule number');
-
     const submittalField = this.page.locator('div:nth-child(7) > div > .flex-grow > .mt-4:visible').last();
-    await this.fillVisible(submittalField, data.submittalNumber, 'Submittal number');
+    const fillIdentity = async () => {
+      await this.fillVisible(textboxes.nth(3), data.specificationNumber, 'Specification number');
+      await this.fillVisible(textboxes.nth(4), data.description, 'Specification description');
+      await this.fillVisible(textboxes.nth(5), data.scheduleNumber, 'Schedule number');
+      await this.fillVisible(submittalField, data.submittalNumber, 'Submittal number');
+    };
+    await fillIdentity();
 
     await this.selectDropdownOption(
       this.page.getByRole('button', { name: 'Choose Suppliers', exact: true }),
@@ -87,17 +117,49 @@ class ProcurementLogPage extends BasePage {
       await this.fillVisible(numericFields.first(), data.leadTime, 'Lead time');
     }
 
-    await this.clickFirstVisible([
-      { locator: this.page.getByRole('button', { name: 'Add', exact: true }), label: 'Add submittal' }
-    ], 'Add submittal', 10000);
+    // A 409 means the number already exists and nothing was saved: the same form is resubmitted with the
+    // run's next identity. The data object is updated in place so later steps use the saved number.
+    const { createProcurementLogData } = require('../../utils/dynamic-data');
+    for (let attempt = 1; ; attempt += 1) {
+      const saved = this.page.waitForResponse(response => response.request().method() === 'POST' &&
+        new URL(response.url()).pathname === '/api/submittal_master/', { timeout: 30000 });
+      await this.clickFirstVisible([
+        { locator: this.page.getByRole('button', { name: 'Add', exact: true }), label: 'Add submittal' }
+      ], 'Add submittal', 10000);
+      const response = await saved;
+      if (response.ok()) break;
+      const body = await response.json().catch(() => ({}));
+      const message = body.message || JSON.stringify(body.error || {});
+      if (response.status() !== 409 || !data.procurementRunId || attempt >= 25) {
+        throw new Error(`Submittal ${data.submittalNumber} was not saved (HTTP ${response.status()}): ${message}`);
+      }
+      const skipped = data.submittalNumber;
+      Object.assign(data, createProcurementLogData(data.procurementRunId, data.procurementVariant + 1));
+      const note = `${skipped} already exists; using ${data.submittalNumber}`;
+      // Cucumber runs outside the Playwright runner, where test.info() is unavailable.
+      try { require('@playwright/test').test.info().annotations.push({ type: 'procurement-number', description: note }); }
+      catch { process.stderr.write(`[procurement] ${note}\n`); }
+      await fillIdentity();
+    }
+    await expect(this.page.getByRole('heading', { name: 'Add Submittal', exact: true }), 'Add Submittal closes after a saved submittal')
+      .toBeHidden({ timeout: 30000 });
     await this.expectSubmittal(data.submittalNumber);
+  }
+
+  // A component row in the open submittal's Details panel, identified by its exact material.
+  componentRow(materialName) {
+    return this.page.getByRole('row')
+      .filter({ has: this.page.getByRole('checkbox', { name: 'Select this component' }) })
+      .filter({ has: this.page.getByRole('cell', { name: materialName, exact: true }) });
   }
 
   async addComponent(data) {
     const row = this.submittalRow(data.submittalNumber);
     await expect(row).toBeVisible({ timeout: 30000 });
     await this.clickFirstVisible([
-      { locator: row.getByRole('cell', { name: data.supplier }).first(), label: data.supplier },
+      ...(data.inventorySetup
+        ? [{ locator: row.getByRole('cell', { name: data.specificationNumber, exact: true }), label: data.specificationNumber }]
+        : [{ locator: row.getByRole('cell', { name: data.supplier }).first(), label: data.supplier }]),
       { locator: row, label: data.submittalNumber }
     ], `Open ${data.submittalNumber}`, 10000);
 
@@ -118,9 +180,10 @@ class ProcurementLogPage extends BasePage {
     ], 'Add component', 10000);
 
     const escapedItem = String(data.componentItem).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Component rows have no Delivery button; a delivery is created from the component opened by clicking its row.
     const componentRow = this.page.getByRole('row')
+      .filter({ has: this.page.getByRole('checkbox', { name: 'Select this component' }) })
       .filter({ hasText: new RegExp(escapedItem, 'i') })
-      .filter({ has: this.page.getByRole('button', { name: 'Delivery', exact: true }) })
       .last();
     await expect(componentRow, `Component ${data.componentItem} should be added`).toBeVisible({ timeout: 30000 });
     await this.closeTopOverlay();
@@ -136,9 +199,10 @@ class ProcurementLogPage extends BasePage {
     await this.page.getByRole('button', { name: 'Add Component', exact: true }).last()
       .waitFor({ state: 'visible', timeout: 30000 });
     const escapedItem = String(data.componentItem).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Component rows have no Delivery button; a delivery is created from the component opened by clicking its row.
     const componentRow = this.page.getByRole('row')
+      .filter({ has: this.page.getByRole('checkbox', { name: 'Select this component' }) })
       .filter({ hasText: new RegExp(escapedItem, 'i') })
-      .filter({ has: this.page.getByRole('button', { name: 'Delivery', exact: true }) })
       .last();
     await componentRow.waitFor({ state: 'visible', timeout: 30000 });
     const componentCell = componentRow.getByRole('cell').filter({ hasText: new RegExp(escapedItem, 'i') }).first();
@@ -169,11 +233,14 @@ class ProcurementLogPage extends BasePage {
       'Delivery location',
       deliveryModal
     );
-    const deliveryItem = await this.selectFirstDropdownOption(
-      deliveryModal.getByRole('button', { name: 'Choose Item Name', exact: true }),
-      'Delivery item'
-    );
+    const itemTrigger = deliveryModal.getByRole('button', { name: 'Choose Item Name', exact: true });
+    const deliveryItem = data.exactDeliveryItem
+      ? (await this.selectDropdownOption(itemTrigger, data.exactDeliveryItem, 'Delivery item'), data.exactDeliveryItem)
+      : await this.selectFirstDropdownOption(itemTrigger, 'Delivery item');
     await this.fillVisible(deliveryModal.getByRole('spinbutton').first(), data.deliveryQuantity, 'Delivery quantity');
+    const savedRequest = data.dynamicChecklist ? this.page.waitForResponse(response =>
+      response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/schedule_delivery/add_schedule_delivery/') : null;
+    savedRequest?.catch(() => {});
     await this.clickFirstVisible([
       { locator: deliveryModal.getByRole('button', { name: 'Add', exact: true }), label: 'Add delivery' }
     ], 'Add delivery', 10000);
@@ -187,7 +254,15 @@ class ProcurementLogPage extends BasePage {
       savedDelivery,
       `Delivery for ${data.componentItem} should be listed before the pre-shipping checklist`
     ).toBeVisible({ timeout: 30000 });
-    return { item: deliveryItem };
+    let record;
+    if (savedRequest) {
+      const response = await savedRequest;
+      expect(response.ok(), 'Delivery creation must succeed').toBe(true);
+      record = (await response.json()).data;
+      expect(record.schedule_delivery_id).toBeTruthy();
+      expect(Number(record.quantity)).toBe(Number(data.deliveryQuantity));
+    }
+    return { item: deliveryItem, record };
   }
 
   async orderComponent(data) {
@@ -248,7 +323,14 @@ class ProcurementLogPage extends BasePage {
     const questionCount = await questionInputs.count();
     expect(questionCount, 'Pre-Shipping checklist should contain at least one question input').toBeGreaterThan(0);
     for (let index = 0; index < questionCount; index += 1) {
-      const value = data.preShipping.textValues[index] ?? data.preShipping.booleanValue;
+      const input = questionInputs.nth(index);
+      const type = await input.getAttribute('type');
+      if (data.dynamicChecklist && (type === 'date' || type === 'datetime-local' || await input.getAttribute('readonly') !== null)) {
+        if (type === 'date') await input.fill(new Date().toISOString().slice(0, 10));
+        else await this.chooseCalendarDate(input, 0, `Pre-shipping date ${index + 1}`);
+        continue;
+      }
+      const value = data.dynamicChecklist ? String(data.quantity) : data.preShipping.textValues[index] ?? data.preShipping.booleanValue;
       await this.fillVisible(questionInputs.nth(index), value, `Pre-shipping value ${index + 1}`);
     }
 
@@ -284,7 +366,9 @@ class ProcurementLogPage extends BasePage {
     const modal = heading.locator('xpath=ancestor::div[.//button[normalize-space()="Add"]][1]');
     const shippingMode = modal.getByRole('button', { name: 'Choose Shipping Mode', exact: true });
     await shippingMode.waitFor({ state: 'visible', timeout: 30000 });
-    await this.selectDropdownOption(
+    if (data.dynamicChecklist && !data.shippingMode) {
+      data.shippingMode = await this.selectFirstDropdownOption(shippingMode, 'Shipping mode');
+    } else await this.selectDropdownOption(
       shippingMode,
       data.shippingMode,
       'Shipping mode'
@@ -300,6 +384,19 @@ class ProcurementLogPage extends BasePage {
 
   async addDeliveryConditions(data) {
     await this.clickImageAction('Update Delivery Condition', 1);
+    if (data.dynamicChecklist) {
+      const heading = this.page.getByRole('heading', { name: 'Add Delivery Conditions', exact: true });
+      const modal = heading.locator('xpath=ancestor::div[.//button[normalize-space()="Add"]][1]');
+      for (const [label, value] of [['Good', data.deliveryQuantity], ['Damage', '0'], ['Shortage', '0']]) {
+        const input = modal.getByText(label, { exact: true }).locator('..').getByRole('spinbutton');
+        await expect(input).toHaveCount(1);
+        if (await input.isEditable()) await input.fill(String(value));
+        else await expect(input, `${label} must reconcile with the full delivery quantity`).toHaveValue(String(value));
+      }
+      await modal.getByRole('button', { name: 'Add', exact: true }).click();
+      await expect(heading, 'Delivery conditions must be saved before generating the GRN').toBeHidden();
+      return;
+    }
     for (const condition of data.deliveryConditions) {
       await this.fillVisible(this.page.getByRole('spinbutton').first(), condition, 'Delivery condition');
       await this.clickFirstVisible([
@@ -310,6 +407,168 @@ class ProcurementLogPage extends BasePage {
 
   async generateGrn() {
     await this.clickImageAction('Generate GRN', 1);
+  }
+
+  async openOwnedDelivery(data) {
+    await this.page.goto(new URL('/procurement-log', this.page.url()).href, { waitUntil: 'domcontentloaded' });
+    await expect(this.addSubmittalButton).toBeVisible();
+    await this.restoreOwnedContext(data);
+    const row = await this.searchExactSubmittal(data.submittalNumber);
+    await row.getByRole('cell', { name: data.specificationNumber, exact: true }).click();
+    // Clicking anywhere on the component row opens it with its deliveries and the + Log Delivery action.
+    const component = this.componentRow(data.material);
+    await expect(component).toHaveCount(1);
+    await component.getByRole('cell', { name: data.material, exact: true }).click();
+    await expect(this.logDeliveryButton.last(), 'Opened component offers + Log Delivery').toBeVisible({ timeout: 30000 });
+    this.deliveryActionScope = this.logDeliveryButton.last().locator('xpath=ancestor::div[.//table][1]').getByRole('row')
+      .filter({ has: this.page.getByRole('cell', { name: data.exactDeliveryItem, exact: true }) })
+      .filter({ hasText: data.deliveryLocation });
+    await expect(this.deliveryActionScope).toHaveCount(1);
+  }
+
+  async restoreOwnedContext(data) {
+    if (data.ownerProject) {
+      const { ProjectSelectorPage } = require('../project-selector.page');
+      await new ProjectSelectorPage(this.page, { projectName: data.ownerProject }).expectActiveProject(data.ownerProject);
+    }
+    if (data.ownerSite) {
+      const { SiteSelectorPage } = require('../site-selector.page');
+      const selector = new SiteSelectorPage(this.page);
+      await selector.ensureSite(data.ownerSite);
+      expect(await selector.activeSiteName(), 'Delivery must retain its owned site before any update').toBe(data.ownerSite);
+    }
+  }
+
+  async completeOwnedDelivery(data, info, sources) {
+    const { currentJournal, managedStep } = require('../../utils/scp-step');
+    const { complete, missing } = require('../../utils/inventory-recovery');
+    const journal = currentJournal();
+    const keys = ['order', 'log', 'checklist', 'approval', 'date', 'shipping', 'conditions', 'grn'];
+    journal?.define(keys.map((key, index) => ({ id: `delivery-${key}`, name: `Delivery ${key}`,
+      dependsOn: index ? [`delivery-${keys[index - 1]}`] : ['submittal'] })));
+    let index = 0;
+    const step = async (name, action, verify) => {
+      const key = keys[index++];
+      await managedStep(require('@playwright/test').test, this.page, name, async () => {
+        const responses = [];
+        const collect = response => {
+          if (new URL(response.url()).origin === new URL(this.page.url()).origin &&
+              !['GET', 'HEAD', 'OPTIONS'].includes(response.request().method())) responses.push(response);
+        };
+        this.page.on('response', collect);
+        try {
+          await action();
+          for (const response of responses) {
+            expect(response.ok(), `${name}: ${new URL(response.url()).pathname} must succeed`).toBe(true);
+            if ((response.headers()['content-type'] || '').includes('application/json')) {
+              const body = await response.json();
+              const status = body.status_code ?? body.statuscode;
+              if (status !== undefined) {
+                expect(Number(status), `${name}: successful application response`).toBeGreaterThanOrEqual(200);
+                expect(Number(status)).toBeLessThan(300);
+              }
+            }
+          }
+        } finally { this.page.off('response', collect); }
+        await info.attach(name, { body: await this.page.screenshot({ fullPage: isHeadless() }), contentType: 'image/png' });
+      }, { id: `delivery-${key}`, dependsOn: journal ? key === 'order' ? ['submittal'] : [`delivery-${keys[index - 2]}`] : [],
+        mutation: true, verify: sources ? verify : undefined,
+        expected: `${name} is persisted for the exact generated component and delivery` });
+    };
+    const liveDelivery = async () => sources.delivery();
+    await step('Delivery: order the exact created component', async () => {
+      await this.page.goto(new URL('/procurement-log', this.page.url()).href, { waitUntil: 'domcontentloaded' });
+      await this.searchExactSubmittal(data.submittalNumber);
+      await this.orderComponent(data);
+    }, async () => {
+      const component = await sources.component();
+      if (!component.po_number) return missing();
+      expect(component.po_number).toBe(data.purchaseOrderNumber); return complete(component);
+    });
+    await step('Delivery: log the same material, supplier, location and quantity', async () => {
+      await this.page.goto(new URL('/procurement-log', this.page.url()).href, { waitUntil: 'domcontentloaded' });
+      await this.restoreOwnedContext(data);
+      await this.searchExactSubmittal(data.submittalNumber);
+      const saved = await this.logDelivery(data);
+      expect(saved.item).toBe(data.exactDeliveryItem);
+      data.deliveryRecord = saved.record;
+      const deliveryPanel = this.logDeliveryButton.last().locator('xpath=ancestor::div[.//table][1]');
+      this.deliveryActionScope = deliveryPanel.getByRole('row')
+        .filter({ has: this.page.getByRole('cell', { name: saved.item, exact: true }) })
+        .filter({ hasText: data.deliveryLocation });
+      await expect(this.deliveryActionScope, 'Exactly one delivery for the generated item and location').toHaveCount(1);
+    }, async () => { const delivery = await liveDelivery(); return delivery ? complete(delivery) : missing(); });
+    try {
+      await step('Delivery: complete mandatory pre-shipping checklist', async () => {
+        await this.openOwnedDelivery(data); await this.completePreShippingChecklist(data);
+      }, async () => {
+        const delivery = await liveDelivery();
+        return delivery.pre_shipping_checklist_status === 'approved' || delivery.supplier_comment === data.preShipping.supplierNote ? complete(delivery) : missing();
+      });
+      await step('Delivery: approve the pre-shipping checklist', async () => {
+        await this.openOwnedDelivery(data);
+        await this.approvePreShippingChecklist(data);
+        await expect(this.page.getByRole('button', { name: 'Approve', exact: true })).toBeHidden();
+      }, async () => { const delivery = await liveDelivery(); return delivery.pre_shipping_checklist_status === 'approved' ? complete(delivery) : missing(); });
+      await step('Delivery: save actual delivery date', async () => {
+        await this.openOwnedDelivery(data);
+        const { currentCalendarDate } = require('../../utils/calendar-date');
+        const today = await currentCalendarDate(this.page);
+        data.actualDeliveryDate ||= today;
+        const offset = Math.round((Date.parse(data.actualDeliveryDate) - Date.parse(today)) / 86400000);
+        await this.updateDeliveryDate(offset);
+        await expect(this.page.getByRole('button', { name: 'Update', exact: true }), 'Actual delivery date must finish saving').toBeHidden();
+      }, async () => {
+        const delivery = await liveDelivery(); if (!delivery.actual_date_of_delivery) return missing();
+        const iso = value => /^\d{2}-\d{2}-\d{4}$/.test(value) ? value.split('-').reverse().join('-') : value.slice(0, 10);
+        const expected = data.actualDeliveryDate || iso(data.deliveryRecord.expected_date_of_delivery);
+        expect(iso(delivery.actual_date_of_delivery)).toBe(expected); data.actualDeliveryDate = expected; return complete(delivery);
+      });
+      await step('Delivery: save shipping information using an available mode', async () => {
+        await this.openOwnedDelivery(data); await this.updateShippingInformation(data);
+      }, async () => {
+        const shipping = await sources.shipping(); if (!shipping?.shipping_id) return missing();
+        expect(shipping.shipping_ref).toBe(data.shippingReference);
+        const modes = (await sources.ctx.read('utils/get_utils_by_type/', { type: 'shipping_mode' })).data;
+        const mode = modes.filter(record => record.util_id === shipping.shipping_mode);
+        // The API uses enum names (vc_booking_system); the UI renders their spaced labels.
+        const modeLabel = value => value.trim().toLowerCase().replace(/_/g, ' ').replace(/\s+/g, ' ');
+        expect(mode).toHaveLength(1); expect(modeLabel(mode[0].name)).toBe(modeLabel(data.shippingMode));
+        return complete(shipping);
+      });
+      await step('Delivery: save delivery conditions', async () => {
+        await this.openOwnedDelivery(data); await this.addDeliveryConditions(data);
+      }, async () => {
+        const conditions = await sources.conditions(); if (!conditions?.condition_at_delivery_id) return missing();
+        expect(Number(conditions.good)).toBe(Number(data.deliveryQuantity));
+        expect(Number(conditions.damage)).toBe(0); expect(Number(conditions.shortage)).toBe(0);
+        return complete(conditions);
+      });
+      await step('Delivery: generate and validate the GRN for the exact saved delivery', async () => {
+        await this.openOwnedDelivery(data);
+        const pending = this.page.waitForResponse(response => response.request().method() === 'POST' &&
+          new URL(response.url()).pathname === '/api/shipping_details/generate_grn_pdf/');
+        pending.catch(() => {});
+        await this.generateGrn();
+        const response = await pending;
+        expect(response.status()).toBe(201);
+        const grn = (await response.json()).data;
+        expect(grn.file_name).toBe(`GRN_${data.deliveryRecord.schedule_delivery_id}.pdf`);
+        expect(grn.folder_name.endsWith(`/${data.deliveryRecord.submittal_schedule}/${data.deliveryRecord.schedule_delivery_id}/`)).toBe(true);
+        expect(Number(grn.file_size), 'Generated GRN must not be empty').toBeGreaterThan(0);
+        data.grn = grn;
+        await info.attach('generated-grn-source', { body: Buffer.from(JSON.stringify(grn)), contentType: 'application/json' });
+      }, async () => {
+        if (!data.grn) {
+          if (journal?.runningStep?.mutationObserved || journal?.state.steps['delivery-grn']?.mutationObserved) {
+            return { status: 'unknown', reason: 'GRN may already have been created; its saved metadata must be recovered before generating another file' };
+          }
+          return missing();
+        }
+        expect(data.grn.file_name).toBe(`GRN_${data.deliveryRecord.schedule_delivery_id}.pdf`);
+        expect(Number(data.grn.file_size)).toBeGreaterThan(0); return complete(data.grn);
+      });
+    } finally { this.deliveryActionScope = null; }
   }
 
   async answerAllYesNoQuestions() {
@@ -340,6 +599,14 @@ class ProcurementLogPage extends BasePage {
   }
 
   async clickImageAction(name, preferredIndex = 0) {
+    if (this.deliveryActionScope) {
+      const image = this.deliveryActionScope.getByRole('img', { name, exact: true });
+      await expect(image, `Exactly one ${name} action on the owned delivery`).toHaveCount(1);
+      await image.click();
+      await this.waitForReady();
+      await this.pauseAfterOperation();
+      return;
+    }
     const images = this.page.getByRole('img', { name });
     const candidates = preferredIndex > 0
       ? [
@@ -394,6 +661,14 @@ class ProcurementLogPage extends BasePage {
     if (!(await calendarDay.first().isVisible({ timeout: 1000 }).catch(() => false))) {
       const calendarIcon = field.locator('xpath=..').locator('svg').first();
       if (await calendarIcon.isVisible().catch(() => false)) await calendarIcon.click();
+    }
+    // A date in another month (e.g. today + 5 at month end) needs the calendar's month/year selects first.
+    if (!(await calendarDay.first().isVisible({ timeout: 1000 }).catch(() => false))) {
+      const calendar = this.page.locator('[data-date]').first().locator('xpath=ancestor::div[.//select][1]');
+      if (await calendar.isVisible().catch(() => false)) {
+        await calendar.locator('select').filter({ has: this.page.locator(`option[value="${date.getFullYear()}"]`) }).selectOption(String(date.getFullYear()));
+        await calendar.locator('select').filter({ has: this.page.getByRole('option', { name: month, exact: true }) }).selectOption({ label: month });
+      }
     }
     if (await calendarDay.first().isVisible({ timeout: 2000 }).catch(() => false)) {
       await this.clickFirstVisible([

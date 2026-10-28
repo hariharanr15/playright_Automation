@@ -23,21 +23,27 @@ function nextUniqueSequence(counter = 'current') {
   return state[counter];
 }
 
-function createRunData(domain = process.env.SCP_TEST_EMAIL_DOMAIN || 'yopmail.com') {
-  const runId = String(nextUniqueSequence('runs'));
+function createRunData(domain = process.env.SCP_TEST_EMAIL_DOMAIN || 'yopmail.com', saved, changed = () => {}) {
+  const runId = saved?.runId || String(nextUniqueSequence('runs'));
   const invitationEmail = `fdiuser${runId}@${domain}`;
-  const automationData = {};
-  const dataUsage = [];
-  const createdRecords = [];
+  const automationData = saved?.automationData || {};
+  const dataUsage = saved?.dataUsage || [];
+  const createdRecords = saved?.createdRecords || [];
+  const sequences = saved?.sequences || []; let sequenceIndex = 0;
   const runData = {
     runId,
-    nextSequence: () => nextUniqueSequence('current'),
+    sequences,
+    nextSequence: () => {
+      if (sequences[sequenceIndex] === undefined) sequences[sequenceIndex] = nextUniqueSequence('current');
+      const value = sequences[sequenceIndex++]; changed(); return value;
+    },
     automationData,
     dataUsage,
     captureData(key, value, source) {
       automationData[key] = { value, source };
       createdRecords.push({ key, value, source });
       dataUsage.push({ key, action: 'captured', module: source });
+      changed();
       return value;
     },
     useData(key, consumer) {
@@ -60,7 +66,7 @@ function createRunData(domain = process.env.SCP_TEST_EMAIL_DOMAIN || 'yopmail.co
     invitationEmail,
     invitedUser: {
       email: invitationEmail,
-      password: process.env.SCP_INVITED_USER_PASSWORD || 'Master@15',
+      password: process.env.SCP_INVITED_USER_PASSWORD || null,
       firstName: 'FDI',
       lastName: `User${runId}`,
       phoneNumber: '9988778899',
@@ -79,16 +85,46 @@ function createRunData(domain = process.env.SCP_TEST_EMAIL_DOMAIN || 'yopmail.co
   return runData;
 }
 
-function createProcurementLogData(runId) {
-  const sequence = String(runId).padStart(3, '0');
+// variant > 1 gives the next identity for the same run when the server reports the number already exists.
+function createProcurementLogData(runId, variant = 1) {
+  const base = String(runId).padStart(3, '0');
+  const sequence = variant > 1 ? `${base}-${String(variant).padStart(2, '0')}` : base;
   const year = new Date().getFullYear();
 
   return {
     specificationNumber: `SPEC-${year}-${sequence}`,
     description: `Structural Steel Material Specification ${sequence}`,
-    scheduleNumber: `${year}${sequence}`,
-    submittalNumber: `SUB-${year}-${sequence}`
+    scheduleNumber: `${year}${sequence.replace('-', '')}`,
+    submittalNumber: `SUB-${year}-${sequence}`,
+    procurementRunId: String(runId),
+    procurementVariant: variant
   };
 }
 
-module.exports = { createProcurementLogData, createRunData, nextUniqueSequence };
+function createInventoryData() {
+  const { randomUUID, randomInt } = require('crypto');
+  const id = randomUUID().replace(/-/g, '').slice(0, 16);
+  const quantity = randomInt(20, 100);
+  return {
+    material: `Inventory QA ${id}`,
+    supplier: `Inventory Supplier ${id}`,
+    supplierDetails: {
+      name: `Inventory Supplier ${id}`, contact: `QA ${id.slice(0, 8)}`,
+      email: `inventory-${id}@example.com`, phone: `9${randomInt(100000000, 1000000000)}`
+    },
+    specificationNumber: `INV-SPEC-${id}`,
+    description: `Inventory manual entry ${id}`,
+    scheduleNumber: BigInt(`0x${id}`).toString(),
+    submittalNumber: `INV-SUB-${id}`,
+    purchaseOrderNumber: `INV-PO-${id}`,
+    comments: `Inventory QA activity ${id}`,
+    quantity,
+    movementQuantity: Math.floor(quantity / 4),
+    componentQuantity: String(quantity * 4),
+    componentValue: String(quantity * randomInt(2, 20)),
+    lotQuantity: String(quantity * 4),
+    leadTime: String(randomInt(1, 5))
+  };
+}
+
+module.exports = { createProcurementLogData, createRunData, nextUniqueSequence, createInventoryData };

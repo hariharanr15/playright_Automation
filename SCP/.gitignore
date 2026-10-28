@@ -14,6 +14,10 @@ reports/pdf/*.pdf
 reports/screenshots/*.png
 reports/execution-*/
 reports/validation-*/
+# Run output and environment allocations stay local; files committed earlier remain tracked.
+reports/*
+# Recovery checkpoints of executed scenarios
+.state/
 auth/*.json
 
 *.log

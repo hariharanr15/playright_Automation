@@ -30,9 +30,21 @@ function buildConfiguredTabs() {
   });
 }
 
+function credentialsFor(env = process.env) {
+  const username = env.SCP_USERNAME || env.SCP_EMAIL || '';
+  const password = env.SCP_PASSWORD || '';
+  const defaultRole = (env.SCP_DEFAULT_ROLE || 'admin').toLowerCase();
+  const accounts = {
+    admin: { username: env.SCP_ADMIN_USERNAME || username, password: env.SCP_ADMIN_PASSWORD || password },
+    subcontractor: { username: env.SCP_SUBCONTRACTOR_USERNAME || '', password: env.SCP_SUBCONTRACTOR_PASSWORD || '' },
+    supplier: { username: env.SCP_SUPPLIER_USERNAME || '', password: env.SCP_SUPPLIER_PASSWORD || '' }
+  };
+  const selected = accounts[defaultRole]?.username ? accounts[defaultRole] : { username, password };
+  return { username: selected.username, password: selected.password, defaultRole, accounts };
+}
+
 function getScpConfig() {
-  const username = process.env.SCP_USERNAME || process.env.SCP_EMAIL || '';
-  const password = process.env.SCP_PASSWORD || '';
+  const { username, password, defaultRole, accounts } = credentialsFor();
 
   return {
     baseUrl: process.env.SCP_BASE_URL || 'https://stg-supplychain-app.voyagecontrol.com',
@@ -40,21 +52,8 @@ function getScpConfig() {
     managementDashboardUrl: process.env.SCP_MANAGEMENT_DASHBOARD_URL || 'https://stg-supplychain-app.voyagecontrol.com/management-dashboard',
     username,
     password,
-    defaultRole: (process.env.SCP_DEFAULT_ROLE || 'admin').toLowerCase(),
-    accounts: {
-      admin: {
-        username: process.env.SCP_ADMIN_USERNAME || username,
-        password: process.env.SCP_ADMIN_PASSWORD || password
-      },
-      subcontractor: {
-        username: process.env.SCP_SUBCONTRACTOR_USERNAME || '',
-        password: process.env.SCP_SUBCONTRACTOR_PASSWORD || ''
-      },
-      supplier: {
-        username: process.env.SCP_SUPPLIER_USERNAME || '',
-        password: process.env.SCP_SUPPLIER_PASSWORD || ''
-      }
-    },
+    defaultRole,
+    accounts,
     platformName: process.env.SCP_PLATFORM_NAME || 'Supply Chain Planner',
     platformCardName: process.env.SCP_PLATFORM_CARD_NAME || 'Supply Chain Planner Supply',
     projectName: process.env.SCP_PROJECT_NAME || 'NRVC_Hall',
@@ -69,4 +68,4 @@ function getScpConfig() {
   };
 }
 
-module.exports = { getScpConfig };
+module.exports = { getScpConfig, credentialsFor };

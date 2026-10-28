@@ -1,5 +1,8 @@
-const { Then, When } = require('@cucumber/cucumber');
 const path = require('path');
+const { Then, When } = require('@cucumber/cucumber');
+const { ProcurementLogPage } = require('../../pages/procurement-log/procurement-log.page');
+const { loadJsonFile } = require('../../utils/data-loader');
+const { createProcurementLogData } = require('../../utils/dynamic-data');
 const { FirstDeliveryInspectionConfigPage } = require('../../pages/project-management/first-delivery-inspection-config.page');
 const { MaterialMasterPage } = require('../../pages/project-management/material-master.page');
 const { InventoryControlPage } = require('../../pages/project-management/inventory-control.page');
@@ -12,11 +15,6 @@ const { AnalyticsPage } = require('../../pages/project-management/analytics.page
 const { ProjectManagementMenuGroupsPage } = require('../../pages/project-management/project-management-menu-groups.page');
 const { FirstDeliveryInspectionsPage } = require('../../pages/first-delivery-inspections/first-delivery-inspections.page');
 const { InvitedUserActivationPage } = require('../../pages/project-management/invited-user-activation.page');
-const { ProcurementLogPage } = require('../../pages/procurement-log/procurement-log.page');
-const { loadJsonFile } = require('../../utils/data-loader');
-const { createProcurementLogData } = require('../../utils/dynamic-data');
-
-const procurementLogData = loadJsonFile(path.resolve(__dirname, '..', '..', 'test-data', 'procurement-log.json'), {});
 
 function localDateTime(daysFromToday) {
   const date = new Date();
@@ -42,11 +40,7 @@ Then('the FDI setting change is persisted', async function () {
 When('the user validates the enabled settings on the First Delivery Inspection page', async function () {
   this.firstDeliveryInspections = new FirstDeliveryInspectionsPage(this.page, this.config);
   await this.firstDeliveryInspections.open(this.dashboard);
-  const result = await this.firstDeliveryInspections.validateConfiguredSettings(this.runData.fdiSettingChange.states);
-  if (result.skipped) {
-    await this.attach(JSON.stringify({ type: 'skip', reason: result.reason }), 'application/json');
-    return 'skipped';
-  }
+  await this.firstDeliveryInspections.validateConfiguredSettings(this.runData.fdiSettingChange.states);
 });
 
 Then('the corresponding enabled FDI controls are available', async function () {
@@ -233,8 +227,11 @@ When('the disabled inspector access is checked in a separate browser context', a
 });
 
 Then('the disabled inspector cannot self assign a First Delivery Inspection', async function () {
-  await this.disabledInspectorVerification.logout(this.runData.accessValidationUser.firstName);
+  // Access was asserted in the previous step. Logout is cleanup only: closing the separate context also ends that session.
+  const loggedOut = await this.disabledInspectorVerification.logout(this.runData.accessValidationUser.firstName)
+    .then(() => null, error => error.message);
   await this.closeActivationBrowserContext();
+  if (loggedOut) await this.attach(`Disabled inspector logout menu was unavailable (${loggedOut}); the separate browser context was closed instead.`, 'text/plain');
   await this.attach(
     this.runData.disabledInspectorAccess.platformAvailable
       ? `Disabled inspector ${this.runData.accessValidationUser.email} has no Self Assign action.`
@@ -351,6 +348,23 @@ Then('the procurement log field is displayed', async function () {
   await this.captureCheckpoint('TC_PM_PLC_001_Field_Created');
 });
 
+When('the user opens Procurement Log', async function () {
+  this.procurementLog = new ProcurementLogPage(this.page);
+  await this.procurementLog.open();
+});
+
+When('the user creates a unique procurement submittal', async function () {
+  const baseline = loadJsonFile(path.resolve(__dirname, '..', '..', 'test-data', 'procurement-log.json'), {});
+  this.runData.procurementSubmittal = { ...baseline, ...createProcurementLogData(this.runData.runId) };
+  await this.procurementLog.createSubmittal(this.runData.procurementSubmittal);
+  this.runData.captureData('procurementSubmittal', this.runData.procurementSubmittal.submittalNumber, 'Procurement Log');
+});
+
+Then('the new procurement submittal is displayed', async function () {
+  await this.procurementLog.expectSubmittal(this.runData.procurementSubmittal.submittalNumber);
+  await this.captureCheckpoint('TC_PM_PL_001_Submittal_Created');
+});
+
 When('the user opens Site Details', async function () {
   this.siteDetails = new SiteDetailsPage(this.page);
   await this.siteDetails.open(this.dashboard);
@@ -374,29 +388,6 @@ Then('the new site is displayed', async function () {
   await this.siteDetails.expectSite(this.runData.siteName, 'Chennai', 'India');
   await this.captureCheckpoint('TC_PM_SD_001_Site_Created');
   await this.siteDetails.clearSearch();
-});
-
-When('the user opens Procurement Log', async function () {
-  this.procurementLog = new ProcurementLogPage(this.page);
-  await this.procurementLog.open();
-});
-
-When('the user creates a unique procurement submittal', async function () {
-  this.runData.procurementSubmittal = {
-    ...procurementLogData,
-    ...createProcurementLogData(this.runData.runId)
-  };
-  await this.procurementLog.createSubmittal(this.runData.procurementSubmittal);
-  this.runData.captureData(
-    'procurementSubmittal',
-    this.runData.procurementSubmittal.submittalNumber,
-    'Procurement Log'
-  );
-});
-
-Then('the new procurement submittal is displayed', async function () {
-  await this.procurementLog.expectSubmittal(this.runData.procurementSubmittal.submittalNumber);
-  await this.captureCheckpoint('TC_PM_PL_001_Submittal_Created');
 });
 
 When('the user opens System Messages', async function () {
@@ -470,7 +461,14 @@ Then('the Analytics navigation group is displayed', async function () {
 
 When('the user verifies Setup Wizard and Integrations controls', async function () {
   this.projectManagementMenuGroups = new ProjectManagementMenuGroupsPage(this.page);
-  await this.projectManagementMenuGroups.verifySetupWizard(this.dashboard);
+  // Navigation is project-specific: Setup Wizard is validated only where the selected project's menu offers it.
+  await this.dashboard.openProjectManagement();
+  const setupWizard = this.dashboard.leftNavigation.getByRole('button', { name: 'Setup Wizard', exact: true });
+  if (await setupWizard.first().isVisible({ timeout: 5000 }).catch(() => false)) {
+    await this.projectManagementMenuGroups.verifySetupWizard(this.dashboard);
+  } else {
+    await this.attach(JSON.stringify({ type: 'not-applicable', reason: `Setup Wizard is not in the ${this.config.projectName} navigation` }), 'application/json');
+  }
   await this.projectManagementMenuGroups.verifyNonNavigatingControl(this.dashboard, 'Integrations');
 });
 

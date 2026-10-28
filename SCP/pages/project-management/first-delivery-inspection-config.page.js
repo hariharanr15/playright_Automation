@@ -47,12 +47,27 @@ class FirstDeliveryInspectionConfigPage extends BasePage {
     } else {
       await expect(checkbox).not.toBeChecked();
     }
+    // The save must complete before the reload, or the reload can cancel it.
+    const saved = this.page.waitForResponse(response => !['GET', 'HEAD', 'OPTIONS'].includes(response.request().method()) &&
+      new URL(response.url()).pathname.startsWith('/api/'), { timeout: 15000 });
     await this.clickFirstVisible([
       { locator: this.page.getByRole('button', { name: 'Save', exact: true }), label: 'Save FDI Settings' }
     ], 'Save FDI Settings', 10000);
+    const response = await saved;
+    expect(response.ok(), `Saving FDI Settings returned HTTP ${response.status()}`).toBe(true);
 
     await this.page.reload({ waitUntil: 'domcontentloaded' });
     await this.waitForReady();
+    // Checkboxes render unchecked until the saved settings load; read them only once the values stop changing.
+    await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => null);
+    const read = () => Promise.all(this.settings.map(name => this.page.getByRole('checkbox', { name, exact: true }).isChecked()));
+    let previous = await read();
+    for (let i = 0; i < 10; i += 1) {
+      await this.page.waitForTimeout(1000);
+      const current = await read();
+      if (JSON.stringify(current) === JSON.stringify(previous) && current.some(Boolean)) break;
+      previous = current;
+    }
     const persisted = this.page.getByRole('checkbox', { name: this.settings[indexToChange], exact: true });
     if (expectedChecked) {
       await expect(persisted).toBeChecked();

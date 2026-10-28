@@ -5,8 +5,7 @@ const { test } = require('../../fixtures/baseTest');
 const { highlight } = require('../../utils/highlight');
 const { redactUrl } = require('../../utils/evidence');
 const { captureEvidence } = require('../../utils/evidence');
-
-const STEP_WAIT_MS = Number(process.env.STEP_WAIT_MS || 700);
+const { getScreenshotOptions, getStepDelayMs } = require('../../utils/execution-mode');
 
 test.afterEach(async ({ page, runData }, testInfo) => {
   if (runData?.dataUsage?.length) {
@@ -29,7 +28,7 @@ test.afterEach(async ({ page, runData }, testInfo) => {
   });
 
   const screenshotPath = testInfo.outputPath('failure.png');
-  await page.screenshot({ path: screenshotPath, fullPage: true }).catch(() => null);
+  await page.screenshot(getScreenshotOptions({ path: screenshotPath })).catch(() => null);
 
   if (fs.existsSync(screenshotPath)) {
     await testInfo.attach('failure-screenshot', {
@@ -73,11 +72,13 @@ async function hideStepBanner(page) {
 }
 
 async function runStep(page, title, action, validate, timing = {}) {
-  const waitMs = timing.waitMs ?? STEP_WAIT_MS;
-  const afterActionWaitMs = timing.afterActionWaitMs ?? 0;
+  // Fast mode ignores per-step pacing overrides; synchronisation comes from the step's own waits.
+  const waitMs = getStepDelayMs() > 0 ? (timing.waitMs ?? getStepDelayMs()) : 0;
+  const afterActionWaitMs = getStepDelayMs() > 0 ? (timing.afterActionWaitMs ?? 0) : 0;
+  // timing.scp passes step-policy options (mutation, verify) to the managed step.
   await test.step(title, async () => {
     await showStepBanner(page, title);
-    await page.waitForTimeout(waitMs);
+    if (waitMs > 0) await page.waitForTimeout(waitMs);
     await hideStepBanner(page);
     try {
       await action();
@@ -102,11 +103,11 @@ async function runStep(page, title, action, validate, timing = {}) {
         contentType: 'image/png'
       });
 
-      await page.waitForTimeout(waitMs);
+      if (waitMs > 0) await page.waitForTimeout(waitMs);
     } finally {
       await hideStepBanner(page);
     }
-  });
+  }, timing.scp ? { scp: timing.scp } : undefined);
 }
 
 async function expectVisible(locator, label, timeout = 20000) {

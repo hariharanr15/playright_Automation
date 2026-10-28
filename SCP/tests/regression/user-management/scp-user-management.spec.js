@@ -13,11 +13,16 @@ test('User Management invites, activates and finds a current-run user', async ({
   const { page, config } = scpProject;
   const management = new UserManagementPage(page);
   const organization = runData.useData('activeOrganization', 'User Management');
-  const sequence = runData.nextSequence();
+  // A registered address receives "Project Role Assigned" instead of an invitation, so used numbers are skipped.
+  const existing = await management.projectUserEmails(await scpProject.projectSelector.activeProjectReference());
+  let sequence = runData.nextSequence();
+  for (let tries = 1; existing.has(`user${sequence}@yopmail.com`); tries += 1) {
+    if (tries >= 100) throw new Error(`No unused invitation address after ${tries} numbers`);
+    sequence = runData.nextSequence();
+  }
   const user = {
     ...runData.invitedUser,
     email: `User${sequence}@yopmail.com`,
-    password: 'Master@15',
     firstName: 'Hariharan1',
     lastName: 'Raja1',
     phoneNumber: `9${String(Math.floor(Math.random() * 1e9)).padStart(9, '0')}`

@@ -61,6 +61,27 @@ class MaterialMasterPage extends BasePage {
   async clearSearch() {
     await this.clearSearchAndPause(this.searchInput, 'Material Master search');
   }
+
+  async addInventoryItem(materialName, itemName, conversion) {
+    await this.searchInput.fill(materialName);
+    const row = this.page.getByRole('row').filter({ has: this.page.getByRole('cell', { name: materialName, exact: true }) });
+    await expect(row).toHaveCount(1);
+    await row.getByRole('button', { name: 'ADD', exact: true }).click();
+    const heading = this.page.getByRole('heading', { name: 'Add Item', exact: true });
+    await expect(heading).toBeVisible();
+    const modal = heading.locator('xpath=ancestor::div[.//button[normalize-space()="Add"]][1]');
+    for (const [label, value] of [['Name', itemName], ['Conversion', conversion]]) {
+      await modal.locator('label').filter({ hasText: new RegExp(`^${label}\\*$`) }).locator('..').getByRole('textbox').fill(String(value));
+    }
+    const saved = this.page.waitForResponse(r => r.request().method() === 'POST' && /\/api\/item_material\//.test(r.url()));
+    await modal.getByRole('button', { name: 'Add', exact: true }).click();
+    const response = await saved;
+    expect(response.ok()).toBe(true);
+    const body = await response.json();
+    expect(body.status_code).toBe(200);
+    await expect(heading).toBeHidden();
+    return body.data;
+  }
 }
 
 module.exports = { MaterialMasterPage };

@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('../../../fixtures/baseTest');
+const sharedBrowser = require('../../../utils/shared-browser');
 const { getScpConfig } = require('../../../config/scp.config');
 const { AppShellPage } = require('../../../pages/app-shell.page');
 const { PlatformChooserPage } = require('../../../pages/platform-chooser.page');
@@ -30,6 +31,8 @@ for (const scenario of cases) {
     const password = process.env[scenario.passwordEnv];
     expect(Boolean(username && password), 'Both account credential environment variables must be configured').toBe(true);
     const config = { ...getScpConfig(), username, password };
+    // In the shared tab, switch to this scenario's account; the previous user's session is cleared first.
+    if (sharedBrowser.isSharedBrowser()) await sharedBrowser.ensureAccountSession(page, config, username);
     await new AppShellPage(page, config).open();
     await new PlatformChooserPage(page, config).openSupplyChainPlanner();
     const dashboard = new ManagementDashboardPage(page, config);

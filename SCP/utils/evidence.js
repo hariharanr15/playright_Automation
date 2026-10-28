@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { isHeadless } = require('./execution-mode');
 
 const EXECUTION_DIR = process.env.SCP_EXECUTION_DIR
   ? path.resolve(process.env.SCP_EXECUTION_DIR)
@@ -41,7 +42,7 @@ async function captureEvidence(page, attach, name) {
     screenshotPath = path.join(SCREENSHOT_DIR, `${baseName}_${suffix}.png`);
     suffix += 1;
   }
-  const screenshot = await page.screenshot({ path: screenshotPath, fullPage: true });
+  const screenshot = await page.screenshot({ path: screenshotPath, fullPage: isHeadless() });
 
   if (attach) {
     await attach(screenshot, 'image/png');

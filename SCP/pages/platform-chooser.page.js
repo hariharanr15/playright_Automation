@@ -44,13 +44,17 @@ class PlatformChooserPage extends BasePage {
     const appOrigin = new URL(this.config.baseUrl).origin;
     const loginPage = new LoginPage(this.page);
 
-    for (let attempt = 1; attempt <= 3 && !this.isAuthenticatedAppUrl(); attempt += 1) {
       await loginPage.loginIfVisible(this.config);
       const platformTitle = this.page.getByRole('link', { name: platformName, exact: true });
+      // An account with access to only this platform is redirected straight into the app, without the chooser.
+      const landed = await Promise.race([
+        this.page.waitForURL(url => url.origin === appOrigin && !/^\/auth\/?$/i.test(url.pathname), { timeout: 30000 }).then(() => 'app'),
+        platformTitle.first().waitFor({ state: 'visible', timeout: 30000 }).then(() => 'chooser')
+      ]).catch(() => null);
+      if (landed === 'app' && this.isAuthenticatedAppUrl()) return;
       try {
         await this.expectVisible(platformTitle, `${platformName} platform card`, 30000);
       } catch (error) {
-        if (await loginPage.isVisible(1000)) continue;
         throw error;
       }
       const openLink = this.platformCard(platformName).getByRole('link', { name: 'Open', exact: true });
@@ -64,13 +68,10 @@ class PlatformChooserPage extends BasePage {
 
       await openLink.click();
 
-      if (await authenticated) break;
-      await this.page.waitForURL(/\/api\/sso\/platforms\/choose\//i, { timeout: 30000 }).catch(() => null);
-      await this.page.reload({ waitUntil: 'domcontentloaded' });
-    }
+      await authenticated;
 
     if (!this.isAuthenticatedAppUrl()) {
-      throw new Error('SCP platform authentication did not complete after 3 attempts. The SSO session returned to the platform chooser.');
+      throw new Error('SCP platform authentication did not complete. The step retry manager owns the single permitted retry.');
     }
 
     await this.waitForReady();

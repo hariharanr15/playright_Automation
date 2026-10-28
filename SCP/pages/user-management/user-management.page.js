@@ -19,6 +19,21 @@ class UserManagementPage extends BasePage {
     await expect(this.page.getByRole('button', { name: 'Invite Users' })).toBeVisible();
   }
 
+  // Lower-cased emails of every user already in the project, read page by page until the reported count is reached.
+  async projectUserEmails(projectId) {
+    const { read } = require('../../utils/scp-readonly');
+    const emails = new Set(); let count = Infinity;
+    for (let page = 1; emails.size < count && page <= 100; page += 1) {
+      const body = await read(this.page, 'project_user/get_users_by_project/', { project_id: projectId, page });
+      expect(Array.isArray(body.data), 'Project users list').toBe(true);
+      count = Number(body.count ?? body.data.length);
+      const before = emails.size;
+      for (const user of body.data) emails.add(String(user.user_email_id || '').toLowerCase());
+      if (emails.size === before) break;
+    }
+    return emails;
+  }
+
   row(email) {
     return this.page.getByRole('row').filter({ hasText: email }).first();
   }
