@@ -2,10 +2,8 @@ const path = require('path');
 const { test, expect, runStep: baseRunStep } = require('../../support/test-base');
 const { ProcurementLogPage } = require('../../../pages/procurement-log/procurement-log.page');
 const { InternationalShipmentsPage } = require('../../../pages/international-shipments/international-shipments.page');
-const { createProcurementLogData } = require('../../../utils/dynamic-data');
-const { loadJsonFile } = require('../../../utils/data-loader');
-
-const baseline = loadJsonFile(path.resolve(__dirname, '..', '..', '..', 'test-data', 'procurement-log.json'), {});
+const { requireRunDataset } = require('../../../utils/run-dataset');
+const { ScpBlocked } = require('../../../utils/scp-readonly');
 const OPERATION_PAUSE_MS = Number(process.env.SCP_MODULE_OPERATION_PAUSE_MS || 1500);
 const runStep = (page, title, action, validate) => baseRunStep(page, title, action, validate, {
   waitMs: OPERATION_PAUSE_MS,
@@ -17,7 +15,9 @@ test('International Shipment follows a current-run Procurement Log submittal', a
   const { page } = scpProject;
   const procurement = new ProcurementLogPage(page);
   const shipments = new InternationalShipmentsPage(page);
-  const data = { ...baseline, ...createProcurementLogData(runData.runId) };
+  // The run's shared submittal (created once by the Procurement Log module) is flagged; no submittal is created here.
+  const shared = requireRunDataset(scpProject.config.projectName, ScpBlocked);
+  const data = { submittalNumber: shared.data.submittalNumber };
   let before;
   let record;
 
@@ -25,9 +25,10 @@ test('International Shipment follows a current-run Procurement Log submittal', a
     await shipments.open();
     before = await shipments.totalCount();
   });
-  await runStep(page, `Create current-run submittal ${data.submittalNumber}`, async () => {
+  await runStep(page, `Use the shared run submittal ${data.submittalNumber}`, async () => {
     await procurement.open();
-    await procurement.createSubmittal(data);
+    if (shared.site) await scpProject.siteSelector.ensureSite(shared.site);
+    await procurement.searchExactSubmittal(data.submittalNumber);
     runData.captureData('internationalSubmittal', data.submittalNumber, 'Procurement Log');
   });
   await runStep(page, 'Flag the exact procurement record as international', async () => {

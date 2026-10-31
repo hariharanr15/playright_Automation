@@ -80,18 +80,35 @@ class UserManagementPage extends BasePage {
   }
 
   async search(email) {
+    // A list reload still in flight (page reload, rows-per-page change) replaces the filtered rows when it lands.
+    await this.settle();
     await this.searchInput.first().fill(email);
     await this.searchInput.first().press('Enter');
+    await this.settle();
     await expect(this.row(email)).toBeVisible({ timeout: 30000 });
     const rows = this.page.getByRole('row').filter({ hasText: '@' });
     await expect(rows).toHaveCount(1);
+  }
+
+  async settle() {
+    await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => null);
   }
 
   async clearSearch() {
     await this.searchInput.first().fill('');
   }
 
+  // Closes the Change Associated Organization dialog if it is open (e.g. left by a rejected attempt).
+  async closeOrganizationDialog() {
+    const heading = this.page.getByRole('heading', { name: 'Change Associated Organization' });
+    if (!(await heading.isVisible().catch(() => false))) return;
+    const dialog = heading.locator('xpath=ancestor::div[.//button[normalize-space()="Confirm"]][1]');
+    await dialog.locator('button:has(img), button:has(svg)').first().click().catch(() => this.page.keyboard.press('Escape'));
+    await expect(heading).toBeHidden({ timeout: 10000 }).catch(() => null);
+  }
+
   async changeOrganization(email, currentOrganization) {
+    await this.closeOrganizationDialog();
     const row = await this.findRow(email);
     await expect(row).toBeVisible();
     await row.locator('td').last().locator('svg').click();
@@ -106,7 +123,16 @@ class UserManagementPage extends BasePage {
     const alternate = choices.find((value) => value.length > 2 && value !== currentOrganization);
     if (!alternate) throw new Error('No alternate organization is available in Change Associated Organization.');
     await options.filter({ hasText: alternate }).first().click();
+    const saved = this.page.waitForResponse(response => response.request().method() !== 'GET' && /\/api\//.test(response.url()),
+      { timeout: 30000 }).catch(() => null);
     await dialog.getByRole('button', { name: 'Confirm', exact: true }).click();
+    const response = await saved;
+    if (!response) throw new Error(`Change Associated Organization: Confirm sent no save request for ${email}`);
+    if (!response.ok()) {
+      const body = await response.json().catch(() => ({}));
+      await this.closeOrganizationDialog(); // a retry must start from the list, not behind the open dialog
+      throw new Error(`Change Associated Organization rejected (HTTP ${response.status()} ${new URL(response.url()).pathname}): ${body.message || JSON.stringify(body.error || body)}`);
+    }
     await expect(row).toContainText(alternate, { timeout: 30000 });
     return alternate;
   }

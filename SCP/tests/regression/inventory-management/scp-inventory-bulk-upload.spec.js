@@ -50,7 +50,7 @@ test('Inventory bulk upload: reject one overdraft file atomically and download i
   expect(saved.data?.activities || []).toHaveLength(ctx.owned.baseline.activities.length);
   expect(Number(saved.data.closing_balance)).toBe(ctx.owned.baselineBalance);
   const schedules = (await ctx.read('submittal_schedule/list_submittal_schedules/', { submittal_id: ctx.owned.submittal.submittal_id })).data.schedules;
-  expect(Number(exactOne(schedules, s => s.submittal_schedule_id === ctx.owned.schedule.submittal_schedule_id, 'Unchanged component').received_quantity)).toBe(Number(ctx.owned.data.deliveryQuantity));
+  expect(Number(exactOne(schedules, s => s.submittal_schedule_id === ctx.owned.schedule.submittal_schedule_id, 'Unchanged component').received_quantity)).toBe(Number(ctx.owned.receivedQuantity ?? ctx.owned.data.deliveryQuantity));
   await verifyBothSearches(ctx, ctx.owned.baselineBalance);
 });
 

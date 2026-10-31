@@ -107,10 +107,18 @@ class FirstDeliveryInspectionConfigPage extends BasePage {
     return states;
   }
 
+  // A transient full-page backdrop (div.fixed.inset-0 bg-opacity-30) covers the settings while the page loads or
+  // saves; a checkbox clicked under it does not change (31 Oct 2026), so wait until it is gone.
+  async waitForBackdrop() {
+    await this.page.locator('div.fixed.inset-0.bg-opacity-30').first()
+      .waitFor({ state: 'hidden', timeout: 30000 }).catch(() => null);
+  }
+
   async saveSettings(states) {
     for (const name of this.settings) {
       if (typeof states[name] !== 'boolean') throw new Error(`Missing boolean FDI setting: ${name}`);
     }
+    await this.waitForBackdrop();
     if (states['Photos are mandatory?'] && !states['Enable Uploading of Photos?']) {
       throw new Error('Mandatory photos require photo uploads to be enabled.');
     }
@@ -135,6 +143,7 @@ class FirstDeliveryInspectionConfigPage extends BasePage {
   }
 
   async expectPhotoDependency() {
+    await this.waitForBackdrop();
     await this.setting('Enable Uploading of Photos?').uncheck();
     const mandatory = this.setting('Photos are mandatory?');
     // AC6 allows either an automatically corrected control or a validation error.
@@ -274,7 +283,7 @@ class FirstDeliveryInspectionConfigPage extends BasePage {
     }
 
     const membersResponsePromise = this.page.waitForResponse((response) => (
-      response.status() === 200 &&
+      response.ok() &&
       response.url().includes(`/api/sso/projects/${projectReference}/members/`)
     ), { timeout: 30000 });
     await this.page.reload({ waitUntil: 'domcontentloaded' });

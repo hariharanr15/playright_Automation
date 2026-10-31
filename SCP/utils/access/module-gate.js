@@ -1,3 +1,4 @@
+const fs = require('fs');
 const { moduleById } = require('../../config/scp-module-registry');
 const { PermissionResolver } = require('./permission-resolver');
 const { loadExpectations, evaluateModule, maskEmail, STATUS } = require('./access-model');
@@ -8,15 +9,33 @@ function expectedProject(config, projectName, source = loadExpectations()) {
   return account?.projects.find(project => project.project.toLowerCase() === projectName.toLowerCase());
 }
 
+// The run's access discovery already captured every module; re-capturing the left menu before each test
+// cost minutes per stage and could hang. Reuse it, else resolve once per process.
+const resolved = new Map();
+function discoveredAccess(config, moduleId) {
+  const file = process.env.SCP_ACCESS_MATRIX_FILE;
+  if (!file || !fs.existsSync(file)) return null;
+  const combination = JSON.parse(fs.readFileSync(file, 'utf8')).combinations?.find(entry => entry.primary &&
+    entry.user === maskEmail(config.username) && entry.project.toLowerCase() === config.projectName.toLowerCase());
+  const found = combination?.modules.find(item => item.id === moduleId);
+  if (!found) return null;
+  const { evaluation, ...observation } = found;
+  return { role: null, navigation: null, modules: [observation], source: file };
+}
+
 async function requireModuleAccess({ page, config, projectSelector }, info, journal, moduleId) {
   const module = moduleById(moduleId);
   const expected = expectedProject(config, config.projectName);
-  const resolver = new PermissionResolver(page, config, projectSelector);
-  const access = await resolver.resolve(config.projectName, expected?.actions || {}, [moduleId]);
+  const key = [config.username, config.projectName, moduleId].join('|').toLowerCase();
+  if (!resolved.has(key)) {
+    resolved.set(key, discoveredAccess(config, moduleId) ||
+      await new PermissionResolver(page, config, projectSelector).resolve(config.projectName, expected?.actions || {}, [moduleId]));
+  }
+  const access = resolved.get(key);
   const observation = access.modules[0];
   const evaluation = evaluateModule(observation, expected?.modules?.[moduleId], expected?.actions?.[moduleId]);
   const result = { moduleId, module: module.name, user: maskEmail(config.username), project: config.projectName,
-    role: access.role, expectedSource: expected?.source || null, navigation: access.navigation, observation, ...evaluation };
+    role: access.role, accessSource: access.source || 'live capture', expectedSource: expected?.source || null, navigation: access.navigation, observation, ...evaluation };
   journal.scenario.access = result;
   journal.setData('moduleAccess', result);
   await info.attach('module-project-access', { body: Buffer.from(JSON.stringify(result)), contentType: 'application/json' });

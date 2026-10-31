@@ -21,12 +21,21 @@ const sharedBrowserFixtures = {
     // No browser.close() here: on this CDP connection it closed the shared tab (logged as tab closed, context closed,
     // disconnected). After a failed test Playwright replaces the worker while the next test is already running, so
     // that close removed the next test's tab. The connection ends when the worker process exits and Chrome keeps its tab.
-  }, { scope: 'worker' }],
+    // Own budget: the attach retry (60 s + 90 s) does not fit the 90 s test timeout that worker fixtures inherit.
+  }, { scope: 'worker', timeout: 240000 }],
   context: async ({ scpSession }, use) => use(scpSession.context),
   page: async ({ scpSession }, use) => use(scpSession.page),
   // Playwright's own trace option already records the CDP-attached context, so no second trace is started here.
   // A tab left unresponsive by the previous scenario is replaced in the same browser instead of hanging this one.
   sharedTabHealth: [async ({ scpSession }, use, info) => {
+    // A brief network drop (twice on 31 Oct 2026) otherwise fails every remaining scenario within seconds;
+    // wait up to 3 minutes for staging to answer again before starting the scenario.
+    const target = getScpConfig().baseUrl;
+    for (let waited = 0; target && waited < 180000; waited += 10000) {
+      if (await fetch(target, { method: 'HEAD', signal: AbortSignal.timeout(5000) }).then(() => true, () => false)) break;
+      if (!waited) process.stderr.write(`[shared-browser] ${new Date().toISOString()} staging unreachable before "${info.title}"; waiting for the network\n`);
+      await new Promise(resolve => setTimeout(resolve, 10000));
+    }
     const page = scpSession.page;
     const responsive = await Promise.race([page.evaluate(() => true).catch(() => false),
       new Promise(resolve => setTimeout(() => resolve(false), 10000))]);
@@ -34,6 +43,13 @@ const sharedBrowserFixtures = {
       process.stderr.write(`[shared-browser] ${new Date().toISOString()} tab unresponsive before "${info.title}"; replaced in the same browser\n`);
       info.annotations.push({ type: 'shared-browser', description: 'The shared tab was unresponsive and was replaced in the same browser before this scenario' });
       await sharedBrowser.discardUnresponsivePage(page);
+    } else {
+      const reason = await sharedBrowser.recycleReason(page);
+      if (reason) {
+        process.stderr.write(`[shared-browser] ${new Date().toISOString()} tab recycled before "${info.title}" (${reason})\n`);
+        info.annotations.push({ type: 'shared-browser', description: `The shared tab was recycled before this scenario (${reason}) to contain the application's memory leak` });
+        await sharedBrowser.discardUnresponsivePage(page);
+      }
     }
     await use();
   }, { auto: true }]
@@ -101,7 +117,7 @@ const test = base.extend({
     context.off('response', onResponse);
     // The shared context and tab belong to the whole run; only isolated sessions are closed here.
     if (!shared) await context.close();
-  }, { scope: 'worker' }],
+  }, { scope: 'worker', timeout: 240000 }],
 
   runData: async ({ executionJournal }, use) => {
     const data = createRunData(undefined, executionJournal.state.data.runData, () => executionJournal.save());
@@ -128,7 +144,12 @@ const test = base.extend({
     if (!scpSession.initialized) {
       await appShell.open();
     } else if (!page.url().startsWith(config.managementDashboardUrl)) {
-      await page.goto(config.managementDashboardUrl, { waitUntil: 'domcontentloaded' });
+      // In-app navigation through the left menu: a full page load per scenario redraws the whole screen and resets
+      // the header site (SCP-DEF-037). The page load is only the fallback, e.g. for a freshly recycled blank tab.
+      const menu = page.getByRole('button', { name: /^Management Dashboard/ }).first();
+      const viaMenu = await menu.isVisible().catch(() => false) && await menu.click().then(() =>
+        page.waitForURL(config.managementDashboardUrl, { timeout: 15000 })).then(() => true, () => false);
+      if (!viaMenu) await page.goto(config.managementDashboardUrl, { waitUntil: 'domcontentloaded' });
     }
 
     await use({

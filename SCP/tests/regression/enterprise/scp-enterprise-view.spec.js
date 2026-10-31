@@ -33,12 +33,13 @@ test('Enterprise View: independent Procurement open-submittal reconciliation', a
   const iso = text => new Date(date(text)).toISOString().slice(0, 10);
   const source = await sourceRecords(ctx, view.projects, { from: iso(values[0]), to: iso(values[1]) });
   await info.attach('independent-procurement-source', { body: Buffer.from(JSON.stringify(source)), contentType: 'application/json' });
-  expect(source.submittals.length).toBe(data.open_submittals.total);
-  expect(openSubmittals(source.submittals, source.components).length).toBe(data.open_submittals.open);
+  expect(data.open_submittals.total, `Open submittals total: Enterprise ${data.open_submittals.total}, calculated ${source.submittals.length}`).toBe(source.submittals.length);
+  const open = openSubmittals(source.submittals, source.components).length;
+  expect(data.open_submittals.open, `Open submittals open: Enterprise ${data.open_submittals.open}, calculated ${open}`).toBe(open);
 });
 // Independent cumulative expectation: per-project Procurement records for the range, de-duplicated across projects.
 async function cumulativeExpectation(ctx, accessible, range) {
-  const source = await sourceRecords(ctx, accessible.map(project => ({ project_no: project.ref })), { from: '2000-01-01', to: '2100-12-31' });
+  const source = await sourceRecords(ctx, accessible.map(project => ({ project_no: project.ref })), range);
   const submittals = [...new Map(source.submittals.map(record => [record.id, record])).values()];
   const open = openSubmittals(submittals, source.components);
   const perProject = accessible.map(project => ({ project: project.name, ref: project.ref,
@@ -110,7 +111,8 @@ test('Enterprise View: category planned averages, opposite delta sign and missin
   }
 });
 // BUGS-325 (docs/ENTERPRISE_REQUIREMENTS_BUGS-325.md): Enterprise View values recalculated from the Procurement source records of
-// every project the signed-in user can access on this platform, using the same From-To as Enterprise's selection.
+// every project the signed-in user can access on this platform, for Enterprise's From-To. Each metric uses its own date
+// (decision A, 29 Oct 2026; see enterpriseView), so every record of the accessible projects is read once as well.
 async function bugs325(ctx, info, { defaults = false, alerts = false } = {}) {
   // Enterprise's selected From-To is applied unchanged to the Procurement and alert reads, so both sides cover the same dates.
   // SCP_ENTERPRISE_FROM / SCP_ENTERPRISE_TO (YYYY-MM-DD) select a specific range in Enterprise first; otherwise its default is used.
@@ -124,12 +126,14 @@ async function bugs325(ctx, info, { defaults = false, alerts = false } = {}) {
   }
   const accessible = await ctx.projectSelector.sessionProjects();
   expect(accessible.length, 'The signed-in user must have at least one project on this platform').toBeGreaterThan(0);
-  const source = await sourceRecords(ctx, accessible.map(project => ({ project_no: project.ref })), range);
-  if (defaults) await supplierDefaults(ctx, source.components);
+  const projects = accessible.map(project => ({ project_no: project.ref }));
+  const ranged = await sourceRecords(ctx, projects, range);
+  const all = await sourceRecords(ctx, projects, { from: '2000-01-01', to: '2100-12-31' });
+  if (defaults) await supplierDefaults(ctx, all.components);
   const refs = accessible.map(project => project.ref);
   const unread = alerts ? await unreadAlerts(ctx, refs, range) : null;
   const unreadAllDates = alerts ? await unreadAlerts(ctx, refs, { from: '2000-01-01', to: '2100-12-31' }) : null;
-  const expected = enterpriseView(source, accessible, unread);
+  const expected = enterpriseView({ ranged, all, range }, accessible, unread);
   const differences = [];
   const check = (label, actual, wanted) => { if (actual !== wanted) differences.push(`${label}: Enterprise ${actual}, BUGS-325 ${wanted}`); };
   const row = ref => view.projects.find(project => project.project_no === ref);

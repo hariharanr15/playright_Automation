@@ -21,7 +21,7 @@ class EnterpriseViewPage extends EnterprisePage {
         summary.catch(() => {}); projects.catch(() => {});
         await setDateInputs({ page: this.page, from, to, range });
         const [summaryResponse, projectResponse] = await Promise.all([summary, projects]);
-        expect(summaryResponse.status()).toBe(200); expect(projectResponse.status()).toBe(200);
+        expect(summaryResponse.ok(), `HTTP ${summaryResponse.status()}`).toBe(true); expect(projectResponse.ok(), `HTTP ${projectResponse.status()}`).toBe(true);
         const summaryBody = await summaryResponse.json(); const projectBody = await projectResponse.json();
         expect(summaryBody.status_code).toBe(200); expect(projectBody.status_code).toBe(200);
         expect(Array.isArray(projectBody.data?.projects)).toBe(true);
@@ -41,21 +41,39 @@ class EnterpriseViewPage extends EnterprisePage {
   // The application redirects to Management Dashboard after a project change; the redirect is recorded and the same
   // staging URL is reopened. When the page does not refetch, the summary is read for the same filters in the page.
   async changeInPlace(change, read) {
-    const settle = path => this.page.waitForResponse(r => r.request().method() === 'GET' && new URL(r.url()).pathname.endsWith(path), { timeout: 15000 }).catch(() => null);
+    // Since the 29 Oct 2026 build a header project change fires an intermediate summary/projects pair (all zero) before the
+    // final one, so every response is collected and the last one, which the page ends up displaying, is used.
+    const hits = { summary: [], projects: [] };
+    const listener = response => {
+      if (response.request().method() !== 'GET') return;
+      const path = new URL(response.url()).pathname;
+      const kind = path.endsWith('/enterprise/summary/') ? 'summary' : path.endsWith('/enterprise/projects/') ? 'projects' : null;
+      if (kind) hits[kind].push({ url: response.url(), read: response.json().then(body => body.data, () => null) });
+    };
     const enterpriseUrl = new URL('/enterprise-view', this.page.url()).href;
-    let summaryResponse = settle('/enterprise/summary/'); let projectResponse = settle('/enterprise/projects/');
-    await change();
-    await this.page.waitForURL(url => !/\/enterprise-view\/?$/.test(url.pathname), { timeout: 5000 }).catch(() => null);
-    const redirectedTo = /\/enterprise-view\/?$/.test(new URL(this.page.url()).pathname) ? null : this.page.url();
-    if (redirectedTo) {
-      summaryResponse = settle('/enterprise/summary/'); projectResponse = settle('/enterprise/projects/');
-      await this.page.goto(enterpriseUrl, { waitUntil: 'domcontentloaded' });
-    }
-    await expect(this.page, 'Enterprise is validated on /enterprise-view').toHaveURL(/\/enterprise-view\/?$/);
-    const [summaryHit, projectHit] = await Promise.all([summaryResponse, projectResponse]);
-    const params = summaryHit ? new URL(summaryHit.url()).searchParams : null;
-    if (projectHit) this.projects = (await projectHit.json()).data.projects;
-    let summary = summaryHit ? (await summaryHit.json()).data : null;
+    this.page.on('response', listener);
+    let redirectedTo = null;
+    try {
+      await change();
+      // The 29 Oct build redirects to the Management Dashboard 5-15 s after the header change; wait for that or a refetch.
+      await expect.poll(() => !/\/enterprise-view\/?$/.test(new URL(this.page.url()).pathname) || (hits.summary.length > 0 && hits.projects.length > 0),
+        { timeout: 25000 }).toBe(true).catch(() => null);
+      redirectedTo = /\/enterprise-view\/?$/.test(new URL(this.page.url()).pathname) ? null : this.page.url();
+      if (redirectedTo) {
+        hits.summary.length = 0; hits.projects.length = 0;
+        await this.page.goto(enterpriseUrl, { waitUntil: 'domcontentloaded' });
+      }
+      await expect(this.page, 'Enterprise is validated on /enterprise-view').toHaveURL(/\/enterprise-view\/?$/);
+      await expect.poll(() => hits.summary.length && hits.projects.length, { timeout: 15000 }).toBeTruthy().catch(() => null);
+      await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => null);
+    } finally { this.page.off('response', listener); }
+    const summaries = await Promise.all(hits.summary.map(hit => hit.read));
+    const projectLists = await Promise.all(hits.projects.map(hit => hit.read));
+    this.intermediateResponses = summaries.slice(0, -1).map((data, index) => ({ url: hits.summary[index].url, projects: data?.projects ?? null }));
+    const summaryHit = hits.summary.at(-1);
+    const params = summaryHit ? new URL(summaryHit.url).searchParams : null;
+    if (projectLists.length && projectLists.at(-1)) this.projects = projectLists.at(-1).projects;
+    let summary = summaries.at(-1) || null;
     if (!summary && read) {
       const inputs = await this.main.locator('input').evaluateAll(es => es.map(e => e.value));
       const { date } = require('../../utils/enterprise/enterprise-metrics');
@@ -64,8 +82,15 @@ class EnterpriseViewPage extends EnterprisePage {
       summary = (await read(`enterprise/summary/?${query}`)).data;
       this.projects = (await read(`enterprise/projects/?${query}`)).data.projects;
     }
+    // 29 Oct 2026: after a header change the first enterprise request returns the full scope and identical repeats return
+    // none; report that inconsistency explicitly rather than as a table-count mismatch.
+    const shown = await this.table('Organization / Project').locator('tbody tr').count();
+    if (!this.projects.length && shown) {
+      throw new Error(`Enterprise API inconsistency: the latest enterprise/projects response has 0 projects while the page shows ${shown} rows (projects per response: ${projectLists.map(list => list?.projects?.length ?? 'unreadable').join(', ')})`);
+    }
     await this.tableRecords(this.table('Organization / Project'), this.projects.length);
-    return { summary, refetched: Boolean(summaryHit), redirectedTo, requestParams: params ? Object.fromEntries(params) : null };
+    return { summary, refetched: Boolean(summaryHit), redirectedTo, requestParams: params ? Object.fromEntries(params) : null,
+      intermediate: this.intermediateResponses };
   }
   // Sets From/To and returns the summary Enterprise recalculates for exactly that range (projects in this.projects).
   async applyRange(range) {
@@ -80,7 +105,7 @@ class EnterpriseViewPage extends EnterprisePage {
     summary.catch(() => {}); projects.catch(() => {});
     await setDateInputs({ page: this.page, from, to, range });
     const [summaryResponse, projectResponse] = await Promise.all([summary, projects]);
-    expect(summaryResponse.status()).toBe(200); expect(projectResponse.status()).toBe(200);
+    expect(summaryResponse.ok(), `HTTP ${summaryResponse.status()}`).toBe(true); expect(projectResponse.ok(), `HTTP ${projectResponse.status()}`).toBe(true);
     await expect(from).toHaveValue(displayDate(range.from)); await expect(to).toHaveValue(displayDate(range.to));
     this.projects = (await projectResponse.json()).data.projects;
     await this.tableRecords(this.table('Organization / Project'), this.projects.length);

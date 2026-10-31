@@ -110,6 +110,8 @@ function stageEnv(destination, stage) {
     // Each full run keeps its own recovery checkpoints, so data and step history from earlier runs are never replayed.
     // Targeted reruns resume from the checkpoint folder of the run they rerun.
     SCP_RECOVERY_DIR: process.env.SCP_RECOVERY_DIR || path.join(run, 'recovery'),
+    // A full run creates its own shared submittal chain; module-only reruns reuse the latest one (.state/run-dataset.json).
+    SCP_RUN_DATASET_FILE: process.env.SCP_RUN_DATASET_FILE || (selected.length ? require('../utils/run-dataset').runDatasetFile() : path.join(run, 'run-dataset.json')),
     SCP_INVENTORY_MUTATIONS: stage.mutation && mutations ? 'true' : 'false',
     SCP_FDI_OWNED_MUTATIONS: ownedMutations ? 'true' : process.env.SCP_FDI_OWNED_MUTATIONS || 'false',
     SCP_SHIPMENT_OWNED_MUTATIONS: ownedMutations ? 'true' : process.env.SCP_SHIPMENT_OWNED_MUTATIONS || 'false' };
@@ -242,7 +244,8 @@ for (const module of MODULES.filter(item => !selected.length || selected.include
     entry.stages.push(item);
     const requirement = (stage.requiresAccess || []).map(id => ({ id, access: moduleAccess(matrix, config.projectName, id) }))
       .find(({ access: required }) => required.observed !== STATUS.accessible);
-    if (stage.enabledBy && process.env[stage.enabledBy] !== 'true' && !ownedMutations) Object.assign(item, { status: 'Skipped', reason: `Enable ${stage.enabledBy} with a qualified owned allocation` });
+    if (stage.skipReason) Object.assign(item, { status: 'Skipped', reason: stage.skipReason });
+    else if (stage.enabledBy && process.env[stage.enabledBy] !== 'true' && !ownedMutations) Object.assign(item, { status: 'Skipped', reason: `Enable ${stage.enabledBy} with a qualified owned allocation` });
     else if (stage.qualified === false && !unqualified) Object.assign(item, { status: 'Skipped', reason: `Not qualified: ${stage.reason}. Use --include-unqualified once inputs exist` });
     else if (stage.mutation && !mutations) Object.assign(item, { status: 'Skipped', reason: 'Creates owned records; run with --with-inventory-mutations' });
     else if (stage.exceptWithMutations && mutations) Object.assign(item, { status: 'Skipped', reason: 'Covered by the inventory-mutations stage' });

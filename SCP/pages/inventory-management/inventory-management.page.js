@@ -159,10 +159,17 @@ class InventoryManagementPage extends BasePage {
   }
 
   async expectHistory(activity, expectedTotal) {
-    const row = this.drawer().getByRole('row').filter({ has: this.page.getByRole('cell', { name: activity.action, exact: true }) })
+    const rows = this.drawer().getByRole('row').filter({ has: this.page.getByRole('cell', { name: activity.action, exact: true }) })
       .filter({ has: this.page.getByRole('cell', { name: activity.item, exact: true }) });
-    await expect(row, 'Each isolated activity type must have one history row').toHaveCount(1);
-    const cells = row.getByRole('cell');
+    // All inventory tests of a run share one material (one submittal per run, 29 Oct 2026), so its history holds rows
+    // from earlier tests too. This test's row is the one with its own quantity and the expected running total.
+    let index = -1;
+    await expect.poll(async () => {
+      const values = await rows.evaluateAll(list => list.map(r => [...r.cells].map(c => c.innerText)));
+      index = values.findIndex(cells => numeric(cells[6]) === Number(activity.quantity) && numeric(cells[7]) === expectedTotal);
+      return index;
+    }, { message: `History row for this ${activity.action} (quantity ${activity.quantity}, total ${expectedTotal})`, timeout: 15000 }).toBeGreaterThanOrEqual(0);
+    const cells = rows.nth(index).getByRole('cell');
     await expect(cells.nth(1)).toHaveText(activity.specificationNumber);
     await expect(cells.nth(2)).toHaveText(activity.historySchedule);
     await expect(cells.nth(4)).toContainText(activity.source);

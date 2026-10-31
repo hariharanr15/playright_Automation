@@ -90,13 +90,18 @@ class ProcurementLogPage extends BasePage {
       { locator: this.addSubmittalButton, label: 'Add Submittal' }
     ], 'Add Submittal', 10000);
 
-    const textboxes = this.page.getByRole('textbox');
-    const submittalField = this.page.locator('div:nth-child(7) > div > .flex-grow > .mt-4:visible').last();
+    // Fields are found by their label: their order follows Procurement Log Configuration and can change
+    // (31 Oct 2026: "Spec section no" moved to the end of the form after a field reorder).
+    const addForm = this.page.locator('div.fixed.inset-0')
+      .filter({ has: this.page.getByRole('heading', { name: 'Add Submittal', exact: true }) });
+    const labelled = pattern => addForm.locator('div')
+      .filter({ has: this.page.locator('label, p, span').filter({ hasText: pattern }) })
+      .filter({ has: this.page.locator('input') }).last().locator('input:not([type=checkbox]):not([type=radio])').first();
     const fillIdentity = async () => {
-      await this.fillVisible(textboxes.nth(3), data.specificationNumber, 'Specification number');
-      await this.fillVisible(textboxes.nth(4), data.description, 'Specification description');
-      await this.fillVisible(textboxes.nth(5), data.scheduleNumber, 'Schedule number');
-      await this.fillVisible(submittalField, data.submittalNumber, 'Submittal number');
+      await this.fillVisible(labelled(/^\s*Spec (section|selection) no/i), data.specificationNumber, 'Specification number');
+      await this.fillVisible(labelled(/^\s*Spec description/i), data.description, 'Specification description');
+      await this.fillVisible(labelled(/^\s*Schedule Id/i), data.scheduleNumber, 'Schedule number');
+      await this.fillVisible(labelled(/^\s*Submittal no/i), data.submittalNumber, 'Submittal number');
     };
     await fillIdentity();
 
@@ -115,6 +120,19 @@ class ProcurementLogPage extends BasePage {
     if (await numericFields.count() >= 2) {
       await this.fillVisible(numericFields.nth(1), data.lotQuantity, 'Lot quantity');
       await this.fillVisible(numericFields.first(), data.leadTime, 'Lead time');
+    }
+
+    // Enabled custom Procurement Log fields (e.g. the PM flow's "Total count <run>") block the save while empty,
+    // without a required marker or message, so every empty field left in the form gets a run value.
+    const form = this.page.locator('div.fixed.inset-0')
+      .filter({ has: this.page.getByRole('heading', { name: 'Add Submittal', exact: true }) });
+    data.customFields = {};
+    for (const input of await form.locator('input:visible:not([readonly]):not([type=checkbox]):not([type=radio])').all()) {
+      if (await input.inputValue()) continue;
+      const label = (await input.evaluate(node => node.closest('div:has(> label), div:has(> p)')?.innerText || '')).split('\n')[0].trim();
+      const value = await input.getAttribute('type') === 'number' ? '1' : `Automation ${data.submittalNumber}`;
+      await this.fillVisible(input, value, `Custom field ${label}`);
+      data.customFields[label || `field ${Object.keys(data.customFields).length + 1}`] = value;
     }
 
     // A 409 means the number already exists and nothing was saved: the same form is resubmitted with the
@@ -146,6 +164,22 @@ class ProcurementLogPage extends BasePage {
     await this.expectSubmittal(data.submittalNumber);
   }
 
+  // Opens Add Submittal, checks the configured custom field is offered, and closes the form without saving
+  // (the run's only submittal is created by the Procurement Log module).
+  async previewSubmittalForm(fieldName) {
+    await this.clickFirstVisible([{ locator: this.addSubmittalButton, label: 'Add Submittal' }], 'Add Submittal', 10000);
+    const heading = this.page.getByRole('heading', { name: 'Add Submittal', exact: true });
+    await expect(heading).toBeVisible();
+    const form = this.page.locator('div.fixed.inset-0').filter({ has: heading });
+    if (fieldName) {
+      const escaped = String(fieldName).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      await expect(form.getByText(new RegExp(escaped, 'i')).first(), `${fieldName} is offered in Add Submittal`).toBeVisible();
+    }
+    await this.page.keyboard.press('Escape');
+    if (await heading.isVisible().catch(() => false)) await form.getByRole('button').first().click();
+    await expect(heading, 'Add Submittal closes without saving').toBeHidden({ timeout: 10000 });
+  }
+
   // A component row in the open submittal's Details panel, identified by its exact material.
   componentRow(materialName) {
     return this.page.getByRole('row')
@@ -158,7 +192,7 @@ class ProcurementLogPage extends BasePage {
     await expect(row).toBeVisible({ timeout: 30000 });
     await this.clickFirstVisible([
       ...(data.inventorySetup
-        ? [{ locator: row.getByRole('cell', { name: data.specificationNumber, exact: true }), label: data.specificationNumber }]
+        ? [{ locator: row.getByRole('cell', { name: data.specificationNumber, exact: true }).first(), label: data.specificationNumber }]
         : [{ locator: row.getByRole('cell', { name: data.supplier }).first(), label: data.supplier }]),
       { locator: row, label: data.submittalNumber }
     ], `Open ${data.submittalNumber}`, 10000);
@@ -293,7 +327,11 @@ class ProcurementLogPage extends BasePage {
 
     const poDateInput = editModal.getByText('PO Date', { exact: true })
       .locator('xpath=..').getByRole('textbox');
-    await this.chooseCalendarDate(poDateInput, 0, 'PO date');
+    // The app checks "PO date cannot be in the future" against the UTC date. Between 00:00 and 05:30 IST the local date
+    // is a day ahead of UTC, so the PO date then goes one day back (31 Oct 2026 run).
+    const now = new Date();
+    const utcBehind = now.getUTCDate() !== now.getDate();
+    await this.chooseCalendarDate(poDateInput, utcBehind ? -1 : 0, 'PO date');
     await editModal.getByRole('button', { name: 'Update', exact: true }).click();
     await expect(editHeading, 'PO details should be saved before delivery logging')
       .toBeHidden({ timeout: 30000 });
@@ -414,7 +452,7 @@ class ProcurementLogPage extends BasePage {
     await expect(this.addSubmittalButton).toBeVisible();
     await this.restoreOwnedContext(data);
     const row = await this.searchExactSubmittal(data.submittalNumber);
-    await row.getByRole('cell', { name: data.specificationNumber, exact: true }).click();
+    await row.getByRole('cell', { name: data.specificationNumber, exact: true }).first().click(); // the column can appear more than once (SCP-DEF-041)
     // Clicking anywhere on the component row opens it with its deliveries and the + Log Delivery action.
     const component = this.componentRow(data.material);
     await expect(component).toHaveCount(1);
@@ -602,7 +640,7 @@ class ProcurementLogPage extends BasePage {
     if (this.deliveryActionScope) {
       const image = this.deliveryActionScope.getByRole('img', { name, exact: true });
       await expect(image, `Exactly one ${name} action on the owned delivery`).toHaveCount(1);
-      await image.click();
+      await this.clickRowAction(image);
       await this.waitForReady();
       await this.pauseAfterOperation();
       return;
@@ -618,7 +656,26 @@ class ProcurementLogPage extends BasePage {
     if (!image) {
       throw new Error(`${name} action was not visible. Current URL: ${this.page.url()}`);
     }
-    await this.clickFirstVisible([image], name, 5000);
+    await this.clickRowAction(image.locator.first());
+  }
+
+  // Normal click first; when a sticky cell of the drawer table still overlaps the visible, enabled icon, the click is
+  // dispatched to the icon itself (React handles the bubbling click the same way).
+  async clickRowAction(locator) {
+    await this.centerInScroller(locator);
+    try {
+      await locator.click({ timeout: 5000 });
+    } catch (error) {
+      if (!/intercepts pointer events/.test(error.message)) throw error;
+      await expect(locator).toBeVisible();
+      await locator.dispatchEvent('click');
+    }
+  }
+
+  // Row actions sit at the right edge of a horizontally scrolled table (wider since the 29 Oct 2026 build),
+  // where a neighbouring cell overlaps the click point until the icon is scrolled to the middle.
+  async centerInScroller(locator) {
+    await locator.evaluate(node => node.scrollIntoView({ block: 'center', inline: 'center' }));
   }
 
   async closeTopOverlay() {

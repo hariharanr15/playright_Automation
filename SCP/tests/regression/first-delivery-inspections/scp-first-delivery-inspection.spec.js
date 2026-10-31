@@ -1,36 +1,24 @@
-const path = require('path');
+
 const { test, expect, runStep } = require('../../support/test-base');
 const { FirstDeliveryInspectionConfigPage } = require('../../../pages/project-management/first-delivery-inspection-config.page');
 const { FirstDeliveryInspectionsPage } = require('../../../pages/first-delivery-inspections/first-delivery-inspections.page');
-const { MaterialMasterPage } = require('../../../pages/project-management/material-master.page');
-const { SupplierListPage } = require('../../../pages/user-management/supplier-list/supplier-list.page');
-const { loadJsonFile } = require('../../../utils/data-loader');
-const { createProcurementLogData } = require('../../../utils/dynamic-data');
-const { runProcurementLogFlow } = require('../../support/procurement-log-flow');
-
-const procurementDefaults = loadJsonFile(
-  path.resolve(__dirname, '..', '..', '..', 'test-data', 'procurement-log.json'),
-  {}
-);
+const { requireRunDataset } = require('../../../utils/run-dataset');
+const { ScpBlocked } = require('../../../utils/scp-readonly');
 
 test('FDI regression: assignment, draft, required photo, completion and sync', async ({ scpProject, runData }, testInfo) => {
   test.setTimeout(900000);
-  const { page, dashboard, config, siteSelector } = scpProject;
+  const { page, dashboard, config } = scpProject;
   const configuration = new FirstDeliveryInspectionConfigPage(page);
   const inspections = new FirstDeliveryInspectionsPage(page, config);
-  const materials = new MaterialMasterPage(page);
-  const suppliers = new SupplierListPage(page);
   const email = runData.useData('currentUser', 'First Delivery Inspections').email;
   const question = runData.useData('fdiQuestion', 'First Delivery Inspection Config');
-  const supplier = process.env.SCP_FDI_REGRESSION_SUPPLIER || procurementDefaults.supplier;
-  const materialName = `FDI Material ${runData.runId}-${runData.nextSequence()}`;
-  const procurementData = {
-    ...procurementDefaults,
-    ...createProcurementLogData(runData.runId),
-    supplier,
-    material: materialName,
-    componentItem: materialName
-  };
+  // The inspection comes from the run's shared delivery (first delivery of the run's new material), created once by
+  // the Procurement Log module; this test creates no material, submittal or delivery.
+  const shared = requireRunDataset(config.projectName, ScpBlocked);
+  const supplier = shared.data.supplier;
+  const materialName = shared.master.material_name;
+  const procurementData = { submittalNumber: shared.data.submittalNumber, specificationNumber: shared.data.specificationNumber };
+  testInfo.annotations.push({ type: 'shared-run-data', description: `${procurementData.submittalNumber} / ${materialName}` });
   const photo = testInfo.outputPath('inspection-photo.png');
   const secondPhoto = testInfo.outputPath('inspection-photo-2.jpg');
   let record;
@@ -48,34 +36,9 @@ test('FDI regression: assignment, draft, required photo, completion and sync', a
       runData.captureData('configuredInspectionQuestion', question, 'First Delivery Inspection Config');
     });
 
-    await test.step('Create a unique material', async () => {
-      await materials.open(dashboard);
-      const material = await materials.addMaterial(
-        materialName,
-        process.env.SCP_FDI_MATERIAL_CATEGORY,
-        process.env.SCP_FDI_MATERIAL_UOM
-      );
-      runData.captureData('fdiMaterial', material, 'Material Master');
-    });
-
-    await test.step(`Map ${materialName} to ${supplier}`, async () => {
-      await suppliers.open();
-      const mapping = await suppliers.mapMaterial(supplier, materialName);
-      runData.captureData('fdiSupplierMapping', mapping, 'Supplier List');
-    });
-
-    await test.step('Complete the existing Procurement Log functional flow', async () => {
-      await runProcurementLogFlow({
-        page,
-        siteSelector,
-        runData,
-        data: procurementData,
-        runStep,
-        dataPrefix: 'fdiProcurement'
-      });
-    });
-
     await test.step('Open the generated current-run inspection', async () => {
+      // Start from a neutral page so no drawer from an earlier module covers the left menu.
+      await page.goto(new URL('/management-dashboard', page.url()).href, { waitUntil: 'domcontentloaded' });
       await inspections.open(dashboard);
       await inspections.ensureRecords();
     });
@@ -102,9 +65,16 @@ test('FDI regression: assignment, draft, required photo, completion and sync', a
       await inspections.selfAssign(row, email);
       await inspections.unassign(inspections.recordRow(record), email);
       if (config.defaultRole === 'admin') {
-        await inspections.assignInspector(inspections.recordRow(record), email);
-        await inspections.expectAssigneeActions(inspections.recordRow(record), true);
-        await inspections.unassign(inspections.recordRow(record), email);
+        // 29 Oct 2026: unassigned records offer the admin only Self Assign. Recorded as a soft failure so the
+        // draft, photo, completion and sync checks below still run.
+        const adminAssign = inspections.recordRow(record).getByRole('button', { name: /^(Assign|Reassign)$/ });
+        const offered = await adminAssign.count();
+        expect.soft(offered, 'Application defect: FDI offers the Organization Admin no Assign/Reassign action on an unassigned inspection (only Self Assign)').toBeGreaterThan(0);
+        if (offered) {
+          await inspections.assignInspector(inspections.recordRow(record), email);
+          await inspections.expectAssigneeActions(inspections.recordRow(record), true);
+          await inspections.unassign(inspections.recordRow(record), email);
+        }
       }
       await inspections.selfAssign(inspections.recordRow(record), email);
     });

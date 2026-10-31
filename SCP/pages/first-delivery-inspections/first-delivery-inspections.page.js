@@ -67,7 +67,8 @@ class FirstDeliveryInspectionsPage extends BasePage {
     await this.page.getByRole('button', { name: 'PASS', exact: true }).first().waitFor({ state: 'visible', timeout: 30000 }).catch(() => null);
     await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => null);
     const overallNotes = this.page.getByPlaceholder('Add overall observations or notes for this inspection...');
-    const photos = this.page.getByText(/^Photos(?: \(\d+\))?$/);
+    // 31 Oct 2026: the section label renders as "Photos " (trailing space), so surrounding whitespace is allowed.
+    const photos = this.page.getByText(/^\s*Photos(?: \(\d+\))?\s*$/);
     const photoInput = this.page.locator('input[type="file"]');
     const documents = this.page.getByText('Submittal Spec Documents', { exact: true });
 
@@ -244,12 +245,19 @@ class FirstDeliveryInspectionsPage extends BasePage {
   }
 
   async expectReportSettings(settings) {
+    // The form reads the FDI settings when the app loads; right after the settings were saved in the same session it can
+    // still show the old ones. Reload once so the check uses the saved settings (a real defect still fails after it).
+    const photos = this.page.getByText(/^\s*Photos(?: \(\d+\))?\s*$/);
+    if (settings['Enable Uploading of Photos?'] && !(await photos.first().waitFor({ state: 'visible', timeout: 8000 }).then(() => true, () => false))) {
+      await this.page.reload({ waitUntil: 'domcontentloaded' });
+      await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => null);
+    }
     await this.expectConfiguredControl(this.page.getByText('Observation/Notes', { exact: true }),
       settings['Need Overall Notes to be captured'], 'Observation/Notes section');
     await this.expectConfiguredControl(
       this.page.getByPlaceholder('Add overall observations or notes for this inspection...'),
       settings['Need Overall Notes to be captured'], 'Observation/Notes');
-    await this.expectConfiguredControl(this.page.getByText(/^Photos(?: \(\d+\))?$/),
+    await this.expectConfiguredControl(this.page.getByText(/^\s*Photos(?: \(\d+\))?\s*$/),
       settings['Enable Uploading of Photos?'], 'Photos');
     await this.expectConfiguredControl(this.page.getByText('Submittal Spec Documents', { exact: true }),
       settings['Provide Link to Submittal Spec Documents?'], 'Spec documents');

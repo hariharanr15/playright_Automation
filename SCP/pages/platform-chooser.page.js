@@ -47,10 +47,17 @@ class PlatformChooserPage extends BasePage {
       await loginPage.loginIfVisible(this.config);
       const platformTitle = this.page.getByRole('link', { name: platformName, exact: true });
       // An account with access to only this platform is redirected straight into the app, without the chooser.
+      const rejected = this.page.getByText(/Please enter a correct email and password/i).first();
       const landed = await Promise.race([
         this.page.waitForURL(url => url.origin === appOrigin && !/^\/auth\/?$/i.test(url.pathname), { timeout: 30000 }).then(() => 'app'),
-        platformTitle.first().waitFor({ state: 'visible', timeout: 30000 }).then(() => 'chooser')
+        platformTitle.first().waitFor({ state: 'visible', timeout: 30000 }).then(() => 'chooser'),
+        rejected.waitFor({ state: 'visible', timeout: 30000 }).then(() => 'rejected')
       ]).catch(() => null);
+      if (landed === 'rejected') {
+        const { ScpBlocked } = require('../utils/scp-readonly');
+        const { maskEmail } = require('../utils/access/access-model');
+        throw new ScpBlocked(`Sign-in rejected for ${maskEmail(this.config.username)}: the password in SCP/.env does not match the account`);
+      }
       if (landed === 'app' && this.isAuthenticatedAppUrl()) return;
       try {
         await this.expectVisible(platformTitle, `${platformName} platform card`, 30000);

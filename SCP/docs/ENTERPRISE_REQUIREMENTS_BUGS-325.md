@@ -107,3 +107,13 @@ The same From–To was set in Enterprise and used for the Procurement reads. Eac
 BUGS-325 does not say which date From–To applies to, so the expected population for Spend, On-Time and Lead-Time Variance needs a decision.
 
 Project team, 28 Oct 2026: the On-Time Delivery and Active Alerts differences come from old values that were not reset; new records are expected to be counted correctly. SCP-DEF-016 and SCP-DEF-018 stay registered so the checks show when new data reconciles. The date basis for Spend and Lead-Time Variance is still to be decided.
+
+## Decision A (29 Oct 2026) and result
+
+The user chose **A**: each metric uses its own date. Open Submittals and the status chart use the submittals Procurement Log lists for the range. Spend and Lead-Time Variance use Components created in the range. On-Time uses Deliveries with an Actual Delivery Date in the range. Active Alerts uses unread alerts in the range.
+
+Run on 29 Oct 2026, range 28/09–28/10/2026, account projects LLE - Test, NRVC_Hall and SCP_Testing_Ram:
+- Lead-Time Variance **passes**; Spend **matches**.
+- On-Time: NRVC_Hall 5 of 24 in Enterprise vs 8 of 29 per BUGS-325 (SCP-DEF-016, Inventory receipts left out).
+- Active Alerts: 111 vs 0 unread (SCP-DEF-018).
+- LLE - Test: Procurement Log has no submittals for any date, but Enterprise counts 1 submittal and 8 deliveries (SCP-DEF-015). The team attributes these differences to old values that were not reset.

@@ -28,7 +28,7 @@ class SubcontractorIssuesPage extends ReadOnlyReportPage {
         await this.page.reload({ waitUntil: 'domcontentloaded' });
         response = await reloaded;
       }
-      expect(response.status()).toBe(200);
+      expect(response.ok(), `HTTP ${response.status()}`).toBe(true);
       result = { body: await response.json(), requestUrl: response.url() };
       await expect(this.page).toHaveURL(/\/subcontractor-issues\/?$/);
       await ctx.assertContext();

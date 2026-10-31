@@ -24,7 +24,10 @@ class SystemMessagesPage extends BasePage {
   }
 
   async createCodegenMessage(data) {
-    await this.page.getByLabel(/Scope/i).selectOption('project');
+    // Since the 29 Oct 2026 build the Scope selector is disabled and fixed to the open project.
+    const scope = this.page.getByLabel(/Scope/i);
+    if (await scope.isEnabled()) await scope.selectOption('project');
+    else await expect(scope, 'A disabled Scope must already be the project scope').toHaveValue('project');
     await this.fillVisible(this.titleInput, data.title, 'System message title');
     await this.fillVisible(this.bodyInput, data.body, 'System message body');
     await this.fillVisible(this.startsAtInput, data.startsAt, 'System message start');

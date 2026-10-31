@@ -33,7 +33,15 @@ const executionFixtures = {
       }
       return route.continue();
     };
-    const uncaught = error => { if (pageErrors.length < 30) pageErrors.push(error.message); };
+    // Errors raised while the tab is on the SSO login site (its own origin, e.g. "Unexpected identifier 'extend'") are kept
+    // as evidence but are not SCP application errors.
+    const ssoErrors = [];
+    const uncaught = error => {
+      let onScp = true;
+      try { onScp = new URL(page.url()).origin === origin; } catch { onScp = true; }
+      if (!onScp) { if (ssoErrors.length < 30) ssoErrors.push(error.message); return; }
+      if (pageErrors.length < 30) pageErrors.push(error.message);
+    };
     const consoleError = message => {
       if (message.type() === 'error' && /Unhandled render error caught by ErrorBoundary|Maximum update depth exceeded/.test(message.text()) && renderErrors.length < 30) renderErrors.push(message.text());
     };
@@ -47,7 +55,7 @@ const executionFixtures = {
     } finally {
       await context.unroute('**/api/**', guard);
       page.off('pageerror', uncaught); page.off('console', consoleError);
-      await info.attach('chrome-execution-guard', { body: Buffer.from(JSON.stringify({ requests, pageErrors, renderErrors,
+      await info.attach('chrome-execution-guard', { body: Buffer.from(JSON.stringify({ requests, pageErrors, ssoErrors, renderErrors,
         browser: context.browser().version(), channel: 'chrome', headed: !info.project.use.headless })), contentType: 'application/json' });
       if (!page.isClosed()) {
         const image = await page.screenshot({ fullPage: isHeadless(), timeout: 5000 }).catch(() => null);

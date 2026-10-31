@@ -50,7 +50,10 @@ function launchSharedBrowser({ headless }) {
   const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'scp-shared-chrome-'));
   const args = ['--remote-debugging-address=127.0.0.1', '--remote-debugging-port=0', `--user-data-dir=${userDataDir}`,
     '--no-first-run', '--no-default-browser-check', '--disable-default-apps', '--disable-popup-blocking', '--password-store=basic',
-    '--disable-features=Translate,PasswordLeakDetection,AutofillServerCommunication', '--force-device-scale-factor=1',
+    '--disable-features=Translate,PasswordLeakDetection,AutofillServerCommunication',
+    // Headed runs follow the Windows display scaling so the maximised window fits the screen like a normal Chrome;
+    // SCP_FORCE_SCALE_1=true restores the fixed 100 % scale.
+    ...(headless || process.env.SCP_FORCE_SCALE_1 === 'true' ? ['--force-device-scale-factor=1'] : []),
     ...(headless ? ['--headless=new', '--window-size=1440,900'] : ['--start-maximized']), 'about:blank'];
   const executable = chromeExecutable();
   // Optional diagnostics: SCP_SHARED_BROWSER_LOG=<file> captures Chrome's own log (renderer crashes, DevTools disconnects).
@@ -102,7 +105,9 @@ function closeSharedBrowser(handle) {
 async function connectSharedBrowser() {
   const { chromium } = require('@playwright/test');
   try {
-    return await chromium.connectOverCDP(sharedEndpoint(), { slowMo: getSlowMoMs(), timeout: 30000 });
+    // A Chrome slowed by memory pressure can miss one attach window, so a second, longer attempt is made.
+    return await chromium.connectOverCDP(sharedEndpoint(), { slowMo: getSlowMoMs(), timeout: 60000 })
+      .catch(() => chromium.connectOverCDP(sharedEndpoint(), { slowMo: getSlowMoMs(), timeout: 90000 }));
   } catch (error) {
     const interrupted = new Error(`Shared browser unavailable at ${sharedEndpoint()}; no replacement browser is launched. ${error.message}`);
     interrupted.failureCategory = 'Environment';
@@ -115,15 +120,54 @@ async function sharedContextAndPage(browser) {
   const context = browser.contexts()[0];
   if (!context) throw new Error('The shared browser exposes no default context');
   const pages = context.pages().filter(page => !page.isClosed());
-  const page = pages[0] || await context.newPage();
+  // A stage or a restarted worker keeps the live tab: the application's memory leak is contained by recycling the
+  // tab between scenarios (recycleReason), and opening a tab per worker start left two blank tabs racing (31 Oct).
+  const page = pages.find(item => /^https?:/.test(item.url())) || pages[0] || await openFreshTab(context);
+  for (const extra of pages) if (extra !== page) await extra.close({ runBeforeUnload: false }).catch(() => null);
   return { context, page };
+}
+
+// A new tab shares cookies and localStorage but not sessionStorage, where the application keeps the selected site:
+// without it the header shows "Select Venue" and the site list stays empty (31 Oct 2026). The old tab's
+// sessionStorage is therefore restored in the new tab before the application's own scripts run, once.
+async function openFreshTab(context, old) {
+  const url = old && !old.isClosed() ? old.url() : '';
+  const items = /^https?:/.test(url) ? await Promise.race([old.evaluate(() => Object.entries(sessionStorage)).catch(() => null),
+    new Promise(resolve => setTimeout(() => resolve(null), 5000))]) : null;
+  const fresh = await context.newPage();
+  tabOpenedAt.set(fresh, Date.now());
+  if (items?.length) {
+    await fresh.addInitScript(({ origin, items }) => {
+      if (location.origin !== origin || window.name === 'scp-session-restored') return;
+      window.name = 'scp-session-restored';
+      for (const [key, value] of items) sessionStorage.setItem(key, value);
+    }, { origin: new URL(url).origin, items });
+  }
+  return fresh;
 }
 
 // Escapes a tab hung by an application defect. Closing the only tab would quit the shared Chrome, so in shared mode
 // a fresh tab is opened in the same context first; the run still has exactly one tab afterwards.
 async function discardUnresponsivePage(page) {
-  if (isSharedBrowser() && !page.isClosed()) await page.context().newPage().catch(() => null);
+  if (isSharedBrowser() && !page.isClosed()) await openFreshTab(page.context(), page).catch(() => null);
   await page.close({ runBeforeUnload: false }).catch(() => null);
+}
+
+// The leak also builds up inside one stage (a single Analytics tab reached 10.5 GB in 30 min), so the tab is recycled
+// between scenarios once it is old or its JS heap is large. The replacement starts blank; scpApp and scpProject then
+// reopen the Management Dashboard and re-select the project as they do for every scenario in the shared tab.
+const tabOpenedAt = new WeakMap();
+const TAB_MAX_AGE_MS = Number(process.env.SCP_SHARED_TAB_MAX_AGE_MIN || 5) * 60000;
+const TAB_MAX_HEAP_BYTES = Number(process.env.SCP_SHARED_TAB_MAX_HEAP_MB || 1536) * 1024 * 1024;
+
+async function recycleReason(page) {
+  if (!tabOpenedAt.has(page)) tabOpenedAt.set(page, Date.now());
+  // The document's own load time survives stage and worker restarts, which reuse the live tab.
+  const probe = await Promise.race([page.evaluate(() => ({ loaded: performance.timeOrigin, heap: performance.memory?.usedJSHeapSize || 0 }))
+    .catch(() => null), new Promise(resolve => setTimeout(() => resolve(null), 5000))]);
+  const age = Date.now() - (probe?.loaded || tabOpenedAt.get(page));
+  if (age > TAB_MAX_AGE_MS) return `open ${Math.round(age / 60000)} min`;
+  return probe?.heap > TAB_MAX_HEAP_BYTES ? `JS heap ${Math.round(probe.heap / 1048576)} MB` : '';
 }
 
 function sessionOrigins(config) {
@@ -171,6 +215,7 @@ module.exports = {
   ensureAccountSession,
   isSharedBrowser,
   launchSharedBrowser,
+  recycleReason,
   sharedContextAndPage,
   sharedEndpoint,
   signedInEmail

@@ -14,11 +14,13 @@ test('User Management invites, activates and finds a current-run user', async ({
   const management = new UserManagementPage(page);
   const organization = runData.useData('activeOrganization', 'User Management');
   // A registered address receives "Project Role Assigned" instead of an invitation, so used numbers are skipped.
+  // The run sequence restarts with every run and an address may be registered on another project (not visible here),
+  // so the number is time-based (unique across runs) and still checked against this project's users.
   const existing = await management.projectUserEmails(await scpProject.projectSelector.activeProjectReference());
-  let sequence = runData.nextSequence();
+  let sequence = `${Date.now()}`.slice(-9);
   for (let tries = 1; existing.has(`user${sequence}@yopmail.com`); tries += 1) {
     if (tries >= 100) throw new Error(`No unused invitation address after ${tries} numbers`);
-    sequence = runData.nextSequence();
+    sequence = `${Date.now() + tries}`.slice(-9);
   }
   const user = {
     ...runData.invitedUser,
@@ -111,11 +113,13 @@ test('User Management filters and searches an active user independently', async 
     runData.recordFallback('userManagementFilterUser', email, 'User Management');
   });
   await runStep(page, 'Apply Active status filter and verify matching rows', async () => {
-    await management.filterActive(email);
+    const applied = await management.filterActive(email);
+    // The status tab has no options when the page's status-count request (project=null) fails with HTTP 500.
+    if (!applied) throw new Error('User Management status filter offers no status options (status-count request fails), so the Active filter cannot be applied');
     const statuses = await page.getByRole('row').filter({ hasText: '@' }).locator('td:first-child').allTextContents();
     expect(statuses.length).toBeGreaterThan(0);
-    expect.soft(statuses.every((status) => status.trim() === 'Active'),
-      'Active filter should exclude invited users').toBe(true);
+    const other = statuses.map((status) => status.trim()).filter((status) => status !== 'Active');
+    expect.soft(other, `Active filter should exclude invited users (statuses shown: ${[...new Set(statuses.map((status) => status.trim()))].join(', ')})`).toEqual([]);
   });
   await runStep(page, 'Apply project role filter and verify matching rows', async () => {
     await page.reload();
@@ -157,6 +161,7 @@ test('User Management filters and searches an active user independently', async 
     await management.search(email);
     await management.searchInput.first().fill(`missing-${email}`);
     await management.searchInput.first().press('Enter');
+    await management.settle();
     await expect(management.row(email)).toHaveCount(0);
   });
 });

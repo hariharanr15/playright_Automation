@@ -12,7 +12,7 @@ class WatchedMaterialsPage extends BasePage {
 
   async open(dashboard) {
     const projectUsersResponse = this.page.waitForResponse((response) =>
-      response.status() === 200 &&
+      response.ok() &&
       response.url().includes('/api/project_user/get_users_by_project/'),
     { timeout: 30000 });
     await dashboard.openProjectManagementModule('Watched Materials', 'watched-materials', 'Watched Materials');

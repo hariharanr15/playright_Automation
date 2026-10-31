@@ -23,8 +23,10 @@ class SupplierListPage {
   async existingSuppliers() {
     expect(this.projectId, 'Supplier List project must be known before reading existing suppliers').toBeTruthy();
     const body = await read(this.page, 'supplier_master/', { project_id: this.projectId });
-    expect(Array.isArray(body.data), 'Existing supplier list').toBe(true);
-    return body.data;
+    // The 29 Oct 2026 build returns a bare array; earlier builds wrapped it in { data }.
+    const list = Array.isArray(body) ? body : body.data;
+    expect(Array.isArray(list), 'Existing supplier list').toBe(true);
+    return list;
   }
 
   // Draws sequence numbers until neither the supplier name nor the contact email already exists in the project.

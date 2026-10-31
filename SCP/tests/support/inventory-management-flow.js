@@ -7,6 +7,7 @@ const { exactOne, InventoryBlocked } = require('../../utils/inventory-data');
 const { currentJournal, managedStep } = require('../../utils/scp-step');
 const { InventoryRecoverySources, complete, missing, importOwnedSeed } = require('../../utils/inventory-recovery');
 const { isHeadless } = require('../../utils/execution-mode');
+const { loadRunDataset, saveRunDataset } = require('../../utils/run-dataset');
 
 async function details(ctx, materialId) {
   await ctx.assertContext();
@@ -38,9 +39,12 @@ async function prepareContext(ctx) {
   return ctx;
 }
 
-async function createDataset(ctx, info) {
+async function createDataset(ctx, info, { fresh = false } = {}) {
   ctx.owned = undefined;
   info.setTimeout(Math.max(info.timeout, 600000));
+  // The run's shared chain is reused; only the Procurement Log module (fresh) creates one.
+  const shared = fresh ? null : loadRunDataset(ctx.allocation.project, ctx.allocation.site);
+  if (shared) return reuseDataset(ctx, info, shared);
   const journal = currentJournal();
   const seed = journal && !journal.state.data.inventoryOwned ? importOwnedSeed(process.env.SCP_RECOVERY_SEED || journal.state.data.inventoryOrigin?.report, info.title, ctx.allocation) : null;
   if (seed) {
@@ -207,15 +211,61 @@ async function createDataset(ctx, info) {
   });
   await info.attach('inventory-owned-records', { body: Buffer.from(JSON.stringify(owned, (key, value) => key === 'procurement' ? undefined : value, 2)), contentType: 'application/json' });
   journal?.setData('inventoryOwned', owned);
+  if (ctx.allocation.project) {
+    const { procurement: _page, ...record } = owned;
+    saveRunDataset({ project: ctx.allocation.project, site: ctx.allocation.site, sourceCase: info.title, ...record });
+  }
   return owned;
 }
 
-async function openOwnedActivity(ctx, action, quantity) {
+// Starts a test on the run's shared chain: stock is first consolidated at the source location, then the current
+// ledger becomes the test's baseline, so each test verifies only its own change. Comments are unique per test.
+async function reuseDataset(ctx, info, shared) {
+  const { randomUUID } = require('crypto');
+  await ctx.reset();
+  await prepareContext(ctx);
+  const tag = randomUUID().slice(0, 8);
+  const data = { ...shared.data, comments: `${shared.data.comments} ${tag}` };
+  const procurement = new ProcurementLogPage(ctx.page);
+  ctx.owned = { ...shared, data, procurement, activity: { ...shared.activity, comments: data.comments }, activities: [], deliveryCompleted: true, shared: true };
+  const meta = await details(ctx, shared.master.material_master_id);
+  const parked = Number(exactOne(meta.locations, l => l.location_name === ctx.allocation.destinationLocation, 'Destination balance').available_quantity);
+  if (parked > 0) {
+    await managedStep(require('@playwright/test').test, ctx.page, `Consolidate ${parked} at ${ctx.allocation.sourceLocation} before the test`, async () => {
+      const activity = await openOwnedActivity(ctx, 'Internal Movement', parked);
+      Object.assign(activity, { source: ctx.allocation.destinationLocation, destination: ctx.allocation.sourceLocation, comments: `${data.comments} consolidate` });
+      await ctx.inv.fillActivity(activity);
+      await ctx.inv.submitActivity();
+    }, { mutation: true, expected: 'All stock of the shared material is at the source location' });
+    await ctx.reset();
+  }
+  // Recorded as the scenario's 'inventory' step, so dependent operations (dependsOn: ['inventory']) can run on reuse.
+  await managedStep(require('@playwright/test').test, ctx.page, 'Prerequisite: validate the run\'s shared delivered material and baseline', async () => {
+    await ctx.inv.openView(shared.master.material_name, 'Actions');
+    const snapshot = await ledger(ctx);
+    const balance = Number(snapshot.data.closing_balance);
+    if (balance < 2 * Number(data.quantity)) throw new InventoryBlocked(`Shared run stock is exhausted (${balance} left); a new run creates a new chain`);
+    const schedules = (await ctx.read('submittal_schedule/list_submittal_schedules/', { submittal_id: shared.submittal.submittal_id })).data.schedules;
+    const schedule = exactOne(schedules, s => s.submittal_schedule_id === shared.schedule.submittal_schedule_id, 'Shared component');
+    Object.assign(ctx.owned, { baselineBalance: balance, baseline: { ...snapshot.data }, receivedQuantity: Number(schedule.received_quantity) });
+  }, { id: 'inventory', expected: 'The shared delivered material has a reconciled ledger with enough stock for this test' });
+  const balance = ctx.owned.baselineBalance;
+  await ctx.reset();
+  await info.attach('inventory-owned-records', { body: Buffer.from(JSON.stringify(ctx.owned, (key, value) => key === 'procurement' ? undefined : value, 2)), contentType: 'application/json' });
+  info.annotations.push({ type: 'shared-run-data', description: `${data.submittalNumber} (${shared.master.material_name}); starting balance ${balance}` });
+  currentJournal()?.setData('inventoryOwned', ctx.owned);
+  return ctx.owned;
+}
+
+// { open: false } only builds the activity; postAndVerify opens the form itself after a reset.
+async function openOwnedActivity(ctx, action, quantity, { open = true } = {}) {
   const { owned } = ctx;
   expect(owned?.deliveryCompleted, 'Inventory operations require successfully completed delivery prerequisites').toBe(true);
   await ctx.assertContext();
-  await ctx.inv.openView(owned.master.material_name, 'Actions');
-  await ctx.inv.openActivity();
+  if (open) {
+    await ctx.inv.openView(owned.master.material_name, 'Actions');
+    await ctx.inv.openActivity();
+  }
   // Schedule labels are generated by the application from the owned component's date/material/PO.
   const d = owned.schedule;
   const date = new Date(`${d.date_required_on_site}T12:00:00Z`);
@@ -317,7 +367,7 @@ async function verifyBothSearches(ctx, expectedBalance) {
   const row = await procurement.searchExactSubmittal(ctx.owned.data.submittalNumber);
   await expect(row).toContainText(ctx.owned.data.supplier);
   await expect(row).toContainText(ctx.owned.master.material_name);
-  await row.getByRole('cell', { name: ctx.owned.data.specificationNumber, exact: true }).click();
+  await row.getByRole('cell', { name: ctx.owned.data.specificationNumber, exact: true }).first().click(); // column can repeat (SCP-DEF-041)
   await expect(ctx.page.getByRole('button', { name: 'Add Component', exact: true })).toBeVisible();
   // A partially delivered component no longer shows a Delivery action, so the row is found by its material.
   const component = procurement.componentRow(ctx.owned.master.material_name);

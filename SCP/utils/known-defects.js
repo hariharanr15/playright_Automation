@@ -26,7 +26,11 @@ function classifyScenario(scenario) {
   }
   if (!['Failed', 'Blocked'].includes(scenario.status)) return scenario;
   const text = failureText(scenario);
-  const defect = candidates.find(item => (item.statuses || ['Failed']).includes(scenario.status) && matches(item.signature, text));
+  const eligible = candidates.filter(item => (item.statuses || ['Failed']).includes(scenario.status));
+  // With several errors (e.g. a soft assertion plus a later hard failure) every error needs its own registered signature.
+  const errors = (scenario.errors || []).filter(Boolean);
+  if (errors.length > 1 && !errors.every(error => eligible.some(item => matches(item.signature, error)))) return scenario;
+  const defect = eligible.find(item => matches(item.signature, errors.length > 1 ? errors.join('\n') : text));
   if (!defect) return scenario;
   return { ...scenario, status: KNOWN_DEFECT, originalStatus: scenario.status,
     knownDefect: { id: defect.id, summary: defect.summary, recordedOn: defect.recordedOn } };

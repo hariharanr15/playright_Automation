@@ -37,7 +37,8 @@ const MODULES = [
     sessionPermissions: ['submittal:list'],
     stages: [
       { name: 'procurement-readonly', config: 'playwright.application-readonly.config.js', files: ['tests/smoke/procurement-log'], mode: 'qualified-record read-only' },
-      { name: 'procurement-regression', config: 'playwright.stage.config.js', files: ['tests/regression/procurement-log'], qualified: false,
+      // Creates the run's only submittal/delivery chain (utils/run-dataset.js), reused by Inventory, FDI and International Shipment.
+      { name: 'procurement-regression', config: 'playwright.inventory.config.js', files: ['tests/regression/procurement-log'], qualified: false, mutation: true,
         reason: 'Standalone delivery/checklist/shipping/GRN needs qualified dynamic inputs and confirmed checklist rules',
         requiresAccess: ['project-management', 'supplier-list'] }
     ] },
@@ -61,7 +62,8 @@ const MODULES = [
       { name: 'fdi-readonly', config: 'playwright.stage.config.js', mode: 'qualified completed-delivery read-only (Blocked without SCP_FDI_READONLY_DATA)',
         files: ['tests/regression/first-delivery-inspections/scp-fdi-readonly.spec.js', 'tests/regression/first-delivery-inspections/scp-fdi-access.spec.js'] },
       { name: 'fdi-owned-delivery', config: 'playwright.stage.config.js', mode: 'dedicated owned inspection; shared configuration is blocked',
-        enabledBy: 'SCP_FDI_OWNED_MUTATIONS', files: ['tests/regression/first-delivery-inspections/scp-fdi-owned-flow.spec.js'], requiresAccess: ['procurement-log', 'inventory-management'] },
+        enabledBy: 'SCP_FDI_OWNED_MUTATIONS', skipReason: 'Covered by fdi-regression, which completes the inspection of the shared run delivery (one inspection per run)',
+        files: ['tests/regression/first-delivery-inspections/scp-fdi-owned-flow.spec.js'], requiresAccess: ['procurement-log', 'inventory-management'] },
       { name: 'fdi-regression', config: 'playwright.stage.config.js', qualified: false,
         reason: 'Shared settings/question changes and reassignment need an exclusive configuration allocation and role accounts; owned submission is covered by fdi-owned-delivery',
         files: ['tests/regression/first-delivery-inspections/scp-first-delivery-inspection.spec.js', 'tests/regression/first-delivery-inspections/scp-first-delivery-inspection-filters.spec.js',
@@ -74,7 +76,8 @@ const MODULES = [
       { name: 'international-shipments-smoke', config: 'playwright.chrome-smoke.config.js', files: ['tests/smoke/international-shipments'], mode: 'pre-auth guarded read-only' },
       { name: 'international-shipments-source', config: 'playwright.stage.config.js', files: ['tests/regression/international-shipments/scp-shipment-source.spec.js'], mode: 'guarded project-scoped route qualification' },
       { name: 'international-shipments-owned', config: 'playwright.stage.config.js', files: ['tests/regression/international-shipments/scp-shipment-owned-flow.spec.js'],
-        enabledBy: 'SCP_SHIPMENT_OWNED_MUTATIONS', mode: 'fresh owned submittal and shipment; existing reference shipments are read-only', requiresAccess: ['procurement-log', 'supplier-list', 'project-management'] },
+        enabledBy: 'SCP_SHIPMENT_OWNED_MUTATIONS', skipReason: 'Covered by international-shipments-regression on the shared run submittal (no separate submittal per run)',
+        mode: 'fresh owned submittal and shipment; existing reference shipments are read-only', requiresAccess: ['procurement-log', 'supplier-list', 'project-management'] },
       { name: 'international-shipments-regression', config: 'playwright.stage.config.js', files: ['tests/regression/international-shipments/scp-international-shipments.spec.js'], qualified: false,
         reason: 'Legacy flow uses shared reference defaults; the qualified positive path is covered by international-shipments-owned', requiresAccess: ['procurement-log'] }
     ] },

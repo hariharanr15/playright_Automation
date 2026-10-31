@@ -32,9 +32,9 @@ test('Procurement smoke: exact saved component identity, date, quantity and UOM'
   const loaded = ctx.page.waitForResponse(response => response.request().method() === 'GET' &&
     new URL(response.url()).pathname === '/api/submittal_schedule/list_submittal_schedules/' &&
     new URL(response.url()).searchParams.get('submittal_id') === ctx.fixture.submittal.submittal_id);
-  await row.getByRole('cell', { name: ctx.fixture.data.specificationNumber, exact: true }).click();
+  await row.getByRole('cell', { name: ctx.fixture.data.specificationNumber, exact: true }).first().click(); // column can repeat (SCP-DEF-041)
   const response = await loaded;
-  expect(response.status()).toBe(200);
+  expect(response.ok(), `HTTP ${response.status()}`).toBe(true);
   const records = (await response.json()).data.schedules;
   const matches = records.filter(record => record.submittal_schedule_id === ctx.component.submittal_schedule_id);
   expect(matches).toHaveLength(1);

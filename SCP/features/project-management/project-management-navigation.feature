@@ -110,10 +110,10 @@ Feature: SCP Project Management Reference Data
     Then the new site is displayed
 
   @regression @positive
-  Scenario: Admin creates a procurement submittal
+  Scenario: Admin sees the configured log field in Add Submittal without saving
     When the user opens Procurement Log
-    And the user creates a unique procurement submittal
-    Then the new procurement submittal is displayed
+    And the user opens Add Submittal and checks the Codegen field
+    Then Add Submittal closes without creating a submittal
 
   @regression @positive
   Scenario: Admin watches a material category on the dashboard

@@ -39,7 +39,9 @@ function accountsToValidate(config, expectations = loadExpectations()) {
   const accounts = [{ label: config.defaultRole === 'admin' ? 'Organization Admin' : 'Configured account', usernameEnv: process.env[`${prefix}_USERNAME`] ? `${prefix}_USERNAME` : process.env.SCP_USERNAME ? 'SCP_USERNAME' : 'SCP_EMAIL',
     passwordEnv: process.env[`${prefix}_USERNAME`] && (config.defaultRole !== 'admin' || process.env[`${prefix}_PASSWORD`]) ? `${prefix}_PASSWORD` : 'SCP_PASSWORD', projects: projects === 'all' ? 'all' : projects.map(project => ({ project })) }];
   // Supplier and Subcontractor access is discovered on every project the account can open (observed, not validated).
-  for (const [role, label] of [['supplier', 'Supplier'], ['subcontractor', 'Subcontractor']]) {
+  // SCP_ACCESS_ADMIN_ONLY=true limits discovery to the configured account, e.g. while role credentials are being fixed.
+  const roles = /^true$/i.test(process.env.SCP_ACCESS_ADMIN_ONLY || '') ? [] : [['supplier', 'Supplier'], ['subcontractor', 'Subcontractor']];
+  for (const [role, label] of roles) {
     const roleUsername = `SCP_${role.toUpperCase()}_USERNAME`;
     if (role !== config.defaultRole && process.env[roleUsername]) {
       accounts.push({ label, usernameEnv: roleUsername, passwordEnv: `SCP_${role.toUpperCase()}_PASSWORD`, projects: 'all' });

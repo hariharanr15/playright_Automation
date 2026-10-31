@@ -52,20 +52,27 @@ function variance(components, deliveries) {
   return { value: average(values), sample: values.length, included, excluded };
 }
 // BUGS-325 Enterprise View, recalculated from the accessible projects' source records (see docs/ENTERPRISE_REQUIREMENTS_BUGS-325.md).
-// unread: { [projectRef]: unread alert count } or null when alerts are not part of the check.
-function enterpriseView(source, projects, unread = null) {
-  const submittals = [...new Map(source.submittals.map(record => [record.id, record])).values()];
+// From-To applies to each metric's own date (decision A, 29 Oct 2026):
+//   Open Submittals / status: the submittals Procurement Log lists for the range (ranged source);
+//   Spend and Lead-Time Variance: Components created in the range; On-Time: Deliveries with an Actual Delivery Date in the range.
+// ranged/all: sourceRecords() for the range and for every date. unread: { [projectRef]: unread alert count } or null.
+function enterpriseView({ ranged, all, range }, projects, unread = null) {
+  const submittals = [...new Map(ranged.submittals.map(record => [record.id, record])).values()];
+  const inRange = value => { if (!value) return false; const day = date(String(value).slice(0, 10)); return day >= date(range.from) && day <= date(range.to); };
+  const created = all.components.filter(c => inRange(c.created_at));
+  const delivered = all.deliveries.filter(d => d.actualDate && inRange(d.actualDate));
   const scoped = ref => {
-    const subs = ref ? submittals.filter(s => s.projectId === ref) : submittals;
+    const own = record => !ref || record.projectId === ref;
+    const subs = submittals.filter(own);
     const ids = new Set(subs.map(s => s.id));
-    const components = source.components.filter(c => ids.has(c.submittalId));
+    const components = created.filter(own);
     const componentIds = new Set(components.map(c => c.id));
-    const deliveries = source.deliveries.filter(d => componentIds.has(d.componentId));
-    const onTime = deliveryMetrics(deliveries);
+    const onTime = deliveryMetrics(delivered.filter(own));
     const spendBySupplier = {};
     for (const c of components) spendBySupplier[c.supplierName] = (spendBySupplier[c.supplierName] || 0) + Number(c.price || 0) * Number(c.actual_quantity || 0);
-    return { submittals: subs.length, open: openSubmittals(subs, components).length,
-      onTime: { onTime: onTime.onTime, total: onTime.completed, rate: onTime.rate }, variance: variance(components, deliveries),
+    return { submittals: subs.length, open: openSubmittals(subs, ranged.components.filter(c => ids.has(c.submittalId))).length,
+      onTime: { onTime: onTime.onTime, total: onTime.completed, rate: onTime.rate },
+      variance: variance(components, all.deliveries.filter(d => componentIds.has(d.componentId))),
       spend: Object.values(spendBySupplier).reduce((a, b) => a + b, 0), spendBySupplier,
       alerts: unread ? (ref ? unread[ref] || 0 : Object.values(unread).reduce((a, b) => a + b, 0)) : null };
   };

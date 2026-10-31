@@ -25,8 +25,10 @@ for (const action of ['Incoming Load', 'Internal Movement', 'Issue To Constructi
         await ctx.page.getByRole('button', { name: 'ADD', exact: true }).click();
         const response = await pending; const body = await response.json();
         expect(response.status()).toBe(400);
-        expect(body.message).toContain('scheduled_quantity required:0.00');
-        expect(body.message).toContain(`quantity exceeds by ${Number(seed).toFixed(2)}`);
+        // On the shared run chain earlier Returns reopen part of the schedule; the open quantity is read, not assumed 0.
+        const open = Number(ctx.owned.data.componentQuantity) - Number(ctx.owned.receivedQuantity ?? ctx.owned.data.deliveryQuantity);
+        expect(body.message).toContain(`scheduled_quantity required:${open.toFixed(2)}`);
+        expect(body.message).toContain(`quantity exceeds by ${(Number(seed) - open).toFixed(2)}`);
         await info.attach('duplicate-receipt-rejection', { body: Buffer.from(JSON.stringify(body)), contentType: 'application/json' });
         await ctx.inv.cancelActivity();
         await verifyInventoryState(ctx, [], initial);
@@ -35,7 +37,7 @@ for (const action of ['Incoming Load', 'Internal Movement', 'Issue To Constructi
       return;
     }
     const quantity = ctx.owned.data.movementQuantity;
-    const activity = await openOwnedActivity(ctx, action, quantity);
+    const activity = await openOwnedActivity(ctx, action, quantity, { open: false });
     const balance = initial - (action === 'Internal Movement' ? 0 : quantity);
     await inventoryStep(ctx.page, `${action}: Search both modules and reconcile stock`, async () => {
       await postAndVerify(ctx, activity, balance);
@@ -94,7 +96,7 @@ test('Inventory validation: nonpositive quantity, movement precision, same locat
 test('Inventory boundary: move exactly the available stock and conserve site total', async ({ inventory: ctx }, info) => {
   await owned(ctx, info);
   const available = ctx.owned.baselineBalance;
-  await postAndVerify(ctx, await openOwnedActivity(ctx, 'Internal Movement', available), available);
+  await postAndVerify(ctx, await openOwnedActivity(ctx, 'Internal Movement', available, { open: false }), available);
   const metadata = await details(ctx, ctx.owned.master.material_master_id);
   expect(Number(exactOne(metadata.locations, l => l.location_name === ctx.allocation.sourceLocation, 'Source').available_quantity)).toBe(0);
   expect(Number(exactOne(metadata.locations, l => l.location_name === ctx.allocation.destinationLocation, 'Destination').available_quantity)).toBe(available);
@@ -104,7 +106,7 @@ test('Inventory filters: location balances, site isolation and date boundaries',
   await owned(ctx, info);
   const moved = ctx.owned.data.movementQuantity;
   const available = ctx.owned.baselineBalance;
-  await postAndVerify(ctx, await openOwnedActivity(ctx, 'Internal Movement', moved), available);
+  await postAndVerify(ctx, await openOwnedActivity(ctx, 'Internal Movement', moved, { open: false }), available);
   const filter = ctx.inv.main.getByRole('combobox');
   for (const [location, quantity] of [[ctx.allocation.sourceLocation, available - moved], [ctx.allocation.destinationLocation, moved]]) {
     await test.step(`Location ${location}`, async () => {

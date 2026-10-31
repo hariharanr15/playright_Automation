@@ -27,6 +27,17 @@ class SiteSelectorPage extends BasePage {
       { locator: this.siteSelector, label: 'Site selector' }
     ], 'Site selector', 20000);
 
+    // The application sometimes keeps the project name in the header but loses the project context: the site list
+    // shows "No options available" and the dashboard shows the setup banner (31 Oct 2026). A reload restores it.
+    const empty = this.page.getByText('No options available', { exact: true });
+    if (await empty.waitFor({ state: 'visible', timeout: 3000 }).then(() => true, () => false)) {
+      await this.page.keyboard.press('Escape');
+      await this.page.reload({ waitUntil: 'domcontentloaded' });
+      await this.waitForReady();
+      if ((await this.activeSiteName()).includes(siteName)) return this.expectActiveSite(siteName).then(() => true);
+      await this.clickFirstVisible([{ locator: this.siteSelector, label: 'Site selector' }], 'Site selector', 20000);
+    }
+
     const sitePattern = new RegExp(`^${this.escapeForRegex(siteName)}$`, 'i');
     await this.clickFirstVisible([
       { locator: this.page.getByRole('option', { name: sitePattern }), label: siteName },

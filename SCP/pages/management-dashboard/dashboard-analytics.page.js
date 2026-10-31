@@ -18,8 +18,17 @@ class DashboardAnalyticsPage extends BasePage {
     const loaded = this.page.waitForResponse(r => this.isList(r, name) && new URL(r.url()).searchParams.get('marked_read') === 'False');
     await this.page.reload({ waitUntil: 'domcontentloaded' });
     const response = await loaded;
+    // Read the body before the page moves on: a superseded request loses it ("No resource with given identifier"),
+    // in which case the same URL is read again.
+    const read = await response.json().then(body => ({ body, status: response.status() }), async error => {
+      if (!/No resource with given identifier/.test(error.message)) throw error;
+      return this.page.evaluate(async url => {
+        const again = await fetch(url, { headers: { Authorization: `Bearer ${localStorage.getItem('_sso_access')}` } });
+        return { body: await again.json(), status: again.status };
+      }, response.url());
+    });
     await this.main.getByRole('button', { name: new RegExp(`^${name}(?:\\s*\\d+\\+?)?$`) }).click();
-    const rows = this.records(await response.json(), response.status());
+    const rows = this.records(read.body, read.status);
     const unit = name === 'Alerts' ? 'alert' : name === 'Tasks' ? 'task' : 'notification';
     await expect(this.main.getByText(`${rows.length} ${unit}${rows.length === 1 ? '' : 's'}`, { exact: true })).toBeVisible();
     await expect(this.main.getByRole('button', { name: /^(?:icon\s+)?Unread$/, exact: true })).toBeVisible();
@@ -79,7 +88,7 @@ class DashboardAnalyticsPage extends BasePage {
   }
   async charts() {
     const responses = [];
-    const listener = response => { if (response.request().method() === 'GET' && /notification_system\/.+\/(pie|status-pie|by-category|by-type-status|aging)\/?|get_project_aggregation/.test(new URL(response.url()).pathname)) responses.push(response); };
+    const listener = response => { if (response.request().method() === 'GET' && /notification_system\/.+\/(pie|status-pie|by-category|by-type-status|aging)\/?|get_project_aggregation/.test(new URL(response.url()).pathname)) responses.push({ response, read: response.json().then(body => ({ body }), error => ({ error })) }); };
     this.page.on('response', listener);
     try {
       await this.main.getByRole('heading', { name: this.chartTitle(), exact: true }).click();
@@ -90,7 +99,15 @@ class DashboardAnalyticsPage extends BasePage {
       const expected = this.name === 'Alerts' ? 1 : 3;
       await expect.poll(() => responses.length).toBeGreaterThanOrEqual(expected);
       const data = [];
-      for (const response of responses) { expect(response.status()).toBe(200); data.push({ url: response.url(), body: await response.json() }); }
+      for (const { response, read } of responses) {
+        expect(response.ok(), `HTTP ${response.status()}`).toBe(true);
+        const { body, error } = await read;
+        // A request the page superseded can lose its body before it is read; its replacement is captured as well.
+        if (/No resource with given identifier/.test(error?.message || '')) continue;
+        if (error) throw error;
+        data.push({ url: response.url(), body });
+      }
+      expect(data.length, 'Chart responses with readable bodies').toBeGreaterThanOrEqual(expected);
       return data;
     } finally { this.page.off('response', listener); }
   }

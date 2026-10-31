@@ -29,12 +29,12 @@ module.exports = defineConfig({
     actionTimeout: 30000,
     navigationTimeout: 45000,
     screenshot: 'only-on-failure',
-    trace: 'on',
+    trace: 'retain-on-failure',
     video: 'retain-on-failure',
     launchOptions: {
       // Low-level slowMo only in demo mode; normal mode paces major actions instead (utils/execution-mode.js).
       slowMo: getSlowMoMs(),
-      args: ['--start-maximized', '--force-device-scale-factor=1']
+      args: ['--start-maximized', ...(process.env.SCP_FORCE_SCALE_1 === 'true' ? ['--force-device-scale-factor=1'] : [])]
     },
     viewport: null
   },

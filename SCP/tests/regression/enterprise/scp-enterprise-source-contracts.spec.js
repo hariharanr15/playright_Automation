@@ -39,7 +39,7 @@ test('Enterprise access: changing any available SCP header project does not narr
   try {
     for (const project of matches) {
       // The project is changed from the header while staying on /enterprise-view.
-      const { summary: ui } = await view.changeInPlace(async () => {
+      const { summary: ui, requestParams } = await view.changeInPlace(async () => {
         await ctx.projectSelector.ensureProject(project.name);
         await ctx.projectSelector.expectActiveProject(project.name);
       }, ctx.read);
@@ -47,7 +47,7 @@ test('Enterprise access: changing any available SCP header project does not narr
       expect(ui).toEqual(baseline);
       const params = new URLSearchParams({ from_date: from, to_date: to, project_id: project.ref });
       const actual = await ctx.read(`enterprise/summary/?${params}`);
-      expect(actual.data).toEqual(baseline);
+      expect(actual.data, `enterprise/summary read for header project ${project.name} (${project.ref}) with ${params} (page requested ${new URLSearchParams(requestParams || {})})`).toEqual(baseline);
     }
   } finally { await ctx.projectSelector.ensureProject(ctx.config.projectName); }
 });

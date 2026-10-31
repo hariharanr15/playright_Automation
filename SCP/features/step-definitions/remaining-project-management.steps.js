@@ -353,16 +353,14 @@ When('the user opens Procurement Log', async function () {
   await this.procurementLog.open();
 });
 
-When('the user creates a unique procurement submittal', async function () {
-  const baseline = loadJsonFile(path.resolve(__dirname, '..', '..', 'test-data', 'procurement-log.json'), {});
-  this.runData.procurementSubmittal = { ...baseline, ...createProcurementLogData(this.runData.runId) };
-  await this.procurementLog.createSubmittal(this.runData.procurementSubmittal);
-  this.runData.captureData('procurementSubmittal', this.runData.procurementSubmittal.submittalNumber, 'Procurement Log');
+// The run's only submittal is created by the Procurement Log module; here the form is checked and closed unsaved.
+When('the user opens Add Submittal and checks the Codegen field', async function () {
+  const field = this.runData.procurementFieldName || this.runData.useData('procurementLogField', 'Add Submittal');
+  await this.procurementLog.previewSubmittalForm(field);
 });
 
-Then('the new procurement submittal is displayed', async function () {
-  await this.procurementLog.expectSubmittal(this.runData.procurementSubmittal.submittalNumber);
-  await this.captureCheckpoint('TC_PM_PL_001_Submittal_Created');
+Then('Add Submittal closes without creating a submittal', async function () {
+  await this.captureCheckpoint('TC_PM_PL_001_Add_Submittal_Previewed');
 });
 
 When('the user opens Site Details', async function () {

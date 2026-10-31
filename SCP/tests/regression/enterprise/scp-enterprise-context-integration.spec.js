@@ -52,10 +52,22 @@ test('Supplier Inbox: allocated exact component Open and Procurement Search pres
   const projectId = await ctx.projectSelector.activeProjectReference();
   const view = new SupplierInboxPage(ctx.page); await view.load();
   await view.filter('Project', projectId);
-  const filtered = await view.filter('Material', fixture.referenceMaterialId);
-  const section = filtered.sections.find(s => s.key === 'unconfirmed_lead_times'); expect(section).toBeTruthy();
-  const expanded = await view.expandSection(section);
-  if (expanded.items.length !== 1) throw new ScpBlocked('Exact allocated material must have one uniquely addressable Inbox component for drill-down; allocate its component identity if ambiguous');
+  // The Material filter lists only materials with Inbox records; the configured one is tried first, then other listed
+  // materials (max 8), until one has exactly one Unconfirmed Lead Times component to drill into.
+  const materialField = view.main.locator('label').filter({ has: ctx.page.getByText('Material', { exact: true }) }).getByRole('combobox');
+  const options = (await materialField.locator('option').evaluateAll(nodes => nodes.map(node => ({ value: node.value, text: node.textContent.trim() })))).filter(option => option.value);
+  const ordered = [...options.filter(option => option.value === fixture.referenceMaterialId), ...options.filter(option => option.value !== fixture.referenceMaterialId)].slice(0, 8);
+  let expanded = null; const tried = [];
+  for (const option of ordered) {
+    const filtered = await view.filter('Material', option.value);
+    const section = filtered.sections.find(s => s.key === 'unconfirmed_lead_times'); expect(section).toBeTruthy();
+    if (!Number(section.summary?.components)) { tried.push(`${option.text}: 0`); continue; }
+    const result = await view.expandSection(section);
+    tried.push(`${option.text}: ${result.items.length}`);
+    if (result.items.length === 1) { expanded = result; info.annotations.push({ type: 'inbox-material', description: `${option.text} (tried ${tried.join(', ')})` }); break; }
+    await view.collapseSection(section);
+  }
+  if (!expanded) throw new ScpBlocked(`No listed material has exactly one Unconfirmed Lead Times component for drill-down (${tried.join(', ') || 'no options'})`);
   const record = expanded.items[0]; expect(record.project_id).toBe(projectId);
   if (record.submittal_no === 'SUB-2026-525') throw new Error('Completed FDI submittal is excluded from reuse');
   const row = view.main.locator('tbody tr').filter({ has: ctx.page.getByRole('cell', { name: record.submittal_no, exact: true }) })
@@ -66,7 +78,7 @@ test('Supplier Inbox: allocated exact component Open and Procurement Search pres
   await row.getByRole('button', { name: 'Open', exact: true }).click();
   await expect(ctx.page).toHaveURL(/\/procurement-log(?:\?|$)/);
   await ctx.assertContext(); expect(await ctx.projectSelector.activeProjectReference()).toBe(record.project_id);
-  const response = await opened; expect(response.status()).toBe(200);
+  const response = await opened; expect(response.ok(), `HTTP ${response.status()}`).toBe(true);
   const components = (await response.json()).data.schedules;
   expect(components.filter(component => component.submittal_schedule_id === record.submittal_schedule_id)).toHaveLength(1);
   // Open lands either on the Procurement Log row or (since 27 Oct 2026) directly on the component detail view.
