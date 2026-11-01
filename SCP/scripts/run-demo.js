@@ -6,7 +6,8 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-const root = path.resolve(__dirname, '..');
+// The real folder spelling: a cwd typed in another case (scp vs SCP) makes Playwright load twice and refuse to start.
+const root = fs.realpathSync.native(path.resolve(__dirname, '..'));
 const args = process.argv.slice(2);
 const stamp = new Date().toISOString().replace(/[:.]/g, '-');
 const outDir = path.join(root, 'reports', `demo-${stamp}`);

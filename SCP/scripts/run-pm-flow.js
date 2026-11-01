@@ -12,7 +12,8 @@ if (!spec) {
   console.error(`Unknown suite "${suite}". Use smoke, regression or regression2.`);
   process.exit(2);
 }
-const root = path.resolve(__dirname, '..');
+// The real folder spelling: a cwd typed in another case (scp vs SCP) makes Playwright load twice and refuse to start.
+const root = fs.realpathSync.native(path.resolve(__dirname, '..'));
 if (!fs.existsSync(path.join(root, 'tests/pm-flow', spec))) {
   console.error(`tests/pm-flow/${spec} does not exist yet.`);
   process.exit(2);
