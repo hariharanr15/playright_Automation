@@ -12,7 +12,10 @@ class UserManagementPage extends BasePage {
   async open() {
     await this.navigation.first().waitFor({ state: 'visible', timeout: 30000 });
     if (!/\/user-management\/?$/.test(this.page.url())) {
-      await this.navigation.first().click();
+      // The group and its page share the name; clicking an already open group would collapse it, so the group is
+      // expanded only while the page entry (the second match) is not shown.
+      if (await this.navigation.count() < 2) await this.navigation.first().click();
+      await expect(this.navigation, 'User Management page entry').toHaveCount(2, { timeout: 10000 });
       await this.navigation.last().click();
     }
     await expect(this.page).toHaveURL(/\/user-management\/?$/);
