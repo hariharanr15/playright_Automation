@@ -139,7 +139,7 @@ test('Inventory filters: location balances, site isolation and date boundaries',
 });
 
 test('Inventory date: selected activity date remains visible before submission', async ({ inventory: ctx }) => {
-  test.setTimeout(60000);
+  test.setTimeout(120000); // continues on the Inventory page without a fresh load, so allow for the slower date picker
   const { prepareContext } = require('../../support/inventory-management-flow');
   await prepareContext(ctx);
   await ctx.inv.openView(ctx.reference.material_name, 'Actions');

@@ -9,6 +9,11 @@ const { ProjectSelectorPage } = require('../pages/project-selector.page');
 const { SiteSelectorPage } = require('../pages/site-selector.page');
 const { createRunData } = require('../utils/dynamic-data');
 const sharedBrowser = require('../utils/shared-browser');
+const { clearLeftovers, continuesOnPage } = require('../utils/page-cleanup');
+
+function onApplication(page, config) {
+  try { return new URL(page.url()).origin === new URL(config.baseUrl).origin; } catch { return false; }
+}
 
 loadEnvFile(path.resolve(__dirname, '..', '.env'));
 
@@ -143,6 +148,8 @@ const test = base.extend({
     }
     if (!scpSession.initialized) {
       await appShell.open();
+    } else if (scpSession.shared && continuesOnPage() && onApplication(page, config) && await clearLeftovers(page)) {
+      scpSession.stayed = true;
     } else if (!page.url().startsWith(config.managementDashboardUrl)) {
       // In-app navigation through the left menu: a full page load per scenario redraws the whole screen and resets
       // the header site (SCP-DEF-037). The page load is only the fallback, e.g. for a freshly recycled blank tab.
@@ -173,7 +180,9 @@ const test = base.extend({
       await projectSelector.ensureProject(config.projectName);
       scpApp.scpSession.initialized = true;
     } else {
-      await dashboard.expectLoaded();
+      // Procurement Log and Inventory continue on the current page; the project is checked from the header there.
+      if (!scpApp.scpSession.stayed) await dashboard.expectLoaded();
+      scpApp.scpSession.stayed = false;
       // In the shared tab an earlier stage (for example access discovery) may have left another project selected.
       if (scpApp.scpSession.shared) await projectSelector.ensureProject(config.projectName);
       else await projectSelector.expectActiveProject(config.projectName);

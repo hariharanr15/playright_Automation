@@ -12,8 +12,19 @@ class InventoryManagementPage extends BasePage {
   }
 
   async open() {
+    // Already on Inventory (the scenario continued on this page): the menu would not reload the list, so the page is
+    // reused as it is, with the search cleared; each scenario's own Search queries the current data.
+    if (/\/inventory-management\/?$/.test(new URL(this.page.url()).pathname)
+      && await require('../../utils/page-cleanup').clearLeftovers(this.page)
+      && await this.searchInput.isVisible().catch(() => false)) {
+      if (await this.searchInput.inputValue().catch(() => '')) await this.searchInput.fill('');
+      await expect(this.page.getByRole('heading', { name: 'Inventory Management', exact: true })).toBeVisible();
+      return;
+    }
     const loaded = this.page.waitForResponse(r => /\/ledger_balance\/list_inv_materials\/?/.test(r.url()) && r.request().method() === 'GET');
     loaded.catch(() => {});
+    // A loading backdrop or a dialog from the previous screen must not cover the menu.
+    await require('../../utils/page-cleanup').clearLeftovers(this.page);
     await this.page.getByRole('button', { name: 'Inventory Management', exact: true }).click();
     const response = await loaded;
     expect(response.ok()).toBe(true);

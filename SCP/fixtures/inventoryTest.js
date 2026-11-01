@@ -2,6 +2,7 @@ const { test: base, expect } = require('./baseTest');
 const { InventoryManagementPage } = require('../pages/inventory-management/inventory-management.page');
 const { loadInventoryEnvironment, InventoryBlocked, readInventoryApi } = require('../utils/inventory-data');
 const { isHeadless } = require('../utils/execution-mode');
+const { clearLeftovers, continuesOnPage } = require('../utils/page-cleanup');
 
 const test = base.extend({
   inventory: async ({ scpProject }, use, info) => {
@@ -19,8 +20,15 @@ const test = base.extend({
       await projectSelector.expectActiveProject(allocation.project);
       await expect(siteSelector.siteSelector, 'Exact Inventory site').toHaveText(allocation.site);
     };
-    const reset = async () => {
+    // Procurement Log and Inventory runs continue on the current page once it is clean; a page load (which also
+    // resets the header site, SCP-DEF-037) is used only when the tab is not usable.
+    const startPage = async () => {
+      const onApp = (() => { try { return new URL(page.url()).origin === new URL(config.baseUrl).origin; } catch { return false; } })();
+      if (scpSession.shared && continuesOnPage() && onApp && await clearLeftovers(page)) return;
       await page.goto(config.managementDashboardUrl, { waitUntil: 'domcontentloaded' });
+    };
+    const reset = async () => {
+      await startPage();
       await projectSelector.ensureProject(allocation.project);
       await siteSelector.ensureSite(allocation.site);
       await assertContext();
@@ -28,7 +36,7 @@ const test = base.extend({
       await assertContext();
     };
     try {
-      await page.goto(config.managementDashboardUrl, { waitUntil: 'domcontentloaded' });
+      await startPage();
       await projectSelector.ensureProject(allocation.project);
       await siteSelector.ensureSite(allocation.site);
       await assertContext();
@@ -40,6 +48,8 @@ const test = base.extend({
       throw error;
     } finally {
       page.off('console', consoleListener);
+      // Cleanup after each scenario: no dialog is left open for the next one, which continues on this page.
+      if (continuesOnPage()) await clearLeftovers(page).catch(() => null);
       await info.attach('inventory-created-records', { body: Buffer.from(JSON.stringify(createdRecords, null, 2)), contentType: 'application/json' });
       await info.attach('inventory-context', { body: Buffer.from(JSON.stringify({ project: await projectSelector.projectSelector.innerText({ timeout: 2000 }).catch(() => 'unavailable'), site: await siteSelector.siteSelector.innerText({ timeout: 2000 }).catch(() => 'unavailable') })), contentType: 'application/json' });
       await info.attach('inventory-console-errors', { body: Buffer.from(JSON.stringify(events)), contentType: 'application/json' });
