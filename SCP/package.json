@@ -65,7 +65,8 @@
     "report:cucumber:steps": "node scripts/generate-cucumber-step-report.js",
     "report:cucumber:pdf": "node scripts/generate-cucumber-pdf.js",
     "test:scenarios": "node scripts/run-and-report.js",
-    "smoke:all": "npm run pm:smoke & npm run demo:flow"
+    "smoke:all": "npm run pm:smoke & npm run demo:flow",
+    "procurement:flow": "node scripts/run-pm-flow.js procurement"
   },
   "keywords": [
     "playwright",
