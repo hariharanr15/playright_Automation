@@ -7,7 +7,7 @@ const { spawnSync } = require('child_process');
 
 const args = process.argv.slice(2);
 const suite = (args.find(arg => !arg.startsWith('--')) || 'smoke').toLowerCase();
-const spec = { smoke: 'pm-smoke.spec.js', regression: 'pm-regression.spec.js', regression2: 'pm-regression-part2.spec.js', flow: 'scp-demo-flow.spec.js', procurement: 'scp-procurement-flow.spec.js' }[suite];
+const spec = { smoke: 'pm-smoke.spec.js', regression: 'pm-regression.spec.js', regression2: 'pm-regression-part2.spec.js', flow: 'scp-demo-flow.spec.js', procurement: 'scp-procurement-flow.spec.js', tickets: 'tickets-regression.spec.js' }[suite];
 if (!spec) {
   console.error(`Unknown suite "${suite}". Use smoke, regression or regression2.`);
   process.exit(2);
