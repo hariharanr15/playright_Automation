@@ -67,7 +67,16 @@
     "test:scenarios": "node scripts/run-and-report.js",
     "smoke:all": "npm run pm:smoke & npm run demo:flow",
     "procurement:flow": "node scripts/run-pm-flow.js procurement",
-    "tickets:regression": "node scripts/run-pm-flow.js tickets"
+    "procurement:smoke": "node scripts/run-pm-flow.js pl-smoke",
+    "procurement:regression": "node scripts/run-pm-flow.js pl-regression",
+    "procurement:regression2": "node scripts/run-pm-flow.js pl-regression2",
+    "procurement:regression3": "node scripts/run-pm-flow.js pl-regression3",
+    "modules:smoke": "node scripts/run-pm-flow.js app-smoke",
+    "modules:regression": "node scripts/run-pm-flow.js app-regression",
+    "inventory:regression": "node scripts/run-pm-flow.js inv-regression",
+    "tickets:regression": "node scripts/run-pm-flow.js tickets",
+    "e2e:smoke": "node scripts/run-pm-flow.js e2e-smoke",
+    "full:regression": "node scripts/run-full-regression.js"
   },
   "keywords": [
     "playwright",
@@ -78,6 +87,7 @@
   "license": "ISC",
   "devDependencies": {
     "@cucumber/cucumber": "^13.0.0",
-    "@playwright/test": "^1.59.1"
+    "@playwright/test": "^1.59.1",
+    "ffmpeg-static": "^5.2.0"
   }
 }

@@ -61,8 +61,9 @@ const KNOWN_DEFECTS = [
     summary: 'Subcontractor Issues: Search by an existing subcontractor name returns no rows, and the Subcontractor column header does not sort the records.' },
   { id: 'SCP-DEF-014', recordedOn: '2026-10-28', modules: ['Analytics'],
     title: 'Subcontractor Issues: exported report retains every record and all seven associated values',
-    signature: /waitForEvent: Timeout \d+ms exceeded while waiting for event "download"/,
-    summary: 'Subcontractor Issues Export offers only "Download Template", which sends no request and produces no file.' },
+    // 18 Nov 2026: root cause confirmed – the menu item's onClick is an empty handler (()=>{}); no export API is integrated.
+    signature: /waitForEvent: Timeout \d+ms exceeded while waiting for event "download"|Export › "Download Template" sent no request and produced no file/,
+    summary: 'Subcontractor Issues Export offers only "Download Template", which sends no request and produces no file (empty click handler, no export API).' },
   // BUGS-325 Enterprise View reconciliation (docs/ENTERPRISE_REQUIREMENTS_BUGS-325.md), observed 28 Oct 2026 on staging.
   { id: 'SCP-DEF-015', recordedOn: '2026-10-28', modules: ['Enterprise'],
     title: /Enterprise View BUGS-325: Projects in Scope, Open Submittals, status chart and Spend from source records|Enterprise View: independent Procurement open-submittal reconciliation|Enterprise cumulative: all accessible projects reconcile/,
@@ -177,7 +178,55 @@ const KNOWN_DEFECTS = [
   { id: 'SCP-DEF-041', recordedOn: '2026-10-31', modules: ['Project Management'], reportNotReproduced: true,
     title: 'Procurement Log Configuration: field names are unique',
     signature: /^Procurement Log Configuration accepted a duplicate field name "Spec Section No"/,
-    summary: 'Procurement Log Configuration > Add Log Fields accepts the name of a standard field ("Spec Section No"): it is stored as another non-custom "spec_section_no" field (no "(Custom)" label) and the standard field moves to the end of the column order (NRVC_Hall, 31 Oct 2026; the automation disables the added duplicates again). Product owner: names are unique (R2). Scenario PM-REG-PLC-08.' }
+    summary: 'Procurement Log Configuration > Add Log Fields accepts the name of a standard field ("Spec Section No"): it is stored as another non-custom "spec_section_no" field (no "(Custom)" label) and the standard field moves to the end of the column order (NRVC_Hall, 31 Oct 2026; the automation disables the added duplicates again). Product owner: names are unique (R2). Scenario PM-REG-PLC-08.' },
+  // 2 Nov 2026: found in Procurement Log functional discovery (docs/functional-discovery/PROCUREMENT_LOG_FUNCTIONAL_DISCOVERY.md); registered with user approval.
+  { id: 'SCP-DEF-042', recordedOn: '2026-11-02', modules: ['Procurement Log'], reportNotReproduced: true,
+    title: 'Edit Submittal: an existing Submittal No and Material pair is rejected as a duplicate',
+    signature: /^Edit Submittal accepted a duplicate Submittal No and Material/,
+    summary: 'Add Submittal rejects an existing Submittal No + Material pair (409, ignoring case and surrounding spaces), but Edit Submittal → Update accepts the same pair: pld1102-sub-01 was changed to Material "43 Inches" and now duplicates PLD1102-SUB-01 / 43 Inches (NRVC_Hall, 2 Nov 2026). The same Submittal No with a different material is expected (product owner, 2 Nov). Discovery OBS-PL-13.' },
+  { id: 'SCP-DEF-043', recordedOn: '2026-11-02', modules: ['Procurement Log'], reportNotReproduced: true,
+    title: 'Delivered submittal shows its Actual Delivery Date in the Procurement Log',
+    signature: /^Delivered submittal has no Actual Delivery Date in the Procurement Log/,
+    summary: 'A submittal whose component is Delivered (delivery with actual date 02/11/2026 and a generated GRN) still shows Actual Delivery Date "-" in the Procurement Log grid; all 25 older Delivered rows on NRVC_Hall show "-" too (2 Nov 2026). Product owner: the date must be shown. Discovery OBS-PL-3, record PLD1102-SUB-01.' },
+  { id: 'SCP-DEF-044', recordedOn: '2026-11-02', modules: ['Procurement Log'], reportNotReproduced: true,
+    title: 'Partial delivery: shortage is calculated from the delivered quantity',
+    signature: /^Shortage QTY was calculated from the component quantity/,
+    summary: 'Delivery Conditions on a partial delivery compute the read-only Shortage from the component quantity instead of the delivery quantity: 4 delivered, Good 3 + Damage 1 gave Shortage 6 instead of 0 (PLD1102-SUB-07, NRVC_Hall, 2 Nov 2026). Discovery OBS-PL-27.' },
+  { id: 'SCP-DEF-045', recordedOn: '2026-11-02', modules: ['Inventory Management'], reportNotReproduced: true,
+    title: 'Inventory activity: schedule must belong to the selected submittal',
+    signature: /^Inventory activity saved with a schedule from another submittal/,
+    summary: 'Add Activity saves a Submittal and a Schedule from different submittals: the Schedule list reloads about 1 s after the Submittal changes, the previous schedule can be picked, and the server accepts the pair (Loss row: PLD1102-SPEC-07 with schedule PLD1102-PO-01, NRVC_Hall, 2 Nov 2026). Discovery OBS-INV-3.' },
+  { id: 'SCP-DEF-046', recordedOn: '2026-11-02', modules: ['Procurement Log'], reportNotReproduced: true,
+    title: 'Update Status: Delivered shows on the component and the submittal',
+    signature: /^Update Status to Delivered did not change the component status/,
+    summary: 'Component Other Actions > Update Status > Delivered returns 200 "SubmittalSchedule updated successfully" but the status stays Ordered and the UI shows no message (PLD1102-SUB-01, NRVC_Hall, 2 Nov 2026). Product owner: Delivered must show on both the submittal and the component page (PL-R13). Discovery OBS-PL-16.' },
+  { id: 'SCP-DEF-047', recordedOn: '2026-11-02', modules: ['Procurement Log'], reportNotReproduced: true,
+    title: 'Export matches the Procurement Log grid columns',
+    signature: /^Procurement Log export columns differ from the grid/,
+    summary: 'Procurement Log Export (Submittal_Report_<date>.xlsx) has 47 Procore-style columns instead of the grid columns: custom fields missing, "Supplier" empty while "Supplier Name" is filled, literal "None", raw status values and unformatted dates (NRVC_Hall, 2 Nov 2026). Product owner: export must match the grid incl. custom fields (PL-R9). Discovery OBS-PL-9.' },
+  // 11 Nov 2026: found by the end-to-end smoke (tests/pm-flow/e2e-smoke.spec.js); registered with user approval.
+  { id: 'SCP-DEF-048', recordedOn: '2026-11-11', modules: ['User Management', 'Supplier Approval'], reportNotReproduced: true,
+    title: 'A new supplier can be linked to its supplier user (Promote to SSO Organisation)',
+    signature: /^New supplier user cannot see its submittal/,
+    summary: 'Supplier List row action "Promote to SSO Organisation" shows no dialog and sends no request, so a supplier added in Supplier List never becomes an SSO organisation. A user invited with role Supplier who sets up an SSO organisation with the same name ("Supplier E2E2611110828") sees 0 submittals in the Procurement Log, including the submittal of that supplier and its delivery opened by direct URL, and so cannot complete the pre-shipping checklist (NRVC_Hall, 11 Nov 2026).' },
+  // 11 Nov 2026: found by the end-to-end smoke; registered as a known issue with user approval.
+  { id: 'SCP-DEF-049', recordedOn: '2026-11-11', modules: ['Management Dashboard'], reportNotReproduced: true,
+    title: 'Management Dashboard spend matches the Procurement Log value in the project currency',
+    signature: /^Dashboard spend differs from the Procurement Log Value Delivered/,
+    summary: 'The Materials table "Spend" of a category rises by the sum of QTY × component Value and is shown in $, while the Procurement Log shows the component Value as the total in ₹ ("Value Delivered" ₹1,000.00 for QTY 10, Value 1000). E2E2611111224-SUB (10 × ₹1,000 and 5 × ₹500 components) raised the spend of its category by $12,500 against ₹1,500 delivered (NRVC_Hall, 11 Nov 2026).' },
+  // 13 Nov 2026: User Management findings of the full regression, confirmed as application issues by the user.
+  { id: 'SCP-DEF-050', recordedOn: '2026-11-13', modules: ['User Management'], reportNotReproduced: true,
+    title: 'Duplicate invite rejected (R2)',
+    signature: /^Duplicate invite was accepted \(OBS-UM-1\)/,
+    summary: 'Inviting an email that is already invited (same address in upper case, another role) shows "Invite Sent Successfully" instead of rejecting the duplicate (UM-REG-03, NRVC_Hall, 13 Nov 2026).' },
+  { id: 'SCP-DEF-051', recordedOn: '2026-11-13', modules: ['User Management'], reportNotReproduced: true,
+    title: 'Remove From Project (run user)',
+    signature: /^Removed user is still listed \(OBS-UM-3\)/,
+    summary: 'After "Remove From Project" shows "User Removed Successfully", the user is still listed in User Management after a reload (UM-REG-08, NRVC_Hall, 13 Nov 2026).' },
+  { id: 'SCP-DEF-052', recordedOn: '2026-11-13', modules: ['User Management'], reportNotReproduced: true,
+    title: 'Filter narrows rows',
+    signature: /^Filter tabs offer no values \(OBS-UM-4\)/,
+    summary: 'User Management "Filter" dialog: the "status" tab offers no values (no "Invited" option), so the list cannot be filtered by status (UM-REG-11, NRVC_Hall, 13 Nov 2026).' }
 ];
 
 module.exports = { KNOWN_DEFECTS };

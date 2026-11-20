@@ -24,10 +24,12 @@ module.exports = defineConfig({
     navigationTimeout: 45000,
     screenshot: 'off',
     trace: 'retain-on-failure',
-    video: 'off',
+    // PM_FLOW_VIDEO=on records the whole run (the E2E launcher sets it and converts the WebM to MP4 afterwards).
+    video: process.env.PM_FLOW_VIDEO === 'on' ? { mode: 'on', size: { width: 1920, height: 1080 } } : 'off',
     acceptDownloads: true,
     viewport: null,
-    launchOptions: { args: ['--start-maximized', ...(process.env.SCP_FORCE_SCALE_1 === 'true' ? ['--force-device-scale-factor=1'] : [])] }
+    // PM_FLOW_SLOW_MO: pause (ms) before every browser action; 0 unless a launcher sets it (the E2E smoke does).
+    launchOptions: { slowMo: Number(process.env.PM_FLOW_SLOW_MO || 0), args: ['--start-maximized', ...(process.env.SCP_FORCE_SCALE_1 === 'true' ? ['--force-device-scale-factor=1'] : [])] }
   },
   projects: [{ name: 'Google Chrome', use: { channel: 'chrome', viewport: null } }]
 });

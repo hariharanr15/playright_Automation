@@ -22,13 +22,21 @@ class InvitedUserActivationPage extends BasePage {
 
     // The mailbox is reopened until the invitation arrives (about 3 minutes); the newest message is shown first.
     let latestSubject = null;
+    let frameSeen = false;
     const deadline = Date.now() + Number(process.env.SCP_INVITE_DELIVERY_MS || 180000);
     while (!activationUrl && Date.now() < deadline) {
       if (this.page.isClosed()) this.page = await context.newPage();
-      await this.goto(mailboxUrl.toString());
+      await this.goto(mailboxUrl.toString()).catch(() => null);
       const mailboxReady = await this.page.locator('iframe#ifmail')
         .waitFor({ state: 'attached', timeout: 15000 }).then(() => true).catch(() => false);
-      if (!mailboxReady) throw new Error('Invitation mailbox frame was unavailable within 15 seconds.');
+      // 19 Nov 2026: YOPmail shows a Cloudflare "Verify you are human" check to the automated browser. It is not
+      // bypassed; the step stops with a clear blocked reason (use another mailbox or a pre-created account).
+      if (await this.page.getByText(/Verify you are human|confirm you.re human/i).first().isVisible().catch(() => false)) {
+        throw new Error('BLOCKED: YOPmail shows a Cloudflare human-verification check, so the invitation e-mail cannot be read automatically.');
+      }
+      // YOPmail sometimes loads slowly (17–18 Nov runs): retry within the delivery window instead of failing at once.
+      if (!mailboxReady) { await this.page.waitForTimeout(5000); continue; }
+      frameSeen = true;
       const mail = this.page.frameLocator('iframe#ifmail');
       const acceptInvite = mail.getByRole('link', { name: 'Accept Invite', exact: true });
       if (await acceptInvite.waitFor({ state: 'visible', timeout: 15000 }).then(() => true).catch(() => false)) {
@@ -42,6 +50,9 @@ class InvitedUserActivationPage extends BasePage {
       await this.page.waitForTimeout(15000);
     }
 
+    if (!activationUrl && !frameSeen) {
+      throw new Error('Invitation mailbox frame was unavailable during the whole delivery window.');
+    }
     if (!activationUrl) {
       throw new Error(`YOPmail did not receive an invitation for ${email} within the delivery window${latestSubject ? ` (newest message: ${latestSubject})` : ''}.`);
     }

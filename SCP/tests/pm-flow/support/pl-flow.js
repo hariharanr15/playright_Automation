@@ -36,11 +36,23 @@ function plKit(page) {
       await s.step(`Header project selector › choose "${config.projectName}" → project name shown in the header`, () => new ProjectSelectorPage(page, config).ensureProject(config.projectName), { critical: true });
       await s.step(`Header site selector › choose "${SITE}" → site name shown in the header`, () => new SiteSelectorPage(page).ensureSite(SITE), { critical: true });
     },
+    // "Choose user" lists only the first 25 users; find the user through the list's own Search box. Searching the full
+    // e-mail returns nothing (the search ignores text with "@", 19 Nov 2026), so the part before "@" is typed.
+    async chooseUser(email) {
+      await page.getByRole('button', { name: 'Choose user' }).click();
+      const search = listbox().locator('input[placeholder^="Search"]');
+      if (await search.isVisible().catch(() => false)) { await search.fill(email.split('@')[0]); await settle(1000); }
+      await listbox().getByRole('option', { name: new RegExp(email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') }).first().click();
+    },
+    // Location lists follow the header venue, which resets after every reload (OBS-INV-12): put it back before using them.
+    keepSite: () => new SiteSelectorPage(page).keepSite(SITE),
     // Menu groups collapse after each navigation, so the parent is re-expanded when the child is hidden.
     async menu(name, group) {
       const nav = page.locator('nav');
-      let item = nav.getByRole('button', { name, exact: true }).last();
-      if (group && !(await item.isVisible().catch(() => false))) { await nav.getByRole('button', { name: group, exact: true }).first().click(); item = nav.getByRole('button', { name, exact: true }).last(); }
+      // Menu items can carry a counter badge (e.g. "International Shipments 38", 19 Nov 2026): allow a trailing number.
+      const label = n => new RegExp(`^\\s*${n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s+\\d+\\+?)?\\s*$`);
+      let item = nav.getByRole('button', { name: label(name) }).last();
+      if (group && !(await item.isVisible().catch(() => false))) { await nav.getByRole('button', { name: label(group) }).first().click(); item = nav.getByRole('button', { name: label(name) }).last(); }
       await item.click({ timeout: 8000 });
       await settle(1500);
     },
@@ -52,6 +64,8 @@ function plKit(page) {
       await expect.poll(count, { message: 'Procurement Log item count', timeout: 30000 }).toBeGreaterThan(0);
     },
     async search(text) {
+      // On the list page no drawer covers the header: restore the venue here, before any component is opened.
+      if (/\/procurement-log/.test(page.url()) && !/[?&](submittal|schedule)=/.test(page.url())) await kit.keepSite();
       const box = page.getByRole('textbox', { name: 'Search submittals…' });
       await box.fill(text); await box.press('Enter'); await settle(1000);
     },
@@ -64,6 +78,9 @@ function plKit(page) {
       const label = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
       const cell = page.getByRole('button', { name: label });
       for (let i = 0; i < 3 && !(await cell.isVisible().catch(() => false)); i++) { await field.click(); await page.waitForTimeout(600); }
+      // The picker has month and year dropdowns; a date in another year (e.g. 1 Jan 2027 while on 2026) needs both.
+      const year = page.getByRole('combobox').filter({ has: page.locator('option', { hasText: String(date.getFullYear()) }) }).filter({ hasNot: page.locator('option', { hasText: 'January' }) }).last();
+      if (!(await cell.isVisible().catch(() => false)) && await year.isVisible().catch(() => false)) await year.selectOption(String(date.getFullYear()));
       const month = page.getByRole('combobox').filter({ has: page.locator('option', { hasText: 'January' }) }).last();
       if (!(await cell.isVisible().catch(() => false)) && await month.isVisible().catch(() => false)) await month.selectOption(date.toLocaleDateString('en-US', { month: 'long' }));
       await cell.click();
@@ -124,11 +141,12 @@ function plKit(page) {
     // Full receipt chain: delivery → checklist (all YES, PL-R16) → approve → reload → actual date → shipping → conditions → GRN.
     async deliverToGrn({ material = MATERIAL, qty, good = qty, damage = 0, today = new Date(), tag }) {
       await kit.componentRow(material).getByRole('cell', { name: material }).click();
+      await kit.keepSite();
       await page.getByRole('button', { name: '+ Log Delivery' }).last().click();
       const d = kit.dialog('Add Delivery', 'Add');
       await kit.day(d.getByRole('textbox').first(), today);
-      await d.getByRole('button', { name: 'All Locations' }).click();
-      await listbox().getByRole('option').filter({ hasNotText: 'All Locations' }).first().click();
+      await d.getByRole('button', { name: /^(All Locations|Choose Location)$/ }).click();
+      await listbox().getByRole('option').filter({ hasNotText: /^(All Locations|Choose Location)$/ }).first().click();
       await d.getByRole('button', { name: 'Choose Item Name' }).click(); await listbox().getByRole('option', { name: material, exact: true }).first().click();
       await d.getByRole('spinbutton').first().fill(String(qty));
       await d.getByRole('button', { name: 'Add', exact: true }).click();

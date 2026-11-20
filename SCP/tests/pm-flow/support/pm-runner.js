@@ -99,7 +99,9 @@ class PmRun {
     }
     await setBanner(this.page, { suite: this.suite.toUpperCase(), title, step: name });
     let value;
-    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    // options.attempts (1 or 2) overrides the default; the E2E smoke runs every step once.
+    const maxAttempts = Number.isInteger(options.attempts) && options.attempts > 0 ? Math.min(options.attempts, MAX_ATTEMPTS) : MAX_ATTEMPTS;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       const entry = { number: attempt, startedAt: new Date().toISOString() };
       step.attempts.push(entry);
       try {
@@ -115,7 +117,7 @@ class PmRun {
         // A registered known defect is the real result: record it, do not retry.
         if (knownDefect(entry.error)) break;
         // Between attempts only close an open dropdown; an open form stays open for the retry and the next steps.
-        if (attempt < MAX_ATTEMPTS) await this.recoverLight().catch(() => null);
+        if (attempt < maxAttempts) await this.recoverLight().catch(() => null);
       }
     }
     if (step.status !== 'Passed') {

@@ -1,5 +1,7 @@
 # Project Management – Regression Scenarios (Draft for Review)
 
+> **Step-by-step flows (Action → Expected, matching the automated steps):** [PM_REGRESSION_PART1_STEPS.md](steps/PM_REGRESSION_PART1_STEPS.md), [PM_REGRESSION_PART2_STEPS.md](steps/PM_REGRESSION_PART2_STEPS.md)
+
 Source of truth: [PM_FUNCTIONAL_DISCOVERY.md](PM_FUNCTIONAL_DISCOVERY.md). Smoke scenarios ([PM_SMOKE_SCENARIOS.md](PM_SMOKE_SCENARIOS.md)) are assumed to pass first.
 
 ## Legend
@@ -197,6 +199,7 @@ Requirement: **FDI Config – Inspectors section** (product owner, 30 Oct): mult
 | INS-AC-8 map one or more materials or "All Materials"; saved and editable | FDI-20, FDI-22, FDI-24, FDI-27 |
 | INS-AC-9 enable/disable at any time without deleting the record or history | FDI-23 |
 | INS-AC-10 a disabled inspector is not offered for self-assign on FDI records | FDI-18, FDI-28 |
+| INS-AC-11 audit trail of inspector added / enabled / disabled (reinstated by the product owner, 2 Nov; supersedes R67 for this criterion) | FDI-29 |
 
 Test cases **BUGS-198 (FDI-Setup-InspectorsDefinition)**, supplied by the product owner on 30 Oct (`BUGS-198_TestCases_FDI-Setup-InspectorsDefinition.xlsx`, 17 cases), are all covered. The spreadsheet's "Save" / "toggle" steps map to the UI's `Add` button and the row's `Disable` / `Enable` action.
 
@@ -270,6 +273,7 @@ Implementation sub-stories for the Inspectors section (product owner, 30 Oct) �
 | PM-REG-FDI-27 | Material mapping: one, several, All Materials | POS | M | Owned inspector → edit materials → `Specific Materials` → pick **one** material → save; then a **second** → save; then choose `All Materials` → save; reload after each step | One chip; then two chips; choosing `All Materials` disables/clears the specific-material selection and the row shows `All Materials`. Each state kept after reload | D INS-AC-8, ST-3, TC-198-09/10/11, O (chip formats) |
 | PM-REG-FDI-28 | Disabled and pending inspectors cannot self-assign | NEG/INT | M | Disable an owned inspector eligible for the run's material → reload → log in as that inspector → First Delivery Inspections → unassigned record; also check a pending-invite inspector is not offered; re-enable → reload | Disabled and pending inspectors are not offered for self-assign; after re-enable and reload the inspector is offered again | D INS-AC-10, ST-5, TC-198-15, A (FDI-18 tail) |
 | PM-REG-FDI-28a | Already-assigned records keep a since-disabled inspector | INT | M | FDI record assigned to an owned inspector → disable that inspector → open the record | Record still shows that inspector as auditor (display unchanged); only new selection is restricted | D ST-5 |
+| PM-REG-FDI-29 | Inspector audit trail | POS | M | Add an owned inspector → disable → enable → open the inspector audit trail | One entry each for Added, Disabled, Enabled, with user and timestamp; entries kept after reload | D INS-AC-11 – **no audit trail found in the app on 30 Oct and 2 Nov; expected to fail until built** |
 | PM-REG-FDI-29a | Pending invite stays disabled | NEG | R | Find a row with Status `Invited - Pending Acceptance` | Enabled = `Disabled`; the `Enable` button is disabled with the tooltip "Activates automatically once the invite is accepted" | O (30 Oct, 18 pending rows), D INS-AC-6, ST-4 |
 
 ### 5c. Question Sets, Groups, Questions

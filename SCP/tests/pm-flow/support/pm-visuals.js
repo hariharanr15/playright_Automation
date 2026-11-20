@@ -21,6 +21,10 @@ function installPmVisuals() {
         box-shadow: 0 4px 14px rgba(0,0,0,.25); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       #${BANNER_ID} .pm-suite { background: #fff; color: #0f766e; border-radius: 4px; padding: 0 6px; margin-right: 8px; }
       #${BANNER_ID} .pm-step { display: block; font-weight: 400; opacity: .92; overflow: hidden; text-overflow: ellipsis; }
+      #${BANNER_ID} [data-v]::before { content: attr(data-v); }`;
+    // Banner text is drawn by CSS from data-v, never as DOM text: getByText() would otherwise also match the
+    // banner whenever the step description quotes the text a step looks for (strict-mode violation).
+    style.textContent += `
       [${NAV_ATTR}="group"] { outline: 2px dashed #0f766e !important; outline-offset: -2px; border-radius: 6px; }
       [${NAV_ATTR}="page"] { outline: 3px solid #0f766e !important; outline-offset: -3px; border-radius: 6px;
         background-color: rgba(15, 118, 110, 0.14) !important; }
@@ -33,14 +37,13 @@ function installPmVisuals() {
     let node = document.getElementById(BANNER_ID);
     if (!banner) { if (node) node.remove(); return; }
     if (!document.body) return;
-    if (!node) { node = document.createElement('div'); node.id = BANNER_ID; document.body.appendChild(node); }
+    if (!node) { node = document.createElement('div'); node.id = BANNER_ID; node.setAttribute('aria-hidden', 'true'); document.body.appendChild(node); }
     const text = `${banner.suite}|${banner.title}|${banner.step || ''}`;
-    if (node.dataset.text === text) return;
-    node.dataset.text = text;
+    if (node.dataset.key === text) return;
+    node.dataset.key = text;
     node.textContent = '';
-    const suite = document.createElement('span'); suite.className = 'pm-suite'; suite.textContent = banner.suite;
-    const step = document.createElement('span'); step.className = 'pm-step'; step.textContent = banner.step ? `Step: ${banner.step}` : '';
-    node.append(suite, document.createTextNode(banner.title), step);
+    const part = (className, value) => { const el = document.createElement('span'); if (className) el.className = className; el.dataset.v = value; return el; };
+    node.append(part('pm-suite', banner.suite), part('', banner.title), part('pm-step', banner.step ? `Step: ${banner.step}` : ''));
   };
 
   const renderNav = () => {

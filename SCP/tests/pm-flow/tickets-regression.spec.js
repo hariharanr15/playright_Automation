@@ -8,6 +8,10 @@ const { runPmSuite } = require('./support/pm-flow');
 const { pmUi } = require('./support/pm-ui');
 const { OVERLAY } = require('./support/pm-navigator');
 const { plKit, MATERIAL, SUPPLIER } = require('./support/pl-flow');
+const { LoginPage } = require('../../pages/login.page');
+const { PlatformChooserPage } = require('../../pages/platform-chooser.page');
+const { ProjectSelectorPage } = require('../../pages/project-selector.page');
+const { SiteSelectorPage } = require('../../pages/site-selector.page');
 const { writeUpload } = require('./support/pm-workbook');
 const { readWorkbook } = require('../../utils/bulk-upload/inventory-workbook');
 
@@ -121,11 +125,11 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
       await s.step('Log a delivery on D (no PO)', async () => {
         await fresh(); await k.search(subs.D.number); await k.openSubmittal(subs.D.description);
         await k.componentRow().getByRole('cell', { name: MATERIAL }).click();
-        await page.getByRole('button', { name: '+ Log Delivery' }).last().click();
+        await k.keepSite(); await page.getByRole('button', { name: '+ Log Delivery' }).last().click();
         const dl = k.dialog('Add Delivery', 'Add');
         await k.day(dl.getByRole('textbox').first(), day(0));
-        await dl.getByRole('button', { name: 'All Locations' }).click();
-        await listbox().getByRole('option').filter({ hasNotText: 'All Locations' }).first().click();
+        await dl.getByRole('button', { name: /^(All Locations|Choose Location)$/ }).click();
+        await listbox().getByRole('option').filter({ hasNotText: /^(All Locations|Choose Location)$/ }).first().click();
         await dl.getByRole('button', { name: 'Choose Item Name' }).click(); await listbox().getByRole('option', { name: MATERIAL, exact: true }).first().click();
         await dl.getByRole('spinbutton').first().fill('1');
         await dl.getByRole('button', { name: 'Add', exact: true }).click();
@@ -794,10 +798,10 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
           await fresh(); await k.search(d.number); await k.openSubmittal(d.description);
           await k.addComponent({ rojDate: day(45), qty: 2 });
           await k.componentRow().getByRole('cell', { name: MATERIAL }).click();
-          await page.getByRole('button', { name: '+ Log Delivery' }).last().click();
+          await k.keepSite(); await page.getByRole('button', { name: '+ Log Delivery' }).last().click();
           const dl = k.dialog('Add Delivery', 'Add');
           await k.day(dl.getByRole('textbox').first(), day(0));
-          await dl.getByRole('button', { name: 'All Locations' }).click(); await listbox().getByRole('option').filter({ hasNotText: 'All Locations' }).first().click();
+          await dl.getByRole('button', { name: /^(All Locations|Choose Location)$/ }).click(); await listbox().getByRole('option').filter({ hasNotText: /^(All Locations|Choose Location)$/ }).first().click();
           await dl.getByRole('button', { name: 'Choose Item Name' }).click(); await listbox().getByRole('option', { name: MATERIAL, exact: true }).first().click();
           await dl.getByRole('spinbutton').first().fill('1');
           await dl.getByRole('button', { name: 'Add', exact: true }).click();
@@ -817,7 +821,27 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
         : await run.scenario(meta('T155-SIGNIN', M155, 'Subcontractor sign-in', 'Setup'), async s => {
           subCtx = await page.context().browser().newContext({ viewport: null, baseURL: config.baseUrl });
           subPage = await subCtx.newPage();
-          await plKit(subPage).signIn(s, { ...config, username: acct.username, password: acct.password });
+          // 13 Nov 2026: the subcontractor account has one platform, so Sign in goes straight to SCP (no chooser with the
+          // email heading, which the shared admin sign-in expects). The window is also brought to the front: behind the
+          // admin window the email field was not found within 20 s. A probe signed in fine with the same account.
+          const sk = plKit(subPage);
+          await s.step('Subcontractor window: open the Voyage Control SSO login page → heading "Welcome To Voyage Control" and the Email field are shown', async () => {
+            await subPage.bringToFront();
+            await subPage.goto(config.loginUrl, { waitUntil: 'domcontentloaded' });
+            await expect(subPage.getByRole('heading', { name: 'Welcome To Voyage Control' })).toBeVisible({ timeout: 30000 });
+            await expect(subPage.locator('#id_username, input[name="username"]').first()).toBeVisible({ timeout: 30000 });
+          }, { critical: true });
+          await s.step('Enter the Subcontractor email and password, click Login → SCP opens (directly, or via the platform chooser "Supply Chain Planner" tile) on /management-dashboard', async () => {
+            await subPage.bringToFront();
+            await new LoginPage(subPage).login(acct.username, acct.password);
+            await subPage.waitForURL(u => /platforms\/choose/i.test(u.pathname) || u.origin === new URL(config.baseUrl).origin, { timeout: 45000 });
+            if (/platforms\/choose/i.test(subPage.url())) await new PlatformChooserPage(subPage, config).openSupplyChainPlanner();
+            await expect(subPage).toHaveURL(/\/management-dashboard\/?$/, { timeout: 30000 });
+            s.observe(/platforms\/choose/i.test(subPage.url()) ? 'via platform chooser' : 'opened SCP directly (single-platform account)');
+          }, { critical: true });
+          await s.step(`Header project selector › choose "${config.projectName}" → project name shown in the header`, () => new ProjectSelectorPage(subPage, config).ensureProject(config.projectName), { critical: true });
+          await s.step(`Header site selector › choose "${sk.SITE}" → site name shown in the header`, () => new SiteSelectorPage(subPage).ensureSite(sk.SITE), { critical: true });
+          await page.bringToFront();
         });
     const ok155 = subLogin && subLogin.status === 'Passed';
     const sc155 = (id, title, kind, body, need = true) => ok155 && need ? run.scenario(meta(id, M155, title, kind), body)

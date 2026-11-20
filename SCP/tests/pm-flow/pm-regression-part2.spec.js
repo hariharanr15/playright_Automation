@@ -7,6 +7,8 @@
 const fs = require('fs');
 const path = require('path');
 const { test, expect } = require('@playwright/test');
+// FDI New Question Set category search: "Search categories" before 10 Nov 2026, now "Search or add a category".
+const CATEGORY_SEARCH = /^Search (or add a )?categor/;
 const { runPmSuite } = require('./support/pm-flow');
 const { signIn } = require('./support/pm-session');
 const { pmUi } = require('./support/pm-ui');
@@ -73,7 +75,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     // on the one before it: --only re-runs work and one failure does not strand the next scenario on the wrong page.
     const sc = (id, submodule, title, body, pageLabel) => run.scenario(meta(id, submodule, title), async s => {
       const label = pageLabel === undefined ? submodule.split(' › ').find(part => MENU[part]) : pageLabel;
-      if (label) await s.step(`Open ${label}`, () => navigator.open(label), { critical: true });
+      if (label) await s.step(`Sidebar › Project Management › "${label}" → page opens (skipped when it is already open)`, () => navigator.open(label), { critical: true });
       if (!s.blocked) return body(s);
     });
     const skip = (id, submodule, title, reason) => run.skip(meta(id, submodule, title), reason);
@@ -174,8 +176,8 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       await expect.poll(async () => [...await visibleTaskIds()].sort(), { timeout: 20000 }).toEqual([...ids].sort());
     };
     await sc('PM-REG-INT-08', 'Integrations › XER Import', 'XER: reject unsupported file type', async s => {
-      await s.step('Open XER Import', () => navigator.open('XER Import'), { critical: true });
-      await s.step('Choose a .txt file', async () => {
+      await s.step(`Sidebar › Project Management › Integrations › "XER Import" → XER Import page opens`, () => navigator.open('XER Import'), { critical: true });
+      await s.step(`XER Import: click "Import", choose a .txt file ("Not a schedule file") → no plan is created, plan count unchanged (file-input accept and message recorded)`, async () => {
         await visible(plans(), 'Plans');
         data.planCount = await plans().count();
         const file = writeText(path.join(files, `xer-${RUN}.txt`), 'Not a schedule file');
@@ -191,7 +193,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     if (fs.existsSync(XER_FILE)) {
       await sc('PM-REG-INT-09', 'Integrations › XER Import', 'XER: import → select two tasks → Save', async s => {
-        await s.step('Import the test .xer (open the existing plan when already imported)', async () => {
+        await s.step(`XER Import: click "Import", choose the test .xer file; if "Open existing plan" appears click it → plan view with "Manage tasks" opens, visible task IDs noted`, async () => {
           const chooser = page.waitForEvent('filechooser', { timeout: 15000 });
           await click(button('Import'), 'Import');
           await (await chooser).setFiles(XER_FILE);
@@ -201,13 +203,13 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
           await visible(button('Manage tasks'), 'Plan view');
           data.tasksBefore = await visibleTaskIds();
         }, { critical: true });
-        await s.step('Manage tasks: pick two tasks not visible → Save', async () => {
+        await s.step(`Plan view › "Manage tasks": tick two tasks that are not visible, click "Save (2 tasks)" → dialog closes and only those two tasks are visible`, async () => {
           await openManageTasks();
           data.totalTasks = Number((await counter())[2]);
           data.setAB = await pickTwo(data.tasksBefore);
           await saveSelection(data.setAB);
         });
-        await s.step('Plan lists the two tasks as Unmapped; header 2/<total> visible', async () => {
+        await s.step(`Plan task list → both selected tasks show "Unmapped" and the header reads "2/<total> visible"`, async () => {
           for (const id of data.setAB) {
             await expect(main.locator('tbody tr').filter({ visible: true }).filter({ hasText: id }).first(), `${id} Unmapped`).toContainText('Unmapped');
           }
@@ -215,7 +217,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
         });
       });
       await sc('PM-REG-INT-15', 'Integrations › XER Import', 'XER: Save sets the visible set to the selection', async s => {
-        await s.step('Select two other tasks → Save → only those visible', async () => {
+        await s.step(`"Manage tasks": tick two different tasks, click "Save (2 tasks)" → only these two are visible, the earlier two are no longer visible`, async () => {
           await openManageTasks();
           const other = await pickTwo([...(data.setAB || []), ...(data.tasksBefore || [])]);
           await saveSelection(other);
@@ -282,7 +284,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       const before = await refCount(kind);
       const accepted = [];
       for (const [label, value] of [['same name', name], ['extra spaces', `  ${name.replace(' ', '  ')}  `], ['other case', name.toUpperCase()]]) {
-        await s.step(`Add the existing name (${label})`, async () => {
+        await s.step(`${REF[kind].label} › "${REF[kind].add}": enter the existing name "${value}" (${label}), click "Add" → accepted or rejected is recorded, no second row expected`, async () => {
           const rows = (await refMatches(kind, name)).length;
           const outcome = await refAdd(kind, value, type);
           const after = (await refMatches(kind, name)).length;
@@ -290,7 +292,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
           s.observe(`${after > rows ? 'ACCEPTED as a duplicate' : 'rejected'}; form ${outcome.closed ? 'closed' : 'stayed open'}; message: ${outcome.message || '(none)'}`);
         });
       }
-      await s.step('No duplicate created; count unchanged', async () => {
+      await s.step(`${REF[kind].label}: search the name again → no duplicate row was created and the item count equals the count before the attempts`, async () => {
         if (accepted.length) throw new Error(`${REF[kind].label} accepted duplicate names (${accepted.join(', ')}): "${name}" is now listed ${(await refMatches(kind, name)).length} times`);
         expect(await refCount(kind)).toBe(before);
       });
@@ -298,28 +300,28 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
 
     // ----- Common Utilities -----
     await sc('PM-REG-REF-05', 'Reference Data › Common Utilities', 'Add utility – required fields', async s => {
-      await s.step('Open Common Utilities', () => navigator.open('Common Utilities'), { critical: true });
+      await s.step(`Sidebar › Project Management › Reference Data › "Common Utilities" → page opens, utility count noted`, () => navigator.open('Common Utilities'), { critical: true });
       data.utilCount = await refCount('util');
       for (const [label, name, type] of [['both empty', null, null], ['name only', `Req ${RUN}`, null], ['type only', null, 'file_category']]) {
-        await s.step(`Add with ${label}`, async () => {
+        await s.step(`"Add Common Util" form: submit with ${label} → form stays open (not created), message recorded`, async () => {
           const outcome = await refAdd('util', name, type);
           s.observe(`form ${outcome.closed ? 'closed' : 'stayed open'}; message: ${outcome.message || '(none)'}`);
           expect(outcome.closed, 'Form stays open (not created)').toBe(false);
         });
       }
-      await s.step('Nothing created', async () => {
+      await s.step(`Search "Req ${RUN}" and check the item count → no utility created, count equals the count before`, async () => {
         expect(await refMatches('util', `Req ${RUN}`)).toHaveLength(0);
         expect(await refCount('util')).toBe(data.utilCount);
       });
     });
     await sc('PM-REG-REF-06', 'Reference Data › Common Utilities', 'Add utility – happy path', async s => {
       data.currName = `Curr ${RUN}`;
-      await s.step(`Add "${data.currName}" (currency_type)`, async () => {
+      await s.step(`"Add Common Util": name "${data.currName}", type "currency_type", click "Add" → form closes`, async () => {
         data.utilCount = await refCount('util');
         const outcome = await refAdd('util', data.currName, 'currency_type');
         expect(outcome.closed, `Form closes (${outcome.message || 'no message'})`).toBe(true);
       });
-      await s.step('Row listed with type currency_type; count +1', async () => {
+      await s.step(`Search "${data.currName}" → one row with type "currency_type" and the item count up by 1`, async () => {
         expect(await refMatches('util', data.currName)).toHaveLength(1);
         await expect(refRow(data.currName).locator('td').nth(1)).toHaveText('currency_type');
         expect(await refCount('util')).toBe(data.utilCount + 1);
@@ -327,11 +329,11 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     await sc('PM-REG-REF-08', 'Reference Data › Common Utilities', 'Edit utility name', async s => {
       const edited = `Curr ${RUN} E`;
-      await s.step(`Edit to "${edited}"`, async () => {
+      await s.step(`Row actions › "Edit" on "${data.currName}": rename to "${edited}", click "Update" → edit form closes`, async () => {
         const outcome = await refEdit('util', data.currName, edited);
         expect(outcome.closed, `Edit form closes (${outcome.message || 'no message'})`).toBe(true);
       });
-      await s.step('New name shown, old name gone', async () => {
+      await s.step(`Search the run token → "${edited}" listed once, old name "${data.currName}" no longer listed`, async () => {
         expect(await refMatches('util', edited)).toHaveLength(1);
         expect(await refMatches('util', data.currName)).toHaveLength(0);
         data.currName = edited;
@@ -345,21 +347,21 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       try {
         const long = `Long ${RUN} `.padEnd(255, 'x');
         for (const [label, value, expected] of [['255 characters', long, long], ['leading/trailing spaces', `  Sp ${RUN}  `, `Sp ${RUN}`], ['special characters', `Sp &<>"' ${RUN}`, `Sp &<>"' ${RUN}`]]) {
-          await s.step(`Name with ${label}`, async () => {
+          await s.step(`"Add Common Util": name with ${label}, type "file_category", click "Add" → outcome and stored name recorded`, async () => {
             const outcome = await refAdd('util', value, 'file_category');
             const stored = (await refMatches('util', expected))[0];
             s.observe(`${outcome.closed ? 'accepted' : 'not accepted'}${stored ? `, listed as "${stored.length > 60 ? `${stored.slice(0, 57)}…(${stored.length})` : stored}"` : ', not listed'}; message: ${outcome.message || '(none)'}`);
           });
         }
-        await s.step('No script execution', async () => expect(dialogs, 'Browser dialogs opened by the input').toBe(0));
-        await s.step('1-character name', async () => s.observe('not tried: a 1-character name cannot carry the run token and would collide with other runs (names are unique)'));
+        await s.step(`Check for browser alert dialogs → none was opened by the special-character name (no script execution)`, async () => expect(dialogs, 'Browser dialogs opened by the input').toBe(0));
+        await s.step(`1-character name → not tried (it could not carry the run token and would collide with other runs), reason recorded`, async () => s.observe('not tried: a 1-character name cannot carry the run token and would collide with other runs (names are unique)'));
       } finally { page.off('dialog', onDialog); }
     });
 
     // ----- Common UoM -----
     await sc('PM-REG-REF-12', 'Reference Data › Common UoM', 'Add UoM – required', async s => {
-      await s.step('Open Common UoM', () => navigator.open('Common UoM'), { critical: true });
-      await s.step('Add with an empty name', async () => {
+      await s.step(`Sidebar › Project Management › Reference Data › "Common UoM" → page opens`, () => navigator.open('Common UoM'), { critical: true });
+      await s.step(`"Add UOM" form: leave the name empty, click "Add" → form stays open, UOM count unchanged`, async () => {
         data.uomCount = await refCount('uom');
         const outcome = await refAdd('uom', null);
         s.observe(`message: ${outcome.message || '(none)'}`);
@@ -368,12 +370,12 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-REF-13', 'Reference Data › Common UoM', 'Add + edit UoM', async s => {
-      await s.step(`Add "UoM ${RUN}"`, async () => {
+      await s.step(`"Add UOM": name "UoM ${RUN}", click "Add" → form closes, row listed once`, async () => {
         const outcome = await refAdd('uom', `UoM ${RUN}`);
         expect(outcome.closed, `Form closes (${outcome.message || 'no message'})`).toBe(true);
         expect(await refMatches('uom', `UoM ${RUN}`)).toHaveLength(1);
       });
-      await s.step(`Edit to "UoM ${RUN} E"`, async () => {
+      await s.step(`Row actions › "Edit" on "UoM ${RUN}": rename to "UoM ${RUN} E", click "Update" → form closes, new name listed, old name gone`, async () => {
         const outcome = await refEdit('uom', `UoM ${RUN}`, `UoM ${RUN} E`);
         expect(outcome.closed, `Edit form closes (${outcome.message || 'no message'})`).toBe(true);
         expect(await refMatches('uom', `UoM ${RUN} E`)).toHaveLength(1);
@@ -383,7 +385,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     await sc('PM-REG-REF-20', 'Reference Data › Common UoM', 'Duplicate UoM name', s => duplicateCheck(s, 'uom', data.uomName));
     await sc('PM-REG-REF-22', 'Reference Data › Common UoM', 'Edit to an existing name (UoM)', async s => {
-      await s.step('Edit a run UoM to another existing UoM name', async () => {
+      await s.step(`Create "UoM2 ${RUN}", then "Edit" it to the name of another existing UoM, click "Update" → original name kept, the other UoM not duplicated`, async () => {
         const second = `UoM2 ${RUN}`;
         const created = await refAdd('uom', second);
         expect(created.closed, `${second} created (${created.message || 'no message'})`).toBe(true);
@@ -401,8 +403,8 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
 
     // ----- Material Category -----
     await sc('PM-REG-REF-15', 'Reference Data › Material Category', 'Add Material Category – required', async s => {
-      await s.step('Open Material Category', () => navigator.open('Material Category'), { critical: true });
-      await s.step('Add with an empty name', async () => {
+      await s.step(`Sidebar › Project Management › Reference Data › "Material Category" → page opens`, () => navigator.open('Material Category'), { critical: true });
+      await s.step(`"Add Material Category" form: leave the name empty, click "Add" → "Name is required" shown, category count unchanged`, async () => {
         data.catCount = await refCount('cat');
         await openForm(REF.cat.add, REF.cat.title);
         await click(modal().getByRole('button', { name: 'Add', exact: true }), 'Add');
@@ -412,14 +414,14 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-REF-16', 'Reference Data › Material Category', 'Add + edit Material Category', async s => {
-      await s.step(`Add "Cat ${RUN}" and "Cat B ${RUN}"`, async () => {
+      await s.step(`"Add Material Category": add "Cat ${RUN}" and "Cat B ${RUN}" (click "Add" each time) → both forms close, each name listed once`, async () => {
         for (const name of [`Cat ${RUN}`, `Cat B ${RUN}`]) {
           const outcome = await refAdd('cat', name);
           expect(outcome.closed, `${name}: form closes (${outcome.message || 'no message'})`).toBe(true);
           expect(await refMatches('cat', name)).toHaveLength(1);
         }
       });
-      await s.step(`Edit to "Cat ${RUN} E"`, async () => {
+      await s.step(`Edit icon on "Cat ${RUN}": rename to "Cat ${RUN} E", click "Update" → form closes, new name listed`, async () => {
         const outcome = await refEdit('cat', `Cat ${RUN}`, `Cat ${RUN} E`);
         expect(outcome.closed, `Edit form closes (${outcome.message || 'no message'})`).toBe(true);
         expect(await refMatches('cat', `Cat ${RUN} E`)).toHaveLength(1);
@@ -429,7 +431,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     await sc('PM-REG-REF-21', 'Reference Data › Material Category', 'Duplicate Material Category name', s => duplicateCheck(s, 'cat', data.catName));
     await sc('PM-REG-REF-22b', 'Reference Data › Material Category', 'Edit to an existing name (category)', async s => {
-      await s.step('Edit the run category to another existing category name', async () => {
+      await s.step(`Edit "${data.catB}": change its name to the existing "${data.catName}", click "Update" → original name kept, only one "${data.catName}" listed`, async () => {
         const outcome = await refEdit('cat', data.catB, data.catName);
         s.observe(`form ${outcome.closed ? 'closed' : 'stayed open'}; message: ${outcome.message || '(none)'}`);
         expect(await refMatches('cat', data.catB), 'Original name kept').toHaveLength(1);
@@ -437,7 +439,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-REF-18', 'Reference Data › Material Category', 'Load Defaults', async s => {
-      await s.step('Click Load Defaults', async () => {
+      await s.step(`Click "Load Defaults", choose "Metric (m, L, kg)", confirm any prompt → category count before and after recorded`, async () => {
         const before = await refCount('cat');
         // Load Defaults opens a Measurement System menu: Imperial or Metric (the project works in metric).
         await click(button('Load Defaults'), 'Load Defaults');
@@ -446,7 +448,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
         await page.waitForTimeout(2500);
         s.observe(`categories ${before} → ${await refCount('cat')}; message: ${await feedback() || '(none)'}`);
       });
-      await s.step('No duplicate category names', async () => {
+      await s.step(`Clear the search and read all category names → no name appears twice (ignoring case and spaces)`, async () => {
         await refSearch('cat', '');
         const names = await main.locator('tbody tr').evaluateAll(rows => rows.map(r => r.cells[0]?.innerText.trim()));
         const seen = new Map();
@@ -457,7 +459,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     await sc('PM-REG-REF-23', 'Reference Data › Material Category', 'Delete from the row actions (run-created records only)', async s => {
       for (const [kind, label] of [['cat', 'Material Category'], ['uom', 'Common UoM'], ['util', 'Common Utilities']]) {
         const name = `Del ${RUN}`;
-        await s.step(`${label}: create and delete "${name}"`, async () => {
+        await s.step(`"${label}": add "${name}", then delete it via its row action and confirm → row listed after the add, gone after the delete`, async () => {
           await navigator.open(label);
           const created = await refAdd(kind, name, kind === 'util' ? 'file_category' : null);
           expect(created.closed, `Created (${created.message || 'no message'})`).toBe(true);
@@ -478,8 +480,8 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     const setWeeks = async values => { for (let i = 0; i < values.length; i += 1) { await focus(weekInputs().nth(i)); await weekInputs().nth(i).fill(String(values[i])); } };
     const currencyButton = () => main.locator('div.justify-between', { has: page.locator('p', { hasText: /^Currency Type/ }) }).last().getByRole('button').first();
     await sc('PM-REG-REF-07', 'Configuration Options', 'New currency utility appears in Configuration Options', async s => {
-      await s.step('Open Configuration Options', () => navigator.open('Configuration Options'), { critical: true });
-      await s.step(`Currency Type lists "${data.currName}"`, async () => {
+      await s.step(`Sidebar › Project Management › "Configuration Options" → page opens`, () => navigator.open('Configuration Options'), { critical: true });
+      await s.step(`Click the "Currency Type" dropdown → its options include "${data.currName}" (original alert weeks and currency noted)`, async () => {
         data.weeksOriginal = await weekValues();
         data.currencyOriginal = clean(await currencyButton().innerText());
         const options = await dropdownOptions(currencyButton());
@@ -490,14 +492,14 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     await sc('PM-REG-CFG-04', 'Configuration Options', 'Save and persist alert weeks', async s => {
       const changed = (data.weeksOriginal || ['1', '1', '1']).map(value => (Number(value) === 1 ? 2 : 1));
       try {
-        await s.step(`Save weeks ${changed.join('/')} and reload`, async () => {
+        await s.step(`Enter alert weeks ${changed.join('/')} in the three week fields, click "Save", reload → fields still show ${changed.join('/')}`, async () => {
           await setWeeks(changed);
           s.observe(`message: ${await saveConfig() || '(none)'}`);
           await reload();
           expect(await weekValues()).toEqual(changed.map(String));
         });
       } finally {
-        await s.step(`Restore ${data.weeksOriginal.join('/')}`, async () => {
+        await s.step(`Enter the original alert weeks ${data.weeksOriginal.join('/')}, click "Save", reload → original values shown`, async () => {
           await setWeeks(data.weeksOriginal); await saveConfig(); await reload();
           expect(await weekValues()).toEqual(data.weeksOriginal);
         });
@@ -506,7 +508,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     await sc('PM-REG-CFG-06', 'Configuration Options', 'Week field – non-numeric and negative', async s => {
       try {
         for (const value of ['abc', '-1']) {
-          await s.step(`Enter "${value}" → Save → reload`, async () => {
+          await s.step(`First week field: enter "${value}", click "Save", reload → value is not saved, original weeks remain`, async () => {
             await focus(weekInputs().first()); await weekInputs().first().fill(value);
             const shown = await weekInputs().first().inputValue();
             const message = await saveConfig();
@@ -518,7 +520,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
           });
         }
       } finally {
-        await s.step('Original values in place', async () => {
+        await s.step(`If the weeks differ, re-enter the originals and "Save" → week fields show the original values`, async () => {
           if (JSON.stringify(await weekValues()) !== JSON.stringify(data.weeksOriginal)) { await setWeeks(data.weeksOriginal); await saveConfig(); await reload(); }
           expect(await weekValues()).toEqual(data.weeksOriginal);
         });
@@ -527,7 +529,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     await sc('PM-REG-CFG-07', 'Configuration Options', 'Week field – boundaries', async s => {
       try {
         for (const value of ['0', '1', '52']) {
-          await s.step(`Save ${value} → reload (accepted, R69)`, async () => {
+          await s.step(`First week field: enter "${value}", click "Save", reload → "${value}" is saved (accepted)`, async () => {
             await focus(weekInputs().first()); await weekInputs().first().fill(value);
             s.observe(`message: ${await saveConfig() || '(none)'}`);
             await reload();
@@ -535,7 +537,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
           });
         }
       } finally {
-        await s.step('Restore the original values', async () => {
+        await s.step(`Enter the original alert weeks, click "Save", reload → original values shown`, async () => {
           await setWeeks(data.weeksOriginal); await saveConfig(); await reload();
           expect(await weekValues()).toEqual(data.weeksOriginal);
         });
@@ -544,7 +546,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     await sc('PM-REG-CFG-05', 'Configuration Options', 'Save and persist currency', async s => {
       const other = (data.currencyOptions || []).find(option => norm(option) !== norm(data.currencyOriginal) && !option.includes(RUN));
       try {
-        await s.step(`Switch currency to "${other}" → Save → reload`, async () => {
+        await s.step(`"Currency Type" dropdown: choose "${other}", click "Save", reload → button shows "${other}"`, async () => {
           expect(other, 'Another currency exists').toBeTruthy();
           await choose(currencyButton(), other, 'Currency Type');
           s.observe(`message: ${await saveConfig() || '(none)'}`);
@@ -552,7 +554,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
           await expect(currencyButton()).toHaveText(exactI(other));
         });
       } finally {
-        await s.step(`Restore "${data.currencyOriginal}"`, async () => {
+        await s.step(`"Currency Type" dropdown: choose "${data.currencyOriginal}" again if needed, "Save", reload → original currency shown`, async () => {
           if (norm(await currencyButton().innerText()) !== norm(data.currencyOriginal)) {
             await choose(currencyButton(), data.currencyOriginal, 'Currency Type'); await saveConfig(); await reload();
           }
@@ -564,7 +566,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       const toggle = () => configToggle('LLM Material Categorization');
       let original;
       try {
-        await s.step('Flip LLM Material Categorization → Save → reload', async () => {
+        await s.step(`Click the "LLM Material Categorization" toggle, click "Save", reload → toggle keeps the flipped state`, async () => {
           original = await toggleState(toggle());
           await focus(toggle()); await toggle().click();
           s.observe(`message: ${await saveConfig() || '(none)'}`);
@@ -572,7 +574,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
           expect(await toggleState(toggle()), 'Flipped value kept').not.toBe(original);
         });
       } finally {
-        await s.step('Restore the original value', async () => {
+        await s.step(`Click the toggle back if needed, "Save", reload → original state restored`, async () => {
           if (original !== undefined && (await toggleState(toggle())) !== original) { await toggle().click(); await saveConfig(); await reload(); }
           expect(await toggleState(toggle())).toBe(original);
         });
@@ -598,15 +600,15 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       return outcome;
     };
     await sc('PM-REG-MM-05', 'Material Master', 'Add Material – required', async s => {
-      await s.step('Open Material Master', () => navigator.open('Material Master'), { critical: true });
-      await s.step('Record the Category and UOM lists (REF-14, REF-17)', async () => {
+      await s.step(`Sidebar › Project Management › "Material Master" → page opens`, () => navigator.open('Material Master'), { critical: true });
+      await s.step(`Click "Add Material", read the "Choose Category" and "Choose Unit" lists, close the form → lists recorded for later checks`, async () => {
         await openForm('Add Material', 'Add Material');
         data.addMaterialCategories = await dropdownOptions(modal().getByRole('button', { name: 'Choose Category' }));
         data.addMaterialUoms = await dropdownOptions(modal().getByRole('button', { name: 'Choose Unit' }));
         await closeForm();
       });
       for (const [label, values] of [['nothing', {}], ['no Category', { name: `Mat R1 ${RUN}`, uom: data.uomName }], ['no Material Name', { category: data.catName, uom: data.uomName }], ['no UOM', { category: data.catName, name: `Mat R2 ${RUN}` }]]) {
-        await s.step(`Add with ${label}`, async () => {
+        await s.step(`"Add Material": submit with ${label} → form stays open, material not added (message recorded)`, async () => {
           const outcome = await addMaterial(values);
           s.observe(`message: ${outcome.message || '(none)'}`);
           expect(outcome.closed, 'Not added').toBe(false);
@@ -614,19 +616,19 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       }
     });
     await sc('PM-REG-REF-14', 'Material Master', 'New UoM available in Add Material', async s => {
-      await s.step(`UOM list contains "${data.uomName}"`, async () => expect((data.addMaterialUoms || []).map(norm)).toContain(norm(data.uomName)));
+      await s.step(`Recorded "Choose Unit" list of "Add Material" → contains "${data.uomName}"`, async () => expect((data.addMaterialUoms || []).map(norm)).toContain(norm(data.uomName)));
     });
     await sc('PM-REG-MM-06', 'Material Master', 'Add Material – happy path', async s => {
       data.material = `Mat ${RUN}`;
-      await s.step(`Add "${data.material}"`, async () => {
+      await s.step(`"Add Material": Category "${data.catName}", Material Name "${data.material}", UOM "${data.uomName}", click "Add" → form closes`, async () => {
         const outcome = await addMaterial({ category: data.catName, name: data.material, uom: data.uomName });
         expect(outcome.closed, `Added (${outcome.message || 'no message'})`).toBe(true);
       });
-      await s.step(`Add "Mat CB ${RUN}" under "${data.catB}" (FDI question sets list only categories with materials)`, async () => {
+      await s.step(`"Add Material": Category "${data.catB}", name "Mat CB ${RUN}", UOM "${data.uomName}", click "Add" → form closes (gives that category a material for FDI sets)`, async () => {
         const outcome = await addMaterial({ category: data.catB, name: `Mat CB ${RUN}`, uom: data.uomName });
         expect(outcome.closed, `Added (${outcome.message || 'no message'})`).toBe(true);
       });
-      await s.step('Row with a generated Material ID', async () => {
+      await s.step(`Search the run token → "${data.material}" row shows its Category, UOM and a generated Material ID`, async () => {
         const [row] = await mmByName(data.material);
         expect(row, `${data.material} listed`).toBeTruthy();
         s.observe(`row: ${row.join(' | ')}`);
@@ -636,12 +638,12 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     await sc('PM-REG-MM-07', 'Material Master', 'Add Material with Parent + Supplier', async s => {
       data.childMaterial = `Mat P ${RUN}`;
-      await s.step(`Add "${data.childMaterial}" with parent "${data.material}" and a supplier`, async () => {
+      await s.step(`Reload; "Add Material": Category "${data.catName}", name "${data.childMaterial}", UOM, Parent Material "${data.material}", first Supplier, "Add" → form closes`, async () => {
         await reload(); // the Parent Material list is loaded with the page; the new material appears after a reload
         const outcome = await addMaterial({ category: data.catName, name: data.childMaterial, uom: data.uomName, parent: data.material, supplier: 0 });
         expect(outcome.closed, `Added (${outcome.message || 'no message'})`).toBe(true);
       });
-      await s.step('Parent shown; supplier recorded', async () => {
+      await s.step(`Search the run token → "${data.childMaterial}" row shows parent "${data.material}"; chosen supplier recorded`, async () => {
         const [row] = await mmByName(data.childMaterial);
         expect(row, `${data.childMaterial} listed`).toBeTruthy();
         expect(row.join(' | ')).toMatch(new RegExp(esc(data.material), 'i'));
@@ -650,7 +652,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     await sc('PM-REG-MM-16', 'Material Master', 'Duplicate material name', async s => {
       for (const [label, value] of [['same name', data.material], ['extra spaces', `  ${data.material.replace(' ', '  ')} `], ['other case', data.material.toLowerCase()]]) {
-        await s.step(`Add the existing name (${label})`, async () => {
+        await s.step(`"Add Material" with the existing name (${label}), click "Add" → outcome recorded, still only one "${data.material}" listed`, async () => {
           const outcome = await addMaterial({ category: data.catName, name: value, uom: data.uomName });
           s.observe(`form ${outcome.closed ? 'closed' : 'stayed open'}; message: ${outcome.message || '(none)'}`);
           expect(await mmByName(data.material), `Only one "${data.material}"`).toHaveLength(1);
@@ -673,7 +675,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     };
     await sc('PM-REG-MM-08', 'Material Master', 'Add Item – required/boundary', async s => {
       for (const [label, name, conversion] of [['empty name and conversion', null, null], ['conversion 0', `Itm Z ${RUN}`, '0'], ['conversion -1', `Itm N ${RUN}`, '-1'], ['conversion abc', `Itm A ${RUN}`, 'abc'], ['conversion 1.5', `Itm D ${RUN}`, '1.5']]) {
-        await s.step(`Add Item with ${label}`, async () => {
+        await s.step(`Row "ADD" button on "${data.material}": Add Item with ${label}, click "Add", reload → outcome and Items count before/after recorded`, async () => {
           const before = await itemsOf(data.material);
           const outcome = await addItem(data.material, name, conversion);
           s.observe(`${outcome.closed ? 'accepted' : 'not accepted'}; items ${before} → ${await itemsOf(data.material)}; message: ${outcome.message || '(none)'}`);
@@ -682,7 +684,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     await sc('PM-REG-MM-09', 'Material Master', 'Add Item – happy path', async s => {
       data.item = `Pack ${RUN}`;
-      await s.step(`Add "${data.item}" (conversion 10) to "${data.childMaterial}"`, async () => {
+      await s.step(`Row "ADD" on "${data.childMaterial}": Item name "${data.item}", conversion 10, click "Add", reload → form closes, Items count up by 1`, async () => {
         data.itemsBefore = await itemsOf(data.childMaterial);
         const outcome = await addItem(data.childMaterial, data.item, 10);
         expect(outcome.closed, `Added (${outcome.message || 'no message'})`).toBe(true);
@@ -690,7 +692,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-MM-17', 'Material Master', 'Duplicate item name', async s => {
-      await s.step(`Add "${data.item}" again`, async () => {
+      await s.step(`Row "ADD" on "${data.childMaterial}": item name "${data.item.toUpperCase()}", conversion 10, click "Add" → outcome recorded, Items count unchanged`, async () => {
         const outcome = await addItem(data.childMaterial, data.item.toUpperCase(), 10);
         s.observe(`form ${outcome.closed ? 'closed' : 'stayed open'}; message: ${outcome.message || '(none)'}`);
         expect(await itemsOf(data.childMaterial), 'Items count unchanged').toBe(data.itemsBefore + 1);
@@ -698,7 +700,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     await sc('PM-REG-MM-10', 'Material Master', 'Edit material', async s => {
       const edited = `Mat P ${RUN} E`;
-      await s.step(`Edit "${data.childMaterial}" to "${edited}"`, async () => {
+      await s.step(`Row menu › "Edit" on "${data.childMaterial}": Material Name "${edited}", click "Update"/"Save" → form closes`, async () => {
         await mmSearch(RUN);
         await click(mmRow(data.childMaterial).locator('img[alt="Menu"]'), 'Row menu');
         await click(page.getByText('Edit', { exact: true }).last(), 'Edit');
@@ -708,7 +710,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
         const outcome = await submit(action.trim());
         expect(outcome.closed, `Saved (${outcome.message || 'no message'})`).toBe(true);
       });
-      await s.step('Updated name listed', async () => {
+      await s.step(`Search the run token → "${edited}" listed once`, async () => {
         expect(await mmByName(edited)).toHaveLength(1);
         data.childMaterial = edited;
       });
@@ -720,14 +722,14 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
         await click(page.getByText(action, { exact: true }).last(), action);
         await page.waitForTimeout(1500);
       };
-      await s.step('Map Supplier opens the mapping drawer (nothing saved)', async () => {
+      await s.step(`Row menu › "Map Supplier" on "${data.material}" → "Add Supplier Mapping" drawer shows Supplier ID, Supplier Name, Lead Time in Weeks; close without saving`, async () => {
         await openFromMenu('Map Supplier');
         await visible(modal().getByText('Add Supplier Mapping'), 'Add Supplier Mapping');
         await expect(modal()).toContainText(/Supplier ID[\s\S]*Supplier Name[\s\S]*Lead Time in Weeks/);
         s.observe(clean(await modal().innerText()).slice(0, 160));
         await closeForm();
       });
-      await s.step('Statistics shows the material figures', async () => {
+      await s.step(`Row menu › "Statistics" on "${data.material}" → No. of Submittals, No. of Orders, Qty Pending Delivery, Qty Not Yet Ordered, Current Stock shown`, async () => {
         await openFromMenu('Statistics');
         for (const label of ['No. of Submittals', 'No. of Orders', 'Qty Pending Delivery', 'Qty Not Yet Ordered', 'Current Stock']) {
           await visible(page.getByText(label, { exact: true }).filter({ visible: true }), label);
@@ -818,7 +820,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     };
     const listed = async name => (await mmByName(name)).length;
     await sc('UPL-MM-03', 'Material Master › Upload', 'Valid upload creates materials', async s => {
-      await s.step('Download the template', async () => {
+      await s.step(`Click "Upload" › "Download Template" → template downloads and its UoM list includes "${data.uomName}"`, async () => {
         await click(button('Upload'), 'Upload');
         const file = await download(page.getByText('Download Template', { exact: true }).first(), 'Download Template');
         data.mmTemplate = file.path;
@@ -826,8 +828,8 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
         const lists = (readWorkbook(file.path)._Lists || []).map(row => Object.values(row)[0]);
         expect(lists.map(norm), `Template UoM list has ${data.uomName}`).toContain(norm(data.uomName));
       }, { critical: true });
-      await s.step('Upload two valid rows', () => mmUpload(s, 'UPL-MM-03', [mmRowData(`Mat A ${RUN}`), mmRowData(`Mat B ${RUN}`, { item_name: `Pack B ${RUN}`, item_conversion: 10 })]), { critical: true });
-      await s.step('Both materials listed; the second has 1 item', async () => {
+      await s.step(`"Upload" › "Upload File": two valid rows (Mat A ${RUN}; Mat B ${RUN} with item Pack B ${RUN}, conversion 10), confirm the dialogs → result recorded`, () => mmUpload(s, 'UPL-MM-03', [mmRowData(`Mat A ${RUN}`), mmRowData(`Mat B ${RUN}`, { item_name: `Pack B ${RUN}`, item_conversion: 10 })]), { critical: true });
+      await s.step(`Search the run token → "Mat A ${RUN}" and "Mat B ${RUN}" each listed once, "Mat B ${RUN}" shows 1 item`, async () => {
         await expect.poll(() => listed(`Mat A ${RUN}`), { timeout: 30000 }).toBe(1);
         expect(await listed(`Mat B ${RUN}`)).toBe(1);
         expect(await itemsOf(`Mat B ${RUN}`)).toBe(1);
@@ -835,45 +837,45 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     const notCreated = async (...names) => { for (const name of names) expect(await listed(name), `${name} not created`).toBe(0); };
     await sc('UPL-MM-04', 'Material Master › Upload', 'Fully invalid file', async s => {
-      await s.step('Two rows without material_name', async () => {
+      await s.step(`"Upload" › "Upload File": two rows with an empty material_name, confirm the dialogs → result recorded`, async () => {
         data.mmRunRows = (await mmRows(RUN)).length;
         await mmUpload(s, 'UPL-MM-04', [mmRowData(''), mmRowData('')]);
       });
-      await s.step('Nothing created', async () => expect((await mmRows(RUN)).length, 'Run materials unchanged').toBe(data.mmRunRows));
+      await s.step(`Search the run token → number of run materials unchanged, nothing created`, async () => expect((await mmRows(RUN)).length, 'Run materials unchanged').toBe(data.mmRunRows));
     });
     await sc('UPL-MM-05', 'Material Master › Upload', 'Partly valid file', async s => {
-      await s.step('One valid row + one row with a blank uom', () => mmUpload(s, 'UPL-MM-05', [mmRowData(`Mat C ${RUN}`), mmRowData(`Mat D ${RUN}`, { uom: '' })]));
-      await s.step('Valid row created; invalid row not', async () => {
+      await s.step(`"Upload File": valid "Mat C ${RUN}" plus "Mat D ${RUN}" with a blank uom, confirm the dialogs → result recorded`, () => mmUpload(s, 'UPL-MM-05', [mmRowData(`Mat C ${RUN}`), mmRowData(`Mat D ${RUN}`, { uom: '' })]));
+      await s.step(`Search the run token → "Mat C ${RUN}" listed once, "Mat D ${RUN}" not created`, async () => {
         await expect.poll(() => listed(`Mat C ${RUN}`), { timeout: 30000 }).toBe(1);
         await notCreated(`Mat D ${RUN}`);
       });
     });
     await sc('UPL-MM-06', 'Material Master › Upload', 'Required cells', async s => {
-      await s.step('Blank category; blank uom', () => mmUpload(s, 'UPL-MM-06', [mmRowData(`Mat E ${RUN}`, { category: '' }), mmRowData(`Mat F ${RUN}`, { uom: '' })]));
-      await s.step('Neither created', () => notCreated(`Mat E ${RUN}`, `Mat F ${RUN}`));
+      await s.step(`"Upload File": "Mat E ${RUN}" with a blank category and "Mat F ${RUN}" with a blank uom, confirm the dialogs → result recorded`, () => mmUpload(s, 'UPL-MM-06', [mmRowData(`Mat E ${RUN}`, { category: '' }), mmRowData(`Mat F ${RUN}`, { uom: '' })]));
+      await s.step(`Search the run token → neither "Mat E ${RUN}" nor "Mat F ${RUN}" is created`, () => notCreated(`Mat E ${RUN}`, `Mat F ${RUN}`));
     });
     await sc('UPL-MM-07', 'Material Master › Upload', 'UoM not in the list', async s => {
-      await s.step('uom typed outside the list', () => mmUpload(s, 'UPL-MM-07', [mmRowData(`Mat G ${RUN}`, { uom: `Bogus ${RUN}` })]));
-      await s.step('Not created', () => notCreated(`Mat G ${RUN}`));
+      await s.step(`"Upload File": "Mat G ${RUN}" with uom "Bogus ${RUN}" (not in the list), confirm the dialogs → result recorded`, () => mmUpload(s, 'UPL-MM-07', [mmRowData(`Mat G ${RUN}`, { uom: `Bogus ${RUN}` })]));
+      await s.step(`Search the run token → "Mat G ${RUN}" not created`, () => notCreated(`Mat G ${RUN}`));
     });
     await sc('UPL-MM-08', 'Material Master › Upload', 'Unknown category – confirm', async s => {
-      await s.step(`Category "Cat U ${RUN}" (new) → confirm`, () => mmUpload(s, 'UPL-MM-08', [mmRowData(`Mat H ${RUN}`, { category: `Cat U ${RUN}` })], { confirm: true }));
-      await s.step('Material created under the new category', async () => {
+      await s.step(`"Upload File": "Mat H ${RUN}" with new category "Cat U ${RUN}"; in the progress dialog choose "Create all as new", "Continue" → result recorded`, () => mmUpload(s, 'UPL-MM-08', [mmRowData(`Mat H ${RUN}`, { category: `Cat U ${RUN}` })], { confirm: true }));
+      await s.step(`Search the run token → "Mat H ${RUN}" listed once under category "Cat U ${RUN}"`, async () => {
         await expect.poll(() => listed(`Mat H ${RUN}`), { timeout: 30000 }).toBe(1);
         expect(((await mmByName(`Mat H ${RUN}`))[0] || []).join(' ')).toMatch(new RegExp(esc(`Cat U ${RUN}`), 'i'));
       });
     });
     await sc('UPL-MM-16', 'Material Master › Upload', 'Unknown category – decline', async s => {
-      await s.step(`Category "Cat2 U ${RUN}" (new) → decline`, () => mmUpload(s, 'UPL-MM-16', [mmRowData(`Mat I ${RUN}`, { category: `Cat2 U ${RUN}` })], { confirm: false }));
-      await s.step('Material not created', () => notCreated(`Mat I ${RUN}`));
+      await s.step(`"Upload File": "Mat I ${RUN}" with new category "Cat2 U ${RUN}"; in the progress dialog choose "Reject all", "Continue" → result recorded`, () => mmUpload(s, 'UPL-MM-16', [mmRowData(`Mat I ${RUN}`, { category: `Cat2 U ${RUN}` })], { confirm: false }));
+      await s.step(`Search the run token → "Mat I ${RUN}" not created`, () => notCreated(`Mat I ${RUN}`));
     });
     await sc('UPL-MM-09', 'Material Master › Upload', 'Duplicate of an existing material', async s => {
-      await s.step('Existing name, other case, extra spaces', () => mmUpload(s, 'UPL-MM-09', [mmRowData(data.material), mmRowData(data.material.toUpperCase()), mmRowData(`  ${data.material} `)]));
-      await s.step('No duplicate created', async () => expect(await listed(data.material)).toBe(1));
+      await s.step(`"Upload File": three rows repeating "${data.material}" (same name, upper case, extra spaces), confirm the dialogs → result recorded`, () => mmUpload(s, 'UPL-MM-09', [mmRowData(data.material), mmRowData(data.material.toUpperCase()), mmRowData(`  ${data.material} `)]));
+      await s.step(`Search the run token → "${data.material}" is still listed once`, async () => expect(await listed(data.material)).toBe(1));
     });
     await sc('UPL-MM-10', 'Material Master › Upload', 'Duplicate inside the same file', async s => {
-      await s.step(`"Mat J ${RUN}" twice`, () => mmUpload(s, 'UPL-MM-10', [mmRowData(`Mat J ${RUN}`), mmRowData(`Mat J ${RUN}`)]));
-      await s.step('At most one created', async () => {
+      await s.step(`"Upload File": "Mat J ${RUN}" twice in the same file, confirm the dialogs → result recorded`, () => mmUpload(s, 'UPL-MM-10', [mmRowData(`Mat J ${RUN}`), mmRowData(`Mat J ${RUN}`)]));
+      await s.step(`Search the run token → "Mat J ${RUN}" created at most once (count recorded)`, async () => {
         const count = await listed(`Mat J ${RUN}`);
         s.observe(`"Mat J" created ${count} time(s)`);
         expect(count).toBeLessThanOrEqual(1);
@@ -881,31 +883,31 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     await sc('UPL-MM-11', 'Material Master › Upload', 'Item conversion boundaries', async s => {
       const cases = [['0', 'K1'], ['-1', 'K2'], ['abc', 'K3'], ['1.5', 'K4'], ['2', 'K5']];
-      await s.step('Conversions 0, -1, abc, 1.5 and 2', () => mmUpload(s, 'UPL-MM-11', cases.map(([value, key]) => mmRowData(`Mat ${key} ${RUN}`, { item_name: `Itm ${key} ${RUN}`, item_conversion: value }))));
-      await s.step('Only the whole number ≥ 1 is accepted', async () => {
+      await s.step(`"Upload File": five materials with item conversions 0, -1, abc, 1.5 and 2, confirm the dialogs → result recorded`, () => mmUpload(s, 'UPL-MM-11', cases.map(([value, key]) => mmRowData(`Mat ${key} ${RUN}`, { item_name: `Itm ${key} ${RUN}`, item_conversion: value }))));
+      await s.step(`Search the run token → only "Mat K5 ${RUN}" (conversion 2) exists, with 1 item; Mat K1 to K4 not created`, async () => {
         await expect.poll(() => listed(`Mat K5 ${RUN}`), { timeout: 30000 }).toBe(1);
         expect(await itemsOf(`Mat K5 ${RUN}`)).toBe(1);
         await notCreated(`Mat K1 ${RUN}`, `Mat K2 ${RUN}`, `Mat K3 ${RUN}`, `Mat K4 ${RUN}`);
       });
     });
     await sc('UPL-MM-12', 'Material Master › Upload', 'Item fields must go together', async s => {
-      await s.step('item_name without conversion; conversion without item_name', () => mmUpload(s, 'UPL-MM-12', [mmRowData(`Mat L1 ${RUN}`, { item_name: `Itm L1 ${RUN}` }), mmRowData(`Mat L2 ${RUN}`, { item_conversion: 5 })]));
-      await s.step('Rows rejected (expected result not confirmed: recorded)', async () => {
+      await s.step(`"Upload File": "Mat L1 ${RUN}" with item_name only and "Mat L2 ${RUN}" with item_conversion only, confirm the dialogs → result recorded`, () => mmUpload(s, 'UPL-MM-12', [mmRowData(`Mat L1 ${RUN}`, { item_name: `Itm L1 ${RUN}` }), mmRowData(`Mat L2 ${RUN}`, { item_conversion: 5 })]));
+      await s.step(`Search both materials → whether each was created is recorded (expected result not yet confirmed)`, async () => {
         for (const name of [`Mat L1 ${RUN}`, `Mat L2 ${RUN}`]) s.observe(`${name}: ${await listed(name) ? 'CREATED' : 'not created'}`);
       });
     });
     await sc('UPL-MM-13', 'Material Master › Upload', 'Wrong file / wrong layout', async s => {
       for (const [label, file] of [['.csv', writeText(path.join(files, `upl-mm-13-${RUN}.csv`), `category,material_name,uom\n${data.catName},Mat M1 ${RUN},${data.uomName}\n`)], ['.pdf', writeText(path.join(files, `upl-mm-13-${RUN}.pdf`), '%PDF-1.4\n%%EOF\n')]]) {
-        await s.step(`Upload a ${label} file`, async () => {
+        await s.step(`"Upload" › "Upload File": choose a ${label} file instead of the template, then confirm → messages recorded`, async () => {
           const first = await uploadFrom('Upload File', file);
           s.observe(`message: ${first || '(none)'}; after confirming: ${await confirmUpload() || '(none)'}`);
         });
       }
-      await s.step('Nothing created', () => notCreated(`Mat M1 ${RUN}`));
+      await s.step(`Search the run token → "Mat M1 ${RUN}" not created`, () => notCreated(`Mat M1 ${RUN}`));
     });
     await sc('UPL-MM-14', 'Material Master › Upload', 'Header-only file', async s => {
-      await s.step('Template with an empty data row', () => mmUpload(s, 'UPL-MM-14', [{}]));
-      await s.step('Nothing created', async () => s.observe(`run materials listed: ${(await mmRows(RUN)).length}`));
+      await s.step(`"Upload File": template with one empty data row, confirm the dialogs → result recorded`, () => mmUpload(s, 'UPL-MM-14', [{}]));
+      await s.step(`Search the run token → number of run materials recorded (nothing is expected to be created)`, async () => s.observe(`run materials listed: ${(await mmRows(RUN)).length}`));
     });
 
     // ================= First Delivery Inspection Config =================
@@ -928,9 +930,9 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       expect((await fdiSettings()).map(item => item.checked), 'FDI Settings restored').toEqual(data.fdiInitial.map(item => item.checked));
     };
     await sc('PM-REG-FDI-02a', 'First Delivery Inspection Config', 'No contradictory state is saved', async s => {
-      await s.step('Open First Delivery Inspection Config', () => navigator.open('First Delivery Inspection Config'), { critical: true });
+      await s.step(`Sidebar › Project Management › "First Delivery Inspection Config" → page opens`, () => navigator.open('First Delivery Inspection Config'), { critical: true });
       try {
-        await s.step('Untick Enable Uploading of Photos? → Save → reload', async () => {
+        await s.step(`FDI Settings: untick "Enable Uploading of Photos?", click "Save", reload → uploads No, "Photos are mandatory?" No and disabled`, async () => {
           data.fdiInitial = await fdiSettings();
           await setSetting(SETTINGS[1], false);
           s.observe(`message: ${await saveFdi() || '(none)'}`);
@@ -941,14 +943,14 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
           expect(now[2].disabled, 'Mandatory disabled').toBe(true);
         });
       } finally {
-        await s.step('Restore the original settings', restoreFdi);
+        await s.step(`FDI Settings: set the four checkboxes back to their original values, "Save", reload → original settings shown`, restoreFdi);
       }
     });
     await sc('PM-REG-FDI-04', 'First Delivery Inspection Config', 'Save persists each setting (Yes and No)', async s => {
       try {
         for (const [index, label] of SETTINGS.entries()) {
           for (const pass of [0, 1]) {
-            await s.step(`${label}: ${pass ? 'back to the original' : 'flip'} → Save → reload`, async () => {
+            await s.step(`FDI Settings: ${pass ? 'set' : 'flip'} "${label}" ${pass ? 'back to the original value' : '(tick uploads first for "mandatory")'}, click "Save", reload → value kept`, async () => {
               if (index === 2) await setSetting(SETTINGS[1], true); // mandatory only while uploads is ticked
               const target = pass ? data.fdiInitial[index].checked : !data.fdiInitial[index].checked;
               await setSetting(label, target);
@@ -958,7 +960,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
           }
         }
       } finally {
-        await s.step('Settings equal the original values', restoreFdi);
+        await s.step(`FDI Settings: set the four checkboxes back to their original values, "Save", reload → settings equal the original values`, restoreFdi);
       }
     });
 
@@ -1001,7 +1003,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       return submit('Add');
     };
     await sc('PM-REG-FDI-21', 'First Delivery Inspection Config', 'Add Inspector – Person and Role required', async s => {
-      await s.step('Role chosen, no Project Member → Add', async () => {
+      await s.step(`Inspectors › "Add Inspector": choose a Project Role but no Project Member, click "Add" → form stays open, nothing added`, async () => {
         data.inspectorCount = await inspectorCount();
         await openForm('Add Inspector', 'Add Inspector');
         data.roles = await realOptions(roleSelect());
@@ -1012,7 +1014,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
         expect(outcome.closed, 'Not added').toBe(false);
         await closeForm();
       });
-      await s.step('Project Member chosen, no Project Role → Add', async () => {
+      await s.step(`"Add Inspector": choose a Project Member but no Project Role, click "Add" → form stays open, member not added to the table`, async () => {
         expect(data.freeMembers.length, 'A project member who is not an inspector yet').toBeGreaterThan(0);
         const outcome = await addInspector({ member: data.freeMembers[0] });
         s.observe(`message: ${outcome.message || '(none)'}`);
@@ -1029,7 +1031,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
         { key: 'C', scope: 'By Material Category', pick: () => data.catName }
       ];
       for (const [index, item] of plan.entries()) {
-        await s.step(`Add member ${item.key} (${item.scope})`, async () => {
+        await s.step(`"Add Inspector" (member ${item.key}): next free project member, a role, scope "${item.scope}", click "Add" → row shows the member with that role`, async () => {
           data.memberCursor = data.memberCursor ?? 0;
           let pick = item.pick ? item.pick() : null;
           if (item.scope === 'Specific Materials') {
@@ -1069,7 +1071,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       }
     });
     await sc('PM-REG-FDI-22', 'First Delivery Inspection Config', 'Add Inspector – By Category scope', async s => {
-      await s.step('Row shows "<Category> · all"', async () => {
+      await s.step(`Inspectors table → inspector C's scope cell reads "${data.catName} · all"`, async () => {
         const c = data.inspectorC;
         expect(c, 'Inspector C added (FDI-25)').toBeTruthy();
         if (c.reused) { s.observe(`not checked: no free project member to add with a category scope (reused ${c.name})`); return; }
@@ -1077,18 +1079,18 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-FDI-25a', 'First Delivery Inspection Config', 'Inspector list kept after navigating away', async s => {
-      await s.step('Open another PM page and come back', async () => {
+      await s.step(`Open "Inventory Control", then "First Delivery Inspection Config" again → Inspectors page reloads`, async () => {
         await navigator.open('Inventory Control');
         await navigator.open('First Delivery Inspection Config');
       }, { critical: true });
-      await s.step('The three new inspectors are still listed', async () => {
+      await s.step(`Inspectors table → inspectors A, B and C are still listed`, async () => {
         for (const key of ['A', 'B', 'C']) await visible(inspectorRow(data[`inspector${key}`].name), `Inspector ${key}`);
       });
     });
     await sc('PM-REG-FDI-23', 'First Delivery Inspection Config', 'Enable/Disable inspector', async s => {
       const row = () => inspectorRow(data.inspectorA.name);
       for (const [action, enabled] of [['Disable', 'Disabled'], ['Enable', 'Enabled']]) {
-        await s.step(`${action} → reload`, async () => {
+        await s.step(`Inspector A row: click "${action}", confirm, reload → Enabled column shows "${enabled}", role kept`, async () => {
           await click(row().getByRole('button', { name: action, exact: true }), action);
           await confirmDelete(); await reload();
           await expect(row().locator('td').nth(4)).toHaveText(enabled);
@@ -1119,7 +1121,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     };
     const scopeChips = async name => (await inspectorRow(name).locator('td').nth(2).locator('span span, span').allInnerTexts()).map(clean).filter(text => text && !/^\+\d+ more$/.test(text));
     await sc('PM-REG-FDI-24', 'First Delivery Inspection Config', 'Edit materials scope', async s => {
-      await s.step('Change inspector B to another material → reload', async () => {
+      await s.step(`Inspector B row › "Edit materials": toggle the old material off and another on, click "Save", reload → scope shows the new material only`, async () => {
         const [from, to] = data.materialChoices;
         // Start from the inspector's current materials (a reused inspector may have none): toggle only what is needed
         // so that "to" is selected and "from" is not.
@@ -1135,12 +1137,12 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-FDI-27', 'First Delivery Inspection Config', 'Material mapping: one, several, All Materials', async s => {
-      await s.step('Add a second material → two chips after reload', async () => {
+      await s.step(`Inspector B › "Edit materials": add a third material, "Save", reload → scope shows both chosen materials`, async () => {
         await editMaterials(data.inspectorB.name, { toggle: [data.materialChoices[2]] });
         const cell = inspectorRow(data.inspectorB.name).locator('td').nth(2);
         for (const pick of data.materialChoices.slice(1, 3)) await expect(cell).toContainText(new RegExp(esc(pick), 'i'));
       });
-      await s.step('All Materials → reload', async () => {
+      await s.step(`Inspector B › "Edit materials": tick "All Materials", "Save", reload → scope reads "All Materials"`, async () => {
         await editMaterials(data.inspectorB.name, { all: true });
         await expect(inspectorRow(data.inspectorB.name).locator('td').nth(2)).toHaveText(/^\s*All Materials\s*$/);
         s.observe(`chips: ${(await scopeChips(data.inspectorB.name)).join(', ')}`);
@@ -1154,7 +1156,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     await sc('PM-REG-FDI-26', 'First Delivery Inspection Config', 'Invite several people at once', async s => {
       data.inviteA = `pm.a.${RUN.toLowerCase()}@yopmail.com`;
       data.inviteB = `pm.b.${RUN.toLowerCase()}@yopmail.com`;
-      await s.step('Two e-mails with a role → Send Invites', async () => {
+      await s.step(`Inspectors › "Invite": ${data.inviteA} and ${data.inviteB} (via "Add Another User"), role "Project User" each, click "Send Invites" → form closes`, async () => {
         await openForm('Invite', 'Invite Users');
         await inviteEmail(0).fill(data.inviteA); await inviteRole(0, 'Project User');
         await click(button('Add Another User', modal()), 'Add Another User');
@@ -1162,7 +1164,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
         const outcome = await submit('Send Invites');
         expect(outcome.closed, `Invites sent (${outcome.message || 'no message'})`).toBe(true);
       });
-      await s.step('Both rows: Invited - Pending Acceptance, Disabled, Enable disabled', async () => {
+      await s.step(`Inspectors table → both invited rows show "Invited - Pending Acceptance", Enabled "Disabled" and a disabled "Enable" button`, async () => {
         for (const email of [data.inviteA, data.inviteB]) {
           const row = inspectorRow(email);
           await expect(row, email).toBeVisible({ timeout: 20000 });
@@ -1173,7 +1175,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-FDI-19', 'First Delivery Inspection Config', 'Invite duplicate / existing user email', async s => {
-      await s.step('Invite an e-mail already in the Inspectors table', async () => {
+      await s.step(`"Invite": ${data.inviteA} again with role "Project User", "Send Invites"; close, reload → outcome recorded, still one row for it`, async () => {
         await openForm('Invite', 'Invite Users');
         await inviteEmail(0).fill(data.inviteA); await inviteRole(0, 'Project User');
         const outcome = await submit('Send Invites');
@@ -1194,19 +1196,19 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       if (name !== null) await modal().getByPlaceholder('e.g. Steel Receiving Checks').fill(name);
       if (all) await click(modal().getByText('All Categories (catch-all)', { exact: true }), 'All Categories');
       for (const category of categories) {
-        await modal().getByPlaceholder('Search categories').fill(category);
+        await modal().getByPlaceholder(CATEGORY_SEARCH).fill(category);
         await click(modal().locator('label', { hasText: new RegExp(esc(category), 'i') }).first(), category);
       }
       return submit('Create Question Set');
     };
     await sc('PM-REG-FDI-32', 'First Delivery Inspection Config', 'New Question Set – required', async s => {
-      await s.step('Record the category list (REF-17)', async () => {
+      await s.step(`"New Question Set": read the category checkbox list, close the form → list recorded for later checks`, async () => {
         await openForm('New Question Set', 'New FDI Inspection Question Set');
         data.qsetCategories = (await modal().locator('label').filter({ has: page.locator('input[type="checkbox"]') }).allInnerTexts()).map(clean);
         await closeForm();
       });
       for (const [label, name, categories] of [['empty name', null, [data.catB]], ['no category', `Set X ${RUN}`, []]]) {
-        await s.step(`Create with ${label}`, async () => {
+        await s.step(`"New Question Set": submit with ${label} → form stays open, set not created`, async () => {
           const outcome = await newSet(name, categories);
           s.observe(`message: ${outcome.message || '(none)'}`);
           expect(outcome.closed, 'Not created').toBe(false);
@@ -1216,20 +1218,20 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     await sc('PM-REG-FDI-34', 'First Delivery Inspection Config', 'Create set for a free category', async s => {
       data.setName = `Set ${RUN}`;
-      await s.step(`Create "${data.setName}" for "${data.catName}"`, async () => {
+      await s.step(`"New Question Set": name "${data.setName}", category "${data.catName}", click "Create Question Set" → form closes, new set tab appears`, async () => {
         const outcome = await newSet(data.setName, [data.catName]);
         expect(outcome.closed, `Created (${outcome.message || 'no message'})`).toBe(true);
         await visible(setTab(data.setName), 'New set tab');
       });
-      await s.step(`The category shows "(in: ${data.setName})"`, async () => {
+      await s.step(`"New Question Set": search category "${data.catName}" → label shows "(in: ${data.setName})"; close the form`, async () => {
         await openForm('New Question Set', 'New FDI Inspection Question Set');
-        await modal().getByPlaceholder('Search categories').fill(data.catName);
+        await modal().getByPlaceholder(CATEGORY_SEARCH).fill(data.catName);
         await visible(modal().getByText(new RegExp(`\\(in: ${esc(data.setName)}\\)`, 'i')), `(in: ${data.setName})`);
         await closeForm();
       });
     });
     await sc('PM-REG-FDI-42c', 'First Delivery Inspection Config', 'Empty Questions list', async s => {
-      await s.step('The new set has no questions', async () => {
+      await s.step(`Click the "${data.setName}" tab → Questions list has no question rows (empty-state text recorded)`, async () => {
         await click(setTab(data.setName), data.setName);
         await navigator.ready();
         const rows = await questionTable().locator('tbody tr').count().catch(() => 0);
@@ -1238,7 +1240,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-FDI-43', 'First Delivery Inspection Config', 'Duplicate question set name', async s => {
-      await s.step(`Create "${data.setName.toUpperCase()}" (for "${data.catB}")`, async () => {
+      await s.step(`"New Question Set": name "${data.setName.toUpperCase()}", category "${data.catB}", "Create Question Set"; close, reload → no second set tab with that name`, async () => {
         const before = await setTabsNamed(data.setName).count();
         const outcome = await newSet(data.setName.toUpperCase(), [data.catB]);
         s.observe(`form ${outcome.closed ? 'closed' : 'stayed open'}; message: ${outcome.message || '(none)'}`);
@@ -1266,7 +1268,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     };
     await sc('PM-REG-FDI-36', 'First Delivery Inspection Config', 'Add/edit/reorder/delete group', async s => {
       data.group = `Grp ${RUN}`;
-      await s.step(`Add "${data.group}" and "Grp2 ${RUN}"`, async () => {
+      await s.step(`Set "${data.setName}" › "Manage Groups" › "Add Group": add "${data.group}" and "Grp2 ${RUN}" → both appear in the groups table`, async () => {
         await click(setTab(data.setName), data.setName);
         await openGroups();
         for (const name of [data.group, `Grp2 ${RUN}`]) {
@@ -1275,7 +1277,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
           await visible(groupRow(name), name);
         }
       });
-      await s.step('Edit the heading', async () => {
+      await s.step(`Groups table: "Edit" on "Grp2 ${RUN}", Heading Display Text "Grp2 ${RUN} H", save → row shows the new heading`, async () => {
         await click(groupRow(`Grp2 ${RUN}`).getByRole('button', { name: 'Edit', exact: true }), 'Edit');
         await modal().locator('label', { hasText: 'Heading Display Text' }).locator('xpath=following::*[self::input or self::textarea][1]').fill(`Grp2 ${RUN} H`);
         const action = await modal().getByRole('button', { name: /^(Save|Update)$/ }).first().innerText();
@@ -1283,14 +1285,14 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
         if (!outcome.closed) await closeForm();
         await expect(groupRow(`Grp2 ${RUN}`)).toContainText(`Grp2 ${RUN} H`);
       });
-      await s.step('Move up (▲)', async () => {
+      await s.step(`Groups table: click "▲" on "Grp2 ${RUN}" → the group moves up one position`, async () => {
         const order = async () => (await groupsTable().locator('tbody tr td:nth-child(2)').allInnerTexts()).map(clean);
         const before = await order();
         await click(groupRow(`Grp2 ${RUN}`).getByRole('button', { name: '▲', exact: true }), '▲');
         await expect.poll(order, { timeout: 10000 }).not.toEqual(before);
         expect((await order()).indexOf(`Grp2 ${RUN}`)).toBe(before.indexOf(`Grp2 ${RUN}`) - 1);
       });
-      await s.step('Delete the second group', async () => {
+      await s.step(`Groups table: "Delete" on "Grp2 ${RUN}", confirm in the inline "Delete group" row → group removed`, async () => {
         await click(groupRow(`Grp2 ${RUN}`).getByRole('button', { name: 'Delete', exact: true }), 'Delete');
         // Confirmation is an inline row: "Delete group '<name>'? Its n question(s) will not be deleted…" Delete / Cancel.
         const confirmRow = groupsTable().locator('tbody tr').filter({ hasText: /^Delete group/ }).first();
@@ -1301,7 +1303,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-FDI-45', 'First Delivery Inspection Config', 'Duplicate group name', async s => {
-      await s.step(`Add "${data.group}" again`, async () => {
+      await s.step(`"Add Group": "${data.group.toLowerCase()}" (existing name, lower case) → outcome recorded, only one group with that name; "Manage Groups" reopened`, async () => {
         const outcome = await addGroup(data.group.toLowerCase());
         s.observe(`form ${outcome.closed ? 'closed' : 'stayed open'}; message: ${outcome.message || '(none)'}`);
         await expect(groupsTable().locator('tbody tr td:nth-child(2)', { hasText: exactI(data.group) }), 'Only one group with this name').toHaveCount(1);
@@ -1322,7 +1324,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     };
     await sc('PM-REG-FDI-38', 'First Delivery Inspection Config', 'Add Question – text and Data Type required', async s => {
       for (const [label, text, type] of [['empty Question Text', null, 'Text'], ['no Answer Type', `FDI Q X ${RUN}`, null]]) {
-        await s.step(`Add with ${label}`, async () => {
+        await s.step(`Set "${data.setName}" › "Add Question": submit with ${label} → form stays open, question not added`, async () => {
           const outcome = await addQuestion(text, type);
           s.observe(`message: ${outcome.message || '(none)'}`);
           expect(outcome.closed, 'Not added').toBe(false);
@@ -1332,11 +1334,11 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     await sc('PM-REG-FDI-39', 'First Delivery Inspection Config', 'Add Question – enabled at once in the current project', async s => {
       data.question = `FDI Q ${RUN}`;
-      await s.step(`Add "${data.question}" (Text)`, async () => {
+      await s.step(`"Add Question": Question Text "${data.question}", Answer Type "Text", click "Add" → form closes`, async () => {
         const outcome = await addQuestion(data.question, 'Text');
         expect(outcome.closed, `Added (${outcome.message || 'no message'})`).toBe(true);
       });
-      await s.step('Row: Enabled, text, today', async () => {
+      await s.step(`Questions table → "${data.question}" row shows type "text", Added On today and Status "Enabled"`, async () => {
         const row = questionRow(data.question);
         await expect(row).toBeVisible({ timeout: 15000 });
         // Columns: #, Question, Group, Type, Added On, Status, Actions (row text runs cells together).
@@ -1346,7 +1348,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-FDI-44', 'First Delivery Inspection Config', 'Duplicate question text', async s => {
-      await s.step(`Add "${data.question}" again`, async () => {
+      await s.step(`"Add Question": "${data.question.toUpperCase()}" with extra spaces, type "Text" → outcome recorded; reload → only one question with this text`, async () => {
         const outcome = await addQuestion(`  ${data.question.toUpperCase()} `, 'Text');
         s.observe(`form ${outcome.closed ? 'closed' : 'stayed open'}; message: ${outcome.message || '(none)'}`);
         await closeForm(); await reload();
@@ -1358,7 +1360,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     await sc('PM-REG-FDI-41', 'First Delivery Inspection Config', 'Reorder and regroup questions', async s => {
       const order = async () => (await questionTable().locator('tbody tr td:nth-child(2)').allInnerTexts()).map(clean);
-      await s.step(`Add "FDI Q2 ${RUN}" and move it up`, async () => {
+      await s.step(`"Add Question": "FDI Q2 ${RUN}" (Text), then click "▲" on its row → question added and moves up`, async () => {
         const outcome = await addQuestion(`FDI Q2 ${RUN}`, 'Text');
         expect(outcome.closed, `Added (${outcome.message || 'no message'})`).toBe(true);
         await visible(questionRow(`FDI Q2 ${RUN}`), `FDI Q2 ${RUN}`);
@@ -1366,7 +1368,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
         await click(questionRow(`FDI Q2 ${RUN}`).getByRole('button', { name: '▲', exact: true }), '▲');
         await expect.poll(order, { timeout: 10000 }).not.toEqual(before);
       });
-      await s.step(`Move it into "${data.group}" → reload`, async () => {
+      await s.step(`Questions table: Group dropdown of "FDI Q2 ${RUN}" set to "${data.group}", reload → group kept`, async () => {
         await questionRow(`FDI Q2 ${RUN}`).locator('select').selectOption({ label: data.group });
         await navigator.ready(); await reload();
         await click(setTab(data.setName), data.setName);
@@ -1376,7 +1378,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     await sc('PM-REG-FDI-40', 'First Delivery Inspection Config', 'Add from Organization Bank', async s => {
       const bankRows = () => modal().locator('div.p-2\\.5').filter({ has: page.locator('input[type="checkbox"]') });
-      await s.step('Bank: tick a question, choose Answer Type Text → Add Selected', async () => {
+      await s.step(`"Add Question" › "Add from Organization Bank": tick a bank question, Answer Type "Text", click "Add Selected" → question added (message recorded)`, async () => {
         await click(setTab(data.setName), data.setName);
         await openForm('Add Question', 'Add Question');
         await click(modal().getByRole('button', { name: 'Add from Organization Bank', exact: true }), 'Add from Organization Bank');
@@ -1389,12 +1391,12 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
         s.observe(`added "${data.bankQuestion}"; message: ${outcome.message || '(none)'}`);
         await closeForm();
       });
-      await s.step('Listed in the set as Enabled', async () => {
+      await s.step(`Questions table → the bank question is listed with "Enabled"`, async () => {
         const row = questionRow(data.bankQuestion);
         await expect(row).toBeVisible({ timeout: 15000 });
         await expect(row).toContainText('Enabled');
       });
-      await s.step("No longer offered in this set's bank", async () => {
+      await s.step(`"Add Question" › "Add from Organization Bank" again → the added bank question is no longer offered`, async () => {
         await openForm('Add Question', 'Add Question');
         await click(modal().getByRole('button', { name: 'Add from Organization Bank', exact: true }), 'Add from Organization Bank');
         await page.waitForTimeout(1500);
@@ -1403,13 +1405,13 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-FDI-42', 'First Delivery Inspection Config', 'Delete a question', async s => {
-      await s.step(`Delete "${data.question}"`, async () => {
+      await s.step(`Questions table: "Delete" on "${data.question}", confirm → row removed`, async () => {
         await withDialog(async () => { await click(questionRow(data.question).getByRole('button', { name: 'Delete', exact: true }), 'Delete'); await confirmDelete(); });
         await expect(questionTable().locator('tbody tr').filter({ hasText: data.question }).filter({ hasNotText: `Q2 ${RUN}` })).toHaveCount(0, { timeout: 15000 });
       });
     });
     await sc('PM-REG-FDI-42a', 'First Delivery Inspection Config', 'Show deleted questions lists deleted ones', async s => {
-      await s.step('Tick Show deleted questions', async () => {
+      await s.step(`Tick "Show deleted questions" → "${data.question}" is listed as deleted; untick it`, async () => {
         await click(main.getByText('Show deleted questions', { exact: true }), 'Show deleted questions');
         const row = questionTable().locator('tbody tr').filter({ has: page.locator('td:nth-child(2)', { hasText: exactI(data.question) }) }).first();
         await expect(row).toBeVisible({ timeout: 15000 });
@@ -1445,28 +1447,28 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     await sc('PM-REG-INV-02', 'Inventory Control', 'Add Rule – required', async s => {
       data.rulesBefore = (await ruleList()).length;
       for (const [label, values] of [['nothing', {}], ['Min/Max without item', { min: 10, max: 100 }], ['item without Min/Max', { item: data.material }]]) {
-        await s.step(`Add with ${label}`, async () => {
+        await s.step(`Inventory Control › "Add Rule": submit with ${label} → form stays open, no rule added`, async () => {
           const outcome = await addRule(values);
           s.observe(`message: ${outcome.message || '(none)'}`);
           expect(outcome.closed, 'Not added').toBe(false);
         });
       }
-      await s.step('No rule added', async () => expect((await ruleList()).length).toBe(data.rulesBefore));
+      await s.step(`Rules list → rule count unchanged`, async () => expect((await ruleList()).length).toBe(data.rulesBefore));
     });
     await sc('PM-REG-INV-03', 'Inventory Control', 'Add Rule – happy path', async s => {
-      await s.step(`"${data.material}" + Min 10 + Max 100 + notify toggles → Add`, async () => {
+      await s.step(`"Add Rule": Inventory Item "${data.material}", Min Balance 10, Max Balance 100, both notify toggles on, click "Add" → outcome recorded`, async () => {
         data.ruleSite = await new SiteSelectorPage(page).activeSiteName();
         const outcome = await addRule({ item: data.material, min: 10, max: 100, notifyMin: true, notifyMax: true });
         s.observe(`message: ${outcome.message || '(none)'}`);
       });
-      await s.step('Rule listed with its values', async () => {
+      await s.step(`Rules list (after reload) → rule for "${data.material}" shows Min 10 and Max 100`, async () => {
         const rule = await ruleFor(data.material);
         expect(rule, `Rule for ${data.material}`).toBeTruthy();
         expect([rule.min, rule.max]).toEqual(['10', '100']);
       });
     });
     await sc('PM-REG-INV-04', 'Inventory Control', 'Min greater than Max', async s => {
-      await s.step(`"Mat CB ${RUN}": Min 100, Max 10 → Add`, async () => {
+      await s.step(`"Add Rule": item "Mat CB ${RUN}", Min 100, Max 10, click "Add" → outcome recorded (accepted or rejected, Q-INV-1)`, async () => {
         const outcome = await addRule({ item: `Mat CB ${RUN}`, min: 100, max: 10 });
         const rule = await ruleFor(`Mat CB ${RUN}`);
         // Expected result is not confirmed (Ev. I): record what the app does; see open question Q-INV-1.
@@ -1476,7 +1478,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     await sc('PM-REG-INV-05', 'Inventory Control', 'Negative / zero / decimal', async s => {
       const item = data.childMaterial;
       for (const [label, values] of [['Min -1', { min: -1, max: 5 }], ['Min 0', { min: 0, max: 5 }], ['Max 0.5', { min: 0, max: 0.5 }]]) {
-        await s.step(label, async () => {
+        await s.step(`"Add Rule" for "${item}" with ${label} (skipped when it already has a rule) → outcome recorded`, async () => {
           if (await ruleFor(item)) { s.observe(`not tried: "${item}" already has a rule (one rule per material)`); return; }
           const outcome = await addRule({ item, ...values });
           const rule = await ruleFor(item);
@@ -1486,7 +1488,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     await sc('PM-REG-INV-07', 'Inventory Control', 'Rule is site-specific', async s => {
       const sites = new SiteSelectorPage(page);
-      await s.step('Switch the header site', async () => {
+      await s.step(`Header site selector: choose a different site → site switches`, async () => {
         await click(sites.siteSelector, 'Site selector');
         const options = (await page.getByRole('listbox').last().getByRole('option').allInnerTexts()).map(clean).filter(name => name && norm(name) !== norm(data.ruleSite));
         await page.keyboard.press('Escape');
@@ -1494,11 +1496,11 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
         data.otherSite = options[0];
         await sites.ensureSite(data.otherSite); await navigator.ready();
       }, { critical: true });
-      await s.step(`Rule for "${data.material}" not shown on the other site`, async () => {
+      await s.step(`Inventory Control rules → rule for "${data.material}" is not listed on the other site`, async () => {
         await page.waitForTimeout(1500);
         expect(await ruleFor(data.material)).toBeFalsy();
       });
-      await s.step('Switch back; the rule is listed again', async () => {
+      await s.step(`Header site selector: switch back to the original site → rule for "${data.material}" is listed again`, async () => {
         await sites.ensureSite(data.ruleSite); await navigator.ready(); await page.waitForTimeout(1500);
         expect(await ruleFor(data.material)).toBeTruthy();
       });
@@ -1508,9 +1510,9 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     await sc('PM-REG-PSC-02', 'PreShipping Checklist', 'Enabled tick saves automatically', async s => {
       const box = () => main.locator('tbody tr').last().locator('input[type="checkbox"]');
       let original;
-      await s.step('Open PreShipping Checklist', () => navigator.open('PreShipping Checklist'), { critical: true });
+      await s.step(`Sidebar › Project Management › "PreShipping Checklist" → page opens`, () => navigator.open('PreShipping Checklist'), { critical: true });
       try {
-        await s.step('Toggle the last question (no Save button) → reload', async () => {
+        await s.step(`Last question's "Enabled" checkbox: click it (no Save button; choose Answer Type "Text" and "Add" if asked), reload → change kept`, async () => {
           original = await box().isChecked();
           await focus(box()); await box().click(); await page.waitForTimeout(1200);
           // Enabling a question asks for its answer type first ("Select Answer Type": Boolean / Text / Date → Add).
@@ -1526,7 +1528,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
           expect(await box().isChecked(), 'Change kept after reload').toBe(!original);
         });
       } finally {
-        await s.step('Restore the original value', async () => {
+        await s.step(`Click the last question's checkbox back if needed, reload → original value restored`, async () => {
           if (original !== undefined && (await box().isChecked()) !== original) { await box().click(); await page.waitForTimeout(1500); await reload(); }
           expect(await box().isChecked()).toBe(original);
         });
@@ -1548,24 +1550,24 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     };
     const logFieldCount = () => main.locator('tbody tr').count();
     await sc('PM-REG-PLC-03', 'Procurement Log Configuration', 'Add field – required', async s => {
-      await s.step('Open Procurement Log Configuration', () => navigator.open('Procurement Log Configuration'), { critical: true });
+      await s.step(`Sidebar › Project Management › "Procurement Log Configuration" → page opens`, () => navigator.open('Procurement Log Configuration'), { critical: true });
       data.logFields = await logFieldCount();
       for (const [label, name, type] of [['empty name and type', null, null], ['name only', `Field X ${RUN}`, null], ['type only', null, 'String']]) {
-        await s.step(`Add with ${label}`, async () => {
+        await s.step(`"Add Log Fields": submit with ${label} → form stays open, no field added`, async () => {
           const outcome = await addLogField(name, type);
           s.observe(`message: ${outcome.message || '(none)'}`);
           expect(outcome.closed, 'Not added').toBe(false);
         });
       }
-      await s.step('No field added', async () => expect(await logFieldCount()).toBe(data.logFields));
+      await s.step(`Fields table → row count unchanged`, async () => expect(await logFieldCount()).toBe(data.logFields));
     });
     await sc('PM-REG-PLC-04', 'Procurement Log Configuration', 'Add custom field', async s => {
       data.logField = `Field ${RUN}`;
-      await s.step(`Add "${data.logField}" (String)`, async () => {
+      await s.step(`"Add Log Fields": name "${data.logField}", Field Type "String", click "Add" → form closes`, async () => {
         const outcome = await addLogField(data.logField, 'String');
         expect(outcome.closed, `Added (${outcome.message || 'no message'})`).toBe(true);
       });
-      await s.step('Row "<name>(Custom)" listed', async () => {
+      await s.step(`Fields table → row "${data.logField}(Custom)" listed and row count up by 1`, async () => {
         await expect(logRow(`${data.logField}(Custom)`)).toBeVisible({ timeout: 15000 });
         expect(await logFieldCount()).toBe(data.logFields + 1);
       });
@@ -1584,7 +1586,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       return changed;
     };
     await sc('PM-REG-PLC-08', 'Procurement Log Configuration', 'Duplicate field name', async s => {
-      await s.step(`Add "${data.logField}" again`, async () => {
+      await s.step(`"Add Log Fields": "${data.logField}" again, type "String", "Add"; reload → no duplicate added (any added rows are disabled again via "Save Changes")`, async () => {
         const before = await logFieldCount();
         const outcome = await addLogField(data.logField, 'String');
         s.observe(`form ${outcome.closed ? 'closed' : 'stayed open'}; message: ${outcome.message || '(none)'}`);
@@ -1597,13 +1599,13 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
       // A standard field name ("Spec Section No") is accepted and stored as another standard field (SCP-DEF-041); disabling
       // that copy hides the real field from Add Submittal, so this attempt is not repeated on the shared project.
-      await s.step('Standard field name "Spec Section No"', async () => s.observe('not repeated: accepted on 31 Oct 2026 and stored as another standard field (SCP-DEF-041); a further copy would change the Add Submittal form'));
+      await s.step(`Standard field name "Spec Section No" → not repeated (known defect SCP-DEF-041), reason recorded`, async () => s.observe('not repeated: accepted on 31 Oct 2026 and stored as another standard field (SCP-DEF-041); a further copy would change the Add Submittal form'));
     });
     await sc('PM-REG-PLC-05', 'Procurement Log Configuration', 'Enable/disable + Save Changes', async s => {
       const box = () => logRow(`${data.logField}(Custom)`).locator('input[type="checkbox"]').first();
       let original;
       try {
-        await s.step(`Toggle "${data.logField}" → Save Changes → reload`, async () => {
+        await s.step(`Click the "${data.logField}(Custom)" checkbox, click "Save Changes", reload → change kept`, async () => {
           original = await box().isChecked();
           await focus(box()); await box().click();
           await click(button('Save Changes'), 'Save Changes'); await page.waitForTimeout(1200);
@@ -1612,11 +1614,11 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
           expect(await box().isChecked(), 'Change kept').toBe(!original);
         });
       } finally {
-        await s.step('Restore', async () => {
+        await s.step(`Click the checkbox back if needed, "Save Changes", reload → original value restored`, async () => {
           if (original !== undefined && (await box().isChecked()) !== original) { await box().click(); await click(button('Save Changes'), 'Save Changes'); await reload(); }
           expect(await box().isChecked()).toBe(original);
         });
-        await s.step('Disable the run field so the Procurement Log shows no test column', async () => {
+        await s.step(`Untick the run field, "Save Changes", reload → field disabled so the Procurement Log shows no test column`, async () => {
           if (await box().isChecked()) { await box().click(); await click(button('Save Changes'), 'Save Changes'); await reload(); }
           expect(await box().isChecked()).toBe(false);
         });
@@ -1653,10 +1655,10 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     };
     const locationsOf = async name => firstNumber(((await siteByName(name))[0] || [])[5] || '0');
     await sc('PM-REG-SITE-03', 'Site Details', 'Add Site – required', async s => {
-      await s.step('Open Site Details', () => navigator.open('Site Details'), { critical: true });
+      await s.step(`Sidebar › Project Management › "Site Details" → page opens`, () => navigator.open('Site Details'), { critical: true });
       data.siteCount = await pageCount();
       for (const [label, values] of [['nothing', {}], ['no Site Type', { name: `Gate R ${RUN}` }], ['no Name', { type: 'Site' }]]) {
-        await s.step(`Add with ${label}`, async () => {
+        await s.step(`"Add Site": submit with ${label} → form stays open, nothing added`, async () => {
           const outcome = await addSite(values);
           s.observe(`message: ${outcome.message || '(none)'}`);
           expect(outcome.closed, 'Not added').toBe(false);
@@ -1665,11 +1667,11 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     await sc('PM-REG-SITE-04', 'Site Details', 'Add Site – happy path', async s => {
       data.site = `Gate ${RUN}`;
-      await s.step(`Add "${data.site}" (Site, Chennai, a country)`, async () => {
+      await s.step(`"Add Site": Site Type "Site", Name "${data.site}", City "Chennai", Country India (or first listed), click "Add" → form closes`, async () => {
         const outcome = await addSite({ type: 'Site', name: data.site, city: 'Chennai', country: 'India' });
         expect(outcome.closed, `Added (${outcome.message || 'no message'})`).toBe(true);
       });
-      await s.step('Row listed; site offered in the header site selector', async () => {
+      await s.step(`Sites table → "${data.site}" listed once; after reload the header site selector offers "${data.site}"`, async () => {
         await expect.poll(async () => (await siteByName(data.site)).length, { timeout: 15000 }).toBe(1);
         const sites = new SiteSelectorPage(page);
         await reload();
@@ -1679,7 +1681,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-SITE-05', 'Site Details', 'Add Location', async s => {
-      await s.step(`Add "Loc ${RUN}" (Construction Area)`, async () => {
+      await s.step(`Row "ADD" (location) on "${data.site}": Location Type "Construction Area", name "Loc ${RUN}", click "Add" → form closes, Locations count up by 1`, async () => {
         const before = await locationsOf(data.site);
         const outcome = await addLocation(data.site, 'Construction Area', `Loc ${RUN}`);
         expect(outcome.closed, `Added (${outcome.message || 'no message'})`).toBe(true);
@@ -1687,14 +1689,14 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-SITE-09', 'Site Details', 'Duplicate site name', async s => {
-      await s.step(`Add "${data.site}" again (other case)`, async () => {
+      await s.step(`"Add Site": "${data.site.toLowerCase()}" (other case), type "Site", City "Chennai", click "Add" → outcome recorded, still one site with this name`, async () => {
         const outcome = await addSite({ type: 'Site', name: data.site.toLowerCase(), city: 'Chennai' });
         s.observe(`form ${outcome.closed ? 'closed' : 'stayed open'}; message: ${outcome.message || '(none)'}`);
         expect(await siteByName(data.site), 'Only one site with this name').toHaveLength(1);
       });
     });
     await sc('PM-REG-SITE-10', 'Site Details', 'Duplicate location name', async s => {
-      await s.step(`Add "Loc ${RUN}" again to "${data.site}"`, async () => {
+      await s.step(`Row "ADD" on "${data.site}": "Loc ${RUN}" again, Construction Area, click "Add" → outcome recorded, Locations count unchanged`, async () => {
         const before = await locationsOf(data.site);
         const outcome = await addLocation(data.site, 'Construction Area', `Loc ${RUN}`);
         s.observe(`form ${outcome.closed ? 'closed' : 'stayed open'}; message: ${outcome.message || '(none)'}`);
@@ -1718,70 +1720,70 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     const siteListed = async name => (await siteByName(name)).length;
     const sitesNotCreated = async (...names) => { for (const name of names) expect(await siteListed(name), `${name} not created`).toBe(0); };
     await sc('UPL-SITE-02', 'Site Details › Upload', 'Valid upload creates a site with locations', async s => {
-      await s.step('Download the template', async () => {
+      await s.step(`Click "Upload" › "Download Template" → site template downloads`, async () => {
         await click(button('Upload'), 'Upload');
         const file = await download(page.getByText('Download Template', { exact: true }).first(), 'Download Template');
         data.siteTemplate = file.path;
         await page.keyboard.press('Escape'); await page.mouse.click(5, 300);
       }, { critical: true });
-      await s.step('Upload one site with two locations', () => siteUpload(s, 'UPL-SITE-02', [siteRowData(`Site U ${RUN}`, `Loc A ${RUN}`), siteRowData(`Site U ${RUN}`, `Loc B ${RUN}`)]), { critical: true });
-      await s.step('Site listed with 2 locations', async () => {
+      await s.step(`"Upload": site "Site U ${RUN}" with locations "Loc A ${RUN}" and "Loc B ${RUN}", confirm the dialogs, reload → result recorded`, () => siteUpload(s, 'UPL-SITE-02', [siteRowData(`Site U ${RUN}`, `Loc A ${RUN}`), siteRowData(`Site U ${RUN}`, `Loc B ${RUN}`)]), { critical: true });
+      await s.step(`Sites table → "Site U ${RUN}" listed once with 2 locations`, async () => {
         await expect.poll(() => siteListed(`Site U ${RUN}`), { timeout: 30000 }).toBe(1);
         expect(await locationsOf(`Site U ${RUN}`)).toBe(2);
       });
     });
     await sc('UPL-SITE-03', 'Site Details › Upload', 'Fully invalid file', async s => {
       const before = await pageCount();
-      await s.step('Rows with a blank site_name', () => siteUpload(s, 'UPL-SITE-03', [siteRowData('', `Loc C ${RUN}`), siteRowData('', `Loc C2 ${RUN}`)]));
-      await s.step('Nothing created', async () => expect(await pageCount()).toBe(before));
+      await s.step(`"Upload": two rows with a blank site_name, confirm the dialogs, reload → result recorded`, () => siteUpload(s, 'UPL-SITE-03', [siteRowData('', `Loc C ${RUN}`), siteRowData('', `Loc C2 ${RUN}`)]));
+      await s.step(`Sites count → unchanged, nothing created`, async () => expect(await pageCount()).toBe(before));
     });
     await sc('UPL-SITE-04', 'Site Details › Upload', 'Partly valid file', async s => {
-      await s.step('One valid row + one invalid site_type', () => siteUpload(s, 'UPL-SITE-04', [siteRowData(`Site V ${RUN}`, `Loc V ${RUN}`), siteRowData(`Site W ${RUN}`, `Loc W ${RUN}`, { site_type: `xyz ${RUN}` })]));
-      await s.step('Valid site created; invalid not', async () => {
+      await s.step(`"Upload": valid "Site V ${RUN}" plus "Site W ${RUN}" with invalid site_type "xyz ${RUN}", confirm, reload → result recorded`, () => siteUpload(s, 'UPL-SITE-04', [siteRowData(`Site V ${RUN}`, `Loc V ${RUN}`), siteRowData(`Site W ${RUN}`, `Loc W ${RUN}`, { site_type: `xyz ${RUN}` })]));
+      await s.step(`Sites table → "Site V ${RUN}" listed once, "Site W ${RUN}" not created`, async () => {
         await expect.poll(() => siteListed(`Site V ${RUN}`), { timeout: 30000 }).toBe(1);
         await sitesNotCreated(`Site W ${RUN}`);
       });
     });
     await sc('UPL-SITE-05', 'Site Details › Upload', 'Required cells', async s => {
-      await s.step('Blank site_type; blank location_name; blank location_type', () => siteUpload(s, 'UPL-SITE-05', [
+      await s.step(`"Upload": X1 with a blank site_type, X2 with a blank location_name, X3 with a blank location_type, confirm, reload → result recorded`, () => siteUpload(s, 'UPL-SITE-05', [
         siteRowData(`Site X1 ${RUN}`, `Loc X1 ${RUN}`, { site_type: '' }), siteRowData(`Site X2 ${RUN}`, ''), siteRowData(`Site X3 ${RUN}`, `Loc X3 ${RUN}`, { location_type: '' })]));
-      await s.step('Rows rejected', () => sitesNotCreated(`Site X1 ${RUN}`, `Site X2 ${RUN}`, `Site X3 ${RUN}`));
+      await s.step(`Sites table → none of "Site X1 ${RUN}", "Site X2 ${RUN}", "Site X3 ${RUN}" is created`, () => sitesNotCreated(`Site X1 ${RUN}`, `Site X2 ${RUN}`, `Site X3 ${RUN}`));
     });
     await sc('UPL-SITE-06', 'Site Details › Upload', 'Invalid type values', async s => {
-      await s.step('site_type and location_type outside the project lists', () => siteUpload(s, 'UPL-SITE-06', [
+      await s.step(`"Upload": Y1 with site_type "xyz ${RUN}" and Y2 with location_type "xyz ${RUN}", confirm, reload → result recorded`, () => siteUpload(s, 'UPL-SITE-06', [
         siteRowData(`Site Y1 ${RUN}`, `Loc Y1 ${RUN}`, { site_type: `xyz ${RUN}` }), siteRowData(`Site Y2 ${RUN}`, `Loc Y2 ${RUN}`, { location_type: `xyz ${RUN}` })]));
-      await s.step('Rows rejected', () => sitesNotCreated(`Site Y1 ${RUN}`, `Site Y2 ${RUN}`));
+      await s.step(`Sites table → neither "Site Y1 ${RUN}" nor "Site Y2 ${RUN}" is created`, () => sitesNotCreated(`Site Y1 ${RUN}`, `Site Y2 ${RUN}`));
     });
     await sc('UPL-SITE-07', 'Site Details › Upload', 'Template sample types are not valid by default', async s => {
-      await s.step('local / CONSTRUCTION vs Site / Construction Area', () => siteUpload(s, 'UPL-SITE-07', [
+      await s.step(`"Upload": Z1 with the template sample types "local"/"CONSTRUCTION" and Z2 with "Site"/"Construction Area", confirm, reload → result recorded`, () => siteUpload(s, 'UPL-SITE-07', [
         siteRowData(`Site Z1 ${RUN}`, `Loc Z1 ${RUN}`, { site_type: 'local', location_type: 'CONSTRUCTION' }), siteRowData(`Site Z2 ${RUN}`, `Loc Z2 ${RUN}`)]));
-      await s.step('Sample types rejected; on-screen types accepted', async () => {
+      await s.step(`Sites table → "Site Z2 ${RUN}" created, "Site Z1 ${RUN}" not created`, async () => {
         await expect.poll(() => siteListed(`Site Z2 ${RUN}`), { timeout: 30000 }).toBe(1);
         await sitesNotCreated(`Site Z1 ${RUN}`);
       });
     });
     await sc('UPL-SITE-08', 'Site Details › Upload', 'Existing site name', async s => {
-      await s.step(`"${data.site}" (existing) in other case`, async () => {
+      await s.step(`"Upload": existing site "${data.site.toUpperCase()}" (other case) with location "Loc E ${RUN}", confirm, reload → result recorded`, async () => {
         data.siteLocations = await locationsOf(data.site);
         await siteUpload(s, 'UPL-SITE-08', [siteRowData(data.site.toUpperCase(), `Loc E ${RUN}`)]);
       });
-      await s.step('No duplicate; existing site unchanged', async () => {
+      await s.step(`Sites table → still one "${data.site}" and its Locations count unchanged (rule R46)`, async () => {
         expect(await siteListed(data.site)).toBe(1);
         const now = await locationsOf(data.site);
         if (now !== data.siteLocations) throw new Error(`Site upload with an existing site name (other case) added a location to that site (${data.siteLocations} → ${now}) instead of rejecting the row (R46)`);
       });
     });
     await sc('UPL-SITE-09', 'Site Details › Upload', 'Duplicate location in one site', async s => {
-      await s.step('Same site + same location twice', () => siteUpload(s, 'UPL-SITE-09', [siteRowData(`Site S9 ${RUN}`, `Loc D ${RUN}`), siteRowData(`Site S9 ${RUN}`, `Loc D ${RUN}`)]));
-      await s.step('One location created', async () => {
+      await s.step(`"Upload": "Site S9 ${RUN}" with location "Loc D ${RUN}" listed twice, confirm, reload → result recorded`, () => siteUpload(s, 'UPL-SITE-09', [siteRowData(`Site S9 ${RUN}`, `Loc D ${RUN}`), siteRowData(`Site S9 ${RUN}`, `Loc D ${RUN}`)]));
+      await s.step(`Sites table → "Site S9 ${RUN}" has exactly 1 location (or is not created: recorded)`, async () => {
         const count = await siteListed(`Site S9 ${RUN}`);
         s.observe(count ? `site created with ${await locationsOf(`Site S9 ${RUN}`)} location(s)` : 'site not created');
         if (count) expect(await locationsOf(`Site S9 ${RUN}`)).toBe(1);
       });
     });
     await sc('UPL-SITE-10', 'Site Details › Upload', 'Same location name, different sites', async s => {
-      await s.step(`"Loc X ${RUN}" under two new sites`, () => siteUpload(s, 'UPL-SITE-10', [siteRowData(`Site T1 ${RUN}`, `Loc X ${RUN}`), siteRowData(`Site T2 ${RUN}`, `Loc X ${RUN}`)]));
-      await s.step('Both accepted', async () => {
+      await s.step(`"Upload": location "Loc X ${RUN}" under two new sites "Site T1 ${RUN}" and "Site T2 ${RUN}", confirm, reload → result recorded`, () => siteUpload(s, 'UPL-SITE-10', [siteRowData(`Site T1 ${RUN}`, `Loc X ${RUN}`), siteRowData(`Site T2 ${RUN}`, `Loc X ${RUN}`)]));
+      await s.step(`Sites table → both "Site T1 ${RUN}" and "Site T2 ${RUN}" are listed once`, async () => {
         await expect.poll(() => siteListed(`Site T1 ${RUN}`), { timeout: 30000 }).toBe(1);
         expect(await siteListed(`Site T2 ${RUN}`)).toBe(1);
       });
@@ -1789,18 +1791,18 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     await sc('UPL-SITE-11', 'Site Details › Upload', 'Wrong file type accepted by picker', async s => {
       const before = await pageCount();
       for (const [label, file] of [['.pdf', writeText(path.join(files, `upl-site-11-${RUN}.pdf`), '%PDF-1.4\n%%EOF\n')], ['.csv', writeText(path.join(files, `upl-site-11-${RUN}.csv`), `site_name,site_type,location_name,location_type\nSite Q ${RUN},Site,Loc Q ${RUN},Construction Area\n`)]]) {
-        await s.step(`Upload a ${label} file`, async () => {
+        await s.step(`"Upload": choose a ${label} file instead of the template, then confirm → messages recorded, reload`, async () => {
           const first = await uploadFrom('Upload', file);
           s.observe(`message: ${first || '(none)'}; after confirming: ${await confirmUpload() || '(none)'}`);
           await reload();
         });
       }
-      await s.step('Nothing created', async () => { expect(await pageCount()).toBe(before); await sitesNotCreated(`Site Q ${RUN}`); });
+      await s.step(`Sites table → site count unchanged and "Site Q ${RUN}" not created`, async () => { expect(await pageCount()).toBe(before); await sitesNotCreated(`Site Q ${RUN}`); });
     });
     await sc('UPL-SITE-12', 'Site Details › Upload', 'Header-only file', async s => {
       const before = await pageCount();
-      await s.step('Template with an empty data row', () => siteUpload(s, 'UPL-SITE-12', [{}]));
-      await s.step('Nothing created', async () => expect(await pageCount()).toBe(before));
+      await s.step(`"Upload": template with one empty data row, confirm, reload → result recorded`, () => siteUpload(s, 'UPL-SITE-12', [{}]));
+      await s.step(`Sites count → unchanged, nothing created`, async () => expect(await pageCount()).toBe(before));
     });
 
     // ================= Bulk Upload Status (uploads made above) =================
@@ -1808,9 +1810,9 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     const uploadRow = async id => (await uploads()).find(r => r[4] === (data.uploads || {})[id]);
     const today = ddmmyyyy(new Date());
     await sc('PM-REG-BUS-08', 'Bulk Upload Status', 'Every upload screen is tracked', async s => {
-      await s.step('Open Bulk Upload Status', () => navigator.open('Bulk Upload Status'), { critical: true });
+      await s.step(`Sidebar › Project Management › "Bulk Upload Status" → page opens`, () => navigator.open('Bulk Upload Status'), { critical: true });
       for (const [id, type] of [['UPL-MM-03', 'Materials'], ['UPL-SITE-02', 'Sites']]) {
-        await s.step(`${id}: today, uploader, ${type}, Success + success report`, async () => {
+        await s.step(`Uploads table → ${id} row: dated today, uploader = signed-in account, type "${type}", Status "Success" and a success report link`, async () => {
           await expect.poll(async () => Boolean(await uploadRow(id)), { timeout: 30000 }).toBe(true);
           const row = await uploadRow(id);
           s.observe(row.join(' | '));
@@ -1824,7 +1826,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       }
     });
     await sc('PM-REG-BUS-09', 'Bulk Upload Status', 'Failed upload is tracked', async s => {
-      await s.step('UPL-MM-04: Failed + failure report, no success report', async () => {
+      await s.step(`Uploads table → UPL-MM-04 row: Status "Failed", a failure report, no success report`, async () => {
         const row = await uploadRow('UPL-MM-04');
         expect(row, 'UPL-MM-04 tracked').toBeTruthy();
         s.observe(row.join(' | '));
@@ -1835,7 +1837,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-BUS-11', 'Bulk Upload Status', 'Uploader is captured', async s => {
-      await s.step('Filter by the account e-mail', async () => {
+      await s.step(`"Search by uploader…": enter the account e-mail → every row shows that uploader and the UPL-MM-03 upload is listed; clear the box`, async () => {
         await main.getByPlaceholder('Search by uploader…').fill(config.username);
         await expect.poll(async () => (await uploads()).every(row => row[1] === config.username), { timeout: 15000 }).toBe(true);
         expect(Boolean(await uploadRow('UPL-MM-03')), 'Run upload listed').toBe(true);
@@ -1843,7 +1845,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-BUS-12', 'Bulk Upload Status', 'Partial-success upload', async s => {
-      await s.step('UPL-MM-05: no status, success and failure reports', async () => {
+      await s.step(`Uploads table → UPL-MM-05 row: status "-" or "Partly successful", success report and failure report both present`, async () => {
         const row = await uploadRow('UPL-MM-05');
         expect(row, 'UPL-MM-05 tracked').toBeTruthy();
         s.observe(row.join(' | '));
@@ -1856,7 +1858,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     for (const [id, source] of [['UPL-MM-15', 'UPL-MM-05'], ['UPL-SITE-13', 'UPL-SITE-04']]) {
       await sc(id, source.startsWith('UPL-MM') ? 'Material Master › Upload' : 'Site Details › Upload', 'Reports can be downloaded', async s => {
         for (const [label, column] of [['success', 5], ['failure', 6]]) {
-          await s.step(`${source}: download the ${label} report`, async () => {
+          await s.step(`Uploads table → ${source} row: click the ${label} report link → a workbook file downloads`, async () => {
             const rows = await uploads();
             const index = rows.findIndex(r => r[4] === (data.uploads || {})[source]);
             expect(index, `${source} tracked`).toBeGreaterThanOrEqual(0);
@@ -1878,6 +1880,9 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     const newMessage = async ({ heading, text, severity = 'Info', starts, ends, active = true }) => {
       await click(button('New message'), 'New message');
       await visible(button('Create'), 'Create');
+      // Scope must be chosen: since 10 Nov 2026 the first (default) option is "Platform (all projects)", which
+      // broadcasts the test message to every project and shows a "Platform-wide" banner instead of "Project notice".
+      await main.locator('select').nth(0).selectOption({ label: 'Project (this project only)' });
       await main.locator('select').nth(1).selectOption({ label: severity });
       if (heading) await title().fill(heading);
       if (text) await body().fill(text);
@@ -1906,7 +1911,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     };
     // Messages from earlier automation runs cannot be deleted (SCP-DEF-032); make sure none of them is still active.
     await sc('PM-REG-SYS-00', 'System Messages', 'No active banner left by earlier automation runs', async s => {
-      await s.step('Deactivate active "PMR2-" messages', async () => {
+      await s.step(`System Messages: for every active message titled "PMR2-…" click "Edit", untick "Active", "Save"; reload → no "PMR2-" banner shown`, async () => {
         const rows = await main.locator('tbody tr').filter({ hasText: /PMR2-/ }).evaluateAll(list => list
           .map(r => ({ title: (r.cells[2]?.innerText || '').split('\n')[0].trim(), status: r.cells[4]?.innerText.trim() }))
           .filter(r => r.title && r.status === 'Active'));
@@ -1917,45 +1922,45 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-SYS-03', 'System Messages', 'Body required', async s => {
-      await s.step('Open System Messages', () => navigator.open('System Messages'), { critical: true });
-      await s.step('Empty body keeps Create disabled', async () => {
+      await s.step(`Sidebar › Project Management › "System Messages" → page opens`, () => navigator.open('System Messages'), { critical: true });
+      await s.step(`"New message": title "Empty ${RUN}", no body → "Create" stays disabled; click "Cancel"`, async () => {
         const outcome = await newMessage({ heading: `Empty ${RUN}` });
         expect(outcome.disabled, 'Create disabled').toBe(true);
         await click(button('Cancel'), 'Cancel');
       });
     });
     await sc('PM-REG-SYS-05', 'System Messages', 'Ends before Starts', async s => {
-      await s.step('Ends < Starts → Create', async () => {
+      await s.step(`"New message": title "Order ${RUN}", a body, Ends earlier than Starts, click "Create" → outcome recorded, message not created`, async () => {
         const outcome = await newMessage({ heading: `Order ${RUN}`, text: `Ends before starts ${RUN}`, starts: shift(2), ends: shift(1) });
         s.observe(`${outcome.created ? 'created' : 'not created'}; message: ${outcome.message || '(none)'}`);
         await expect(messageRow(`Order ${RUN}`), 'Message not created').toHaveCount(0);
       });
     });
     await sc('PM-REG-SYS-07', 'System Messages', 'Create scheduled message', async s => {
-      await s.step('Future window, Info → Create', async () => {
+      await s.step(`"New message": title "Sched ${RUN}", Info, Starts in 7 days, Ends in 8 days, "Create" → message created and its row shows "Scheduled"`, async () => {
         const outcome = await newMessage({ heading: `Sched ${RUN}`, text: `Scheduled message ${RUN}`, starts: shift(7), ends: shift(8) });
         expect(outcome.created, `Created (${outcome.message || 'no message'})`).toBe(true);
         await expect(messageRow(`Sched ${RUN}`)).toContainText('Scheduled', { timeout: 15000 });
       });
     });
     await sc('PM-REG-SYS-08', 'System Messages', 'Active message shows banner', async s => {
-      await s.step('Window covering now, Info → Create', async () => {
+      await s.step(`"New message": title "Active ${RUN}", Info, window from 1 hour ago to tomorrow, "Create" → message created`, async () => {
         const outcome = await newMessage({ heading: `Active ${RUN}`, text: `Active message ${RUN}`, starts: shift(0, -1), ends: shift(1) });
         expect(outcome.created, `Created (${outcome.message || 'no message'})`).toBe(true);
       });
-      await s.step('Project notice banner with title and body', async () => {
+      await s.step(`Reload → "Project notice" banner shows the title "Active ${RUN}" and its body`, async () => {
         await reload();
         await visible(banner(`Active ${RUN}`), 'Project notice banner');
         await expect(banner(`Active ${RUN}`)).toContainText(`Active message ${RUN}`);
       });
     });
     await sc('PM-REG-SYS-12', 'System Messages', 'Warning vs Info styling', async s => {
-      await s.step('Create an active Warning', async () => {
+      await s.step(`"New message": title "Warn ${RUN}", severity "Warning", window covering now, "Create" → message created; reload`, async () => {
         const outcome = await newMessage({ heading: `Warn ${RUN}`, text: `Warning message ${RUN}`, severity: 'Warning', starts: shift(0, -1), ends: shift(1) });
         expect(outcome.created, `Created (${outcome.message || 'no message'})`).toBe(true);
         await reload();
       });
-      await s.step('Info and Warning banners have different backgrounds', async () => {
+      await s.step(`Compare the banners → the Warning banner background differs from the Info banner background`, async () => {
         const colour = locator => locator.first().evaluate(node => getComputedStyle(node).backgroundColor);
         await visible(banner(`Warn ${RUN}`), 'Warning banner');
         const info = await colour(banner(`Active ${RUN}`));
@@ -1965,13 +1970,13 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-SYS-09', 'System Messages', 'Inactive / expired not shown', async s => {
-      await s.step('Inactive message and a past window', async () => {
+      await s.step(`"New message": "Inactive ${RUN}" with "Active" unticked, then "Past ${RUN}" with a window in the past; reload → outcomes recorded`, async () => {
         const inactive = await newMessage({ heading: `Inactive ${RUN}`, text: `Inactive message ${RUN}`, starts: shift(0, -1), ends: shift(1), active: false });
         const past = await newMessage({ heading: `Past ${RUN}`, text: `Past message ${RUN}`, starts: shift(-3), ends: shift(-1) });
         s.observe(`inactive ${inactive.created ? 'created' : `not created (${inactive.message})`}; past window ${past.created ? 'created' : `not created (${past.message})`}`);
         await reload();
       });
-      await s.step('No banner for either', async () => {
+      await s.step(`Page banners → no "Project notice" banner for "Inactive ${RUN}" or "Past ${RUN}"`, async () => {
         await expect(banner(`Inactive ${RUN}`)).toHaveCount(0);
         await expect(banner(`Past ${RUN}`)).toHaveCount(0);
       });
@@ -1980,14 +1985,14 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       const headings = ['Active', 'Warn', 'Sched', 'Inactive', 'Past'].map(name => `${name} ${RUN}`);
       const failed = [];
       for (const heading of headings) {
-        await s.step(`Delete "${heading}"`, async () => {
+        await s.step(`Message "${heading}": click "Delete" (dialogs accepted), reload → result recorded (skipped if not listed)`, async () => {
           if (!(await messageRow(heading).count())) { s.observe('not listed – nothing to delete'); return; }
           await withDialog(async () => { await click(messageRow(heading).getByRole('button', { name: 'Delete', exact: true }), 'Delete'); await page.waitForTimeout(2500); });
           await reload();
           if (await messageRow(heading).count()) failed.push(heading);
         });
       }
-      await s.step('Run messages removed; no run banner left', async () => {
+      await s.step(`Deactivate any message that failed to delete (Edit, untick "Active", Save), reload → no banner from this run left; fails if a delete failed (SCP-DEF-032)`, async () => {
         // Delete currently fails on the server (SCP-DEF-032): deactivate whatever is left so the project shows no test banner.
         for (const heading of failed) await deactivate(heading);
         await reload();
@@ -2024,8 +2029,8 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       return { chosen, message: await feedback() };
     };
     await sc('PM-REG-WM-04', 'Watched Materials', 'Add category watch', async s => {
-      await s.step('Open Watched Materials and select the signed-in user', async () => { await navigator.open('Watched Materials'); await selectSelf(); }, { critical: true });
-      await s.step(`Add a Category watch for "${data.catName}"`, async () => {
+      await s.step(`Sidebar › Project Management › "Watched Materials" → page opens; select the signed-in user in the first dropdown → that user's watches show`, async () => { await navigator.open('Watched Materials'); await selectSelf(); }, { critical: true });
+      await s.step(`Second dropdown "Category", third dropdown "${data.catName}", click "Add watch" → row of type "Category" appears (skipped if already present)`, async () => {
         if (await watchRow(data.catName).count()) { s.observe('watch already present (added by an earlier attempt)'); return; }
         await main.locator('select').nth(1).selectOption({ label: 'Category' });
         await expect.poll(async () => (await selectOptions(main.locator('select').nth(2))).map(norm), { timeout: 20000, message: `${data.catName} offered` }).toContain(norm(data.catName));
@@ -2038,14 +2043,14 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     await sc('PM-REG-REF-17', 'Watched Materials', 'New category flows downstream', async s => {
       for (const [label, list] of [['Add Material → Category', () => data.addMaterialCategories], ['New Question Set → categories', () => data.qsetCategories], ['Watched Materials → Category', () => data.categoryWatchOptions]]) {
-        await s.step(`${label} lists "${data.catName}"`, async () => {
+        await s.step(`${label} → category list includes "${data.catName}"`, async () => {
           const values = list() || [];
           expect(values.some(value => norm(value).includes(norm(data.catName))), `${data.catName} offered`).toBe(true);
         });
       }
     });
     await sc('PM-REG-WM-06', 'Watched Materials', 'Duplicate watch', async s => {
-      await s.step(`Add "${data.catName}" again`, async () => {
+      await s.step(`"Add watch": Category "${data.catName}" again (if still offered) → outcome recorded, only one row for it`, async () => {
         const offered = (await selectOptions(main.locator('select').nth(2))).some(v => norm(v) === norm(data.catName));
         if (offered) { const outcome = await addWatch('Category', data.catName); s.observe(`message: ${outcome.message || '(none)'}`); } else s.observe('the category is no longer offered once watched');
         expect((await watchRows()).filter(row => norm(row[1]) === norm(data.catName)), 'Not duplicated').toHaveLength(1);
@@ -2054,21 +2059,21 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     await sc('PM-REG-WM-07', 'Watched Materials', 'Notifications toggle', async s => {
       const toggle = () => watchRow(data.catName).getByRole('button', { name: /^(On|Off|Muted)$/ });
       try {
-        await s.step('On → Muted → reload', async () => {
+        await s.step(`Notification button on the "${data.catName}" row: click it from "On" to Muted/Off, reload, reselect the user → shows "Off" or "Muted"`, async () => {
           if ((await toggle().innerText()).trim() !== 'On') { await toggle().click(); await page.waitForTimeout(1200); await reload(); await selectSelf(); }
           await click(toggle(), 'Notifications'); await page.waitForTimeout(1200);
           await reload(); await selectSelf();
           await expect(toggle()).toHaveText(/^(Off|Muted)$/);
         });
       } finally {
-        await s.step('Back to On', async () => {
+        await s.step(`Click the notification button until it shows "On", reload → shows "On"`, async () => {
           if ((await toggle().innerText()).trim() !== 'On') { await toggle().click(); await page.waitForTimeout(1200); await reload(); await selectSelf(); }
           await expect(toggle()).toHaveText('On');
         });
       }
     });
     await sc('PM-REG-WM-09', 'Watched Materials', 'Trade watch', async s => {
-      await s.step('Add a Trade watch', async () => {
+      await s.step(`Second dropdown "Trade": first trade, click "Add watch" → row of type "Trade" appears (skipped when no trades exist)`, async () => {
         await main.locator('select').nth(1).selectOption({ label: 'Trade' }); await page.waitForTimeout(500);
         const trades = (await selectOptions(main.locator('select').nth(2))).filter(v => !/^Select/.test(v));
         if (!trades.length) { s.observe('no trades are configured on NRVC_Hall – nothing to watch'); return; }
@@ -2078,14 +2083,14 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-WM-10', 'Watched Materials', 'One user can watch every category', async s => {
-      await s.step('Add a watch for each category not yet watched', async () => {
+      await s.step(`Dropdown "Category": add a watch for every category not yet watched → number added recorded`, async () => {
         await main.locator('select').nth(1).selectOption({ label: 'Category' }); await page.waitForTimeout(500);
         const watched = new Set((await watchRows()).filter(row => row[0] === 'Category').map(row => norm(row[1])));
         const pending = (await selectOptions(main.locator('select').nth(2))).filter(v => !/^Select/.test(v) && !watched.has(norm(v)));
         for (const value of pending) await addWatch('Category', value);
         s.observe(`added ${pending.length} category watch(es)`);
       });
-      await s.step('Every category listed once', async () => {
+      await s.step(`Watch rows of type "Category" → each category listed once and every run category watched`, async () => {
         const rows = (await watchRows()).filter(row => row[0] === 'Category').map(row => norm(row[1]));
         expect(rows.length, 'No category listed twice').toBe(new Set(rows).size);
         for (const value of data.categoryWatchOptions) expect(rows, `${value} watched`).toContain(norm(value));
@@ -2099,23 +2104,23 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       return clean(await section.locator('xpath=ancestor::div[2]').innerText());
     };
     await sc('PM-REG-WM-05', 'Watched Materials', 'Watch appears on Dashboard', async s => {
-      await s.step(`Management Dashboard lists "${data.catName}"`, async () => {
+      await s.step(`Sidebar › "Management Dashboard" → "Your watched materials" lists "${data.catName}"`, async () => {
         const text = await dashboardWatches();
         expect(text.toLowerCase()).toContain(data.catName.toLowerCase());
       });
     });
     await sc('PM-REG-WM-08', 'Watched Materials', 'Remove watch', async s => {
-      await s.step(`Remove the "${data.catName}" watch`, async () => {
+      await s.step(`Watched Materials, signed-in user: click "Remove" on the "${data.catName}" row, confirm → row removed`, async () => {
         await navigator.open('Watched Materials'); await selectSelf();
         await withDialog(async () => { await click(watchRow(data.catName).getByRole('button', { name: 'Remove', exact: true }), 'Remove'); await confirmDelete(); });
         await expect(watchRow(data.catName)).toHaveCount(0, { timeout: 15000 });
       });
-      await s.step('Dashboard updated', async () => {
+      await s.step(`Sidebar › "Management Dashboard" → "Your watched materials" no longer lists "${data.catName}"`, async () => {
         const text = await dashboardWatches();
         expect(text.toLowerCase()).not.toContain(data.catName.toLowerCase());
       });
       // Test categories (from this and earlier runs) must not crowd the account's "Your watched materials".
-      await s.step('Remove the watches on test categories ("PMR2-")', async () => {
+      await s.step(`Watched Materials: click "Remove" and confirm for every row containing "PMR2-" → none left`, async () => {
         await navigator.open('Watched Materials'); await selectSelf();
         let removed = 0;
         for (let guard = 0; guard < 60; guard += 1) {
@@ -2132,17 +2137,17 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     // ================= Other project (SCP_Testing_Ram) =================
     const OTHER = `Other project › ${SECOND_PROJECT}`;
     await sc('PM-REG-REF-24', OTHER, 'Common UoM belongs to the project', async s => {
-      await s.step(`Switch to ${SECOND_PROJECT}`, () => navigator.switchProject(SECOND_PROJECT), { critical: true });
-      await s.step('Open Common UoM', () => navigator.open('Common UoM'), { critical: true });
-      await s.step(`"${data.uomName}" not listed`, async () => {
+      await s.step(`Project selector: switch to ${SECOND_PROJECT} → project loads`, () => navigator.switchProject(SECOND_PROJECT), { critical: true });
+      await s.step(`Sidebar › Project Management › Reference Data › "Common UoM" → page opens`, () => navigator.open('Common UoM'), { critical: true });
+      await s.step(`Search "${data.uomName}" → not listed on this project (UoM belongs to the project, R64)`, async () => {
         const found = (await refMatches('uom', data.uomName)).length;
         if (found) throw new Error(`Common UoM is shared across projects: "${data.uomName}" created on ${config.projectName} is listed ${found} time(s) on ${SECOND_PROJECT} (R64)`);
       });
     });
     await sc('PM-REG-REF-25', OTHER, 'Material Category belongs to the project', async s => {
-      await s.step('Open Material Category', () => navigator.open('Material Category'), { critical: true });
-      await s.step(`"${data.catName}" not listed`, async () => expect(await refMatches('cat', data.catName)).toHaveLength(0));
-      await s.step('Not offered in Add Material', async () => {
+      await s.step(`Sidebar › Project Management › Reference Data › "Material Category" → page opens`, () => navigator.open('Material Category'), { critical: true });
+      await s.step(`Search "${data.catName}" → not listed on this project`, async () => expect(await refMatches('cat', data.catName)).toHaveLength(0));
+      await s.step(`"Material Master" › "Add Material" › "Choose Category" → "${data.catName}" is not offered`, async () => {
         await navigator.open('Material Master');
         await openForm('Add Material', 'Add Material');
         // A project without categories offers none (the list stays empty).
@@ -2152,11 +2157,11 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-FDI-47', OTHER, 'New question hidden from other organizations', async s => {
-      await s.step('Open First Delivery Inspection Config', () => navigator.open('First Delivery Inspection Config'), { critical: true });
-      await s.step(`"FDI Q2 ${RUN}" not in the Questions list`, async () => {
+      await s.step(`Sidebar › Project Management › "First Delivery Inspection Config" → page opens`, () => navigator.open('First Delivery Inspection Config'), { critical: true });
+      await s.step(`Questions list → "FDI Q2 ${RUN}" is not present`, async () => {
         await expect(main.getByText(`FDI Q2 ${RUN}`)).toHaveCount(0);
       });
-      await s.step('Not in Add from Organization Bank', async () => {
+      await s.step(`"Add Question" › "Add from Organization Bank": search the run token → no result; close the form`, async () => {
         await openForm('Add Question', 'Add Question');
         await click(modal().getByRole('button', { name: 'Add from Organization Bank', exact: true }), 'Add from Organization Bank');
         await modal().getByPlaceholder("Search the organization's questions…").fill(RUN);
@@ -2168,7 +2173,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     // FDI-06 / CFG-18 / PSC-05: change SCP_Testing_Ram, check NRVC_Hall is unchanged, then restore SCP_Testing_Ram.
     await sc('PM-REG-FDI-06', OTHER, 'Settings are per project', async s => {
-      await s.step(`Flip "${SETTINGS[0]}" on ${SECOND_PROJECT} → Save`, async () => {
+      await s.step(`FDI Settings on ${SECOND_PROJECT}: flip "${SETTINGS[0]}", click "Save", reload → flipped value kept`, async () => {
         data.ramFdi = await fdiSettings();
         await setSetting(SETTINGS[0], !data.ramFdi[0].checked);
         await saveFdi(); await reload();
@@ -2179,26 +2184,26 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     const RAM_UNCONFIGURED = `Not run: ${SECOND_PROJECT}'s Configuration Options cannot be saved while its week fields are empty ("… is required"), and filling them would permanently configure that project (CFG-17 and the Setup Wizard checks need it unconfigured) – needs go-ahead`;
     skip('PM-REG-CFG-18', OTHER, 'Currency is set per project', RAM_UNCONFIGURED);
     await sc('PM-REG-FDI-06b', 'First Delivery Inspection Config', `NRVC_Hall unchanged while ${SECOND_PROJECT} differs`, async s => {
-      await s.step(`Switch to ${config.projectName}`, () => navigator.switchProject(config.projectName), { critical: true });
-      await s.step('Currency unchanged (CFG-18)', async () => {
+      await s.step(`Project selector: switch back to ${config.projectName} → project loads`, () => navigator.switchProject(config.projectName), { critical: true });
+      await s.step(`Sidebar › "Configuration Options" → "Currency Type" still shows the original currency`, async () => {
         await navigator.open('Configuration Options');
         await expect(currencyButton()).toHaveText(exactI(data.currencyOriginal));
       });
-      await s.step('FDI Settings unchanged (FDI-06)', async () => {
+      await s.step(`Sidebar › "First Delivery Inspection Config" → FDI Settings equal their original values`, async () => {
         await navigator.open('First Delivery Inspection Config');
         expect((await fdiSettings()).map(item => item.checked)).toEqual(data.fdiInitial.map(item => item.checked));
       });
     }, null); // switches project first: no automatic page open
     skip('PM-REG-PSC-05', OTHER, 'Menu item follows the Pre-Shipping toggle', RAM_UNCONFIGURED);
     await sc('PM-REG-FDI-06c', OTHER, `Restore ${SECOND_PROJECT}`, async s => {
-      await s.step(`Switch to ${SECOND_PROJECT}`, () => navigator.switchProject(SECOND_PROJECT), { critical: true });
-      await s.step('Restore the FDI setting changed by FDI-06', async () => {
+      await s.step(`Project selector: switch to ${SECOND_PROJECT} → project loads`, () => navigator.switchProject(SECOND_PROJECT), { critical: true });
+      await s.step(`FDI Settings on ${SECOND_PROJECT}: set "${SETTINGS[0]}" back to its original value, "Save", reload → restored (nothing to do if unchanged)`, async () => {
         if (!data.ramFdiChanged) { s.observe('nothing to restore'); return; }
         await navigator.open('First Delivery Inspection Config');
         await setSetting(SETTINGS[0], data.ramFdi[0].checked); await saveFdi(); await reload();
         expect((await fdiSettings())[0].checked).toBe(data.ramFdi[0].checked);
       });
-      await s.step(`Switch back to ${config.projectName}`, () => navigator.switchProject(config.projectName));
+      await s.step(`Project selector: switch back to ${config.projectName} → project loads`, () => navigator.switchProject(config.projectName));
     }, null);
 
     console.log(`\nRun token for this run's records: ${RUN}`);

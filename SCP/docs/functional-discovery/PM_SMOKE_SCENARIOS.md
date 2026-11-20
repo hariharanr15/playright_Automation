@@ -1,5 +1,7 @@
 # Project Management – Smoke Scenarios (Draft for Review)
 
+> **Step-by-step flows (Action → Expected, matching the automated steps):** [PM_SMOKE_STEPS.md](steps/PM_SMOKE_STEPS.md)
+
 Source of truth: [PM_FUNCTIONAL_DISCOVERY.md](PM_FUNCTIONAL_DISCOVERY.md). Evidence tags: **[O]** observed 2026-10-30, **[D]** documented requirement, **[A]** existing automation, **[I]** inferred/unverified.
 
 ## Scope and rules
