@@ -46,7 +46,11 @@ const split = name => {
   return index < 0 ? [String(name), ''] : [name.slice(0, index).trim(), name.slice(index + 1).trim()];
 };
 const lastError = step => plain(((step.attempts || []).slice(-1)[0] || {}).error || '').split(' Expected')[0].slice(0, 300);
+// Full error for the Known Defect document: the assertion text plus Playwright's Expected/Received lines, without the call log.
+const fullError = step => plain(((step.attempts || []).slice(-1)[0] || {}).error || '').replace(/ Call log:.*$/, '').trim();
 const observed = step => plain(step.reason || '').replace(/^Observed: /, '').replace(/ · Observed: /g, ' · ').slice(0, 300);
+// Full observation text; a note repeated by the retry attempt is shown once.
+const fullObserved = step => [...new Set(plain(step.reason || '').replace(/^Observed: /, '').split(/ · Observed: /).map(part => part.trim()).filter(Boolean))].join(' · ');
 const STATUS_ORDER = { Failed: 0, Blocked: 1, Skipped: 2 };
 
 // ---------- Read the scenarios ----------
@@ -173,14 +177,14 @@ const flowLine = (step, index) => {
   const [action, expected] = split(step.name);
   const lineStart = `${index + 1}. ${plain(action)}${expected ? `  \n   _Expected:_ ${plain(expected)}` : ''}`;
   if (step.status === 'Passed') {
-    const note = observed(step);
+    const note = fullObserved(step);
     return `${lineStart}  \n   _Result:_ ✔ as expected${step.retried ? ' (passed on retry)' : ''}${note ? ` · _Noted:_ ${note}` : ''}`;
   }
   if (step.status === 'Known Defect') {
-    const actual = [lastError(step), observed(step)].filter(Boolean).join(' · ');
+    const actual = [fullError(step), fullObserved(step)].filter(Boolean).join(' · ');
     return `${lineStart}  \n   _Result:_ ✖ **defect ${defectLabel(step.defect)} reproduced** – ${actual || 'see the report'}`;
   }
-  const why = [lastError(step), observed(step)].filter(Boolean).join(' · ');
+  const why = [fullError(step), fullObserved(step)].filter(Boolean).join(' · ');
   return `${lineStart}  \n   _Result:_ ${step.status}${why ? ` – ${why}` : ''}`;
 };
 const kdCases = [...knownDefects].sort((first, second) => String(first.module || 'Other').localeCompare(String(second.module || 'Other'))
@@ -201,7 +205,7 @@ const kd = [
   '|---|---|---|---|---|---|',
   ...kdCases.map((item, index) => {
     const { id, entry } = defectOf(item);
-    return `| ${index + 1} | ${cell(item.module || 'Other')} | ${cell(item.id)} – ${cell(item.title)} | ${cell(id)} | ${entry.confirmation === 'pending' ? 'Pending confirmation' : 'Registered'}${item.reclassified ? ' (re-classified)' : ''} | ${cell(plain(entry.summary || '').replace(/^PENDING TEAM CONFIRMATION\. /, '').slice(0, 160))}${(entry.summary || '').length > 170 ? '…' : ''} |`;
+    return `| ${index + 1} | ${cell(item.module || 'Other')} | ${cell(item.id)} – ${cell(item.title)} | ${cell(id)} | ${entry.confirmation === 'pending' ? 'Pending confirmation' : 'Registered'}${item.reclassified ? ' (re-classified)' : ''} | ${cell(plain(entry.summary || '').replace(/^PENDING TEAM CONFIRMATION\. /, ''))} |`;
   }),
   ''
 ];
@@ -216,7 +220,7 @@ kdCases.forEach((item, index) => {
   kd.push(`| **Suite** | ${cell(item.suiteTitle)} |`);
   if (item.navPath) kd.push(`| **Where in the app** | ${cell([].concat(item.navPath).join(' › '))} |`);
   kd.push(`| **Should happen** | ${cell(expectedAtDefect || 'see the flow')} |`);
-  kd.push(`| **Happens today** | ${cell([lastError(step), observed(step)].filter(Boolean).join(' · ') || 'see the flow')} |`);
+  kd.push(`| **Happens today** | ${cell([fullError(step), fullObserved(step)].filter(Boolean).join(' · ') || 'see the flow')} |`);
   if (entry.summary) kd.push(`| **Defect description** | ${cell(plain(entry.summary).replace(/^PENDING TEAM CONFIRMATION\. /, ''))} |`);
   kd.push('', '**Flow**', '');
   if ((item.steps || []).length) item.steps.forEach((entry2, stepIndex) => kd.push(flowLine(entry2, stepIndex)));
