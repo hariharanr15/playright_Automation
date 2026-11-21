@@ -50,7 +50,7 @@
 
 | Risk | Effect | Mitigation |
 |---|---|---|
-| YOPmail shows a "verify you are human" check to automation (E2E TC-06/TC-16 invite acceptance) | About 10 later E2E cases are Blocked | Run the E2E smoke early. A pre-created subcontractor account would remove the dependency (decision pending). The check is never bypassed |
+| YOPmail shows a "verify you are human" check to automation (E2E invite acceptance) | Would block TC-16 and the cases after it | **Covered.** By default (`SCP_E2E_SUBCON_LOGIN` unset or `existing`) TC-16 to TC-18 use the pre-created Subcontractor account `SCP_SUBCONTRACTOR_USERNAME` / `_PASSWORD` (organisation Voyage Control), so YOPmail is not needed. With `SCP_E2E_SUBCON_LOGIN=invite` the run tries YOPmail first and **falls back** to that account when activation fails; TC-16 then shows "FALLBACK: …". TC-06 still creates and checks the invitation. The check is never bypassed |
 | The app resets the header site after a reload or when changing module (SCP-DEF-058) | Location lists may be empty | The tests restore the site themselves (`keepSite`). E2E TC-25 reports the count as a known defect |
 | Shared staging data grows (sites, run submittals, system messages) | Slower pages; leftover banners on screen | Check System Messages for active test messages before presenting |
 | A suite stopped with Ctrl+C or TaskStop leaves browser processes running | Next run collides with it | Use the process check in section 1 and stop the leftovers |

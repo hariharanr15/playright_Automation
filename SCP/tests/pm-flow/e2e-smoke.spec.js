@@ -44,7 +44,9 @@ const INSPECTOR_ROLE = process.env.SCP_E2E_INSPECTOR_ROLE || 'Subcontractor';
 // Who approves the checklist in TC-16 and becomes the FDI inspector in TC-18:
 //   existing (default) – the existing Subcontractor account SCP_SUBCONTRACTOR_* (organisation Voyage Control);
 //   invite             – the user invited in TC-06, activated from YOPmail. Since 20 Nov 2026 YOPmail shows a Cloudflare
-//                        human-verification check, so the invite e-mail cannot be read automatically.
+//                        human-verification check, so the invite e-mail cannot be read automatically. When the
+//                        activation fails, the run falls back to the existing account (21 Nov 2026) and says so in
+//                        TC-16; the check is never bypassed.
 // TC-06 still creates and verifies the invitation in both modes.
 const SUBCON_LOGIN = /^invite$/i.test(process.env.SCP_E2E_SUBCON_LOGIN || '') ? 'invite' : 'existing';
 const FILTER_STATUS = process.env.SCP_E2E_FILTER_STATUS || 'Ordered';
@@ -261,8 +263,10 @@ test('SCP – End-to-end smoke', async ({ page }) => {
     const NEW = { email: null, password: R.newUser.password, role: 'Subcontractor (new user)' };
     const EXISTING_SUBCON = { email: config.accounts.subcontractor.username, password: config.accounts.subcontractor.password,
       role: 'Subcontractor (existing account)' };
-    // The account used by TC-16 (approval), TC-17 (logout) and TC-18 (inspector).
-    const SUBCON = SUBCON_LOGIN === 'invite' ? NEW : EXISTING_SUBCON;
+    // The account used by TC-16 (approval), TC-17 (logout) and TC-18 (inspector). In "invite" mode it switches to the
+    // existing account when the YOPmail activation fails (fallback, recorded in TC-16).
+    let subconLogin = SUBCON_LOGIN;
+    let SUBCON = subconLogin === 'invite' ? NEW : EXISTING_SUBCON;
     console.log(`Run ${DATE} (tag ${RUN})`);
 
     try {
@@ -889,11 +893,26 @@ test('SCP – End-to-end smoke', async ({ page }) => {
       // ================= TC-16 Subcontractor approval =================
       await scenario('subconApproval', ['supplierApproval', 'user'], async s => {
         await logoutAs(s, SUP);
-        if (SUBCON_LOGIN === 'invite') {
-          await s.step(`Pause ${LOGIN_PAUSE / 1000} s; Yopmail ${maskEmail(R.newUser.email)} › "Accept Invite" → set password → profile "${R.newUser.displayName}" → signed in (no organisation setup)`, async () => {
+        let activated = false;
+        if (subconLogin === 'invite') {
+          // STEP: activate the invited user from YOPmail. Fallback: when YOPmail cannot be read (Cloudflare check) or the
+          // activation fails, the existing Subcontractor account approves instead, so the rest of the flow still runs.
+          await s.step(`Pause ${LOGIN_PAUSE / 1000} s; Yopmail ${maskEmail(R.newUser.email)} › "Accept Invite" → set password → profile "${R.newUser.displayName}" → signed in (no organisation setup); if YOPmail cannot be read, the existing Subcontractor account is used instead`, async () => {
             await pause();
-            await transition('Login (invite activation)', NEW, () => kit.activateInvite(R.newUser, t => s.observe(t)));
-          }, { critical: true, evidence: true });
+            try {
+              await transition('Login (invite activation)', NEW, () => kit.activateInvite(R.newUser, t => s.observe(t)));
+              activated = true;
+            } catch (error) {
+              if (!EXISTING_SUBCON.email || !EXISTING_SUBCON.password) throw error; // no fallback account configured
+              const reason = String(error.message || error).split('\n')[0].slice(0, 200);
+              s.observe(`FALLBACK: invite activation failed (${reason}); the existing Subcontractor account (${maskEmail(EXISTING_SUBCON.email)}) approves instead`);
+              subconLogin = 'existing';
+              SUBCON = EXISTING_SUBCON;
+              await kit.signOut().catch(() => null);
+            }
+          }, { critical: true, evidence: true, attempts: 1 });
+        }
+        if (activated) {
           await s.step('Log out after activation → login page (the account then uses the standard login)', () => transition('Logout', NEW, () => kit.signOut()), { critical: true });
           await loginAs(s, NEW, 'Subcontractor', R.newUser.organization);
         } else {
@@ -998,12 +1017,12 @@ test('SCP – End-to-end smoke', async ({ page }) => {
           for (const m of M) expect(m.statusBeforeActual, `${m.name} not Delivered before its actual date`).not.toBe('Delivered');
           expect(v.Status).toBe('Delivered');
         });
-        await s.step(`User Management: ${maskEmail(R.newUser.email)} → ${SUBCON_LOGIN === 'invite' ? '"Active"' : 'listed (invite not accepted: existing Subcontractor account used)'}, role Subcontractor, organisation ${R.newUser.organization}`, async () => {
+        await s.step(`User Management: ${maskEmail(R.newUser.email)} → ${subconLogin === 'invite' ? '"Active"' : 'listed (invite not accepted: existing Subcontractor account used)'}, role Subcontractor, organisation ${R.newUser.organization}`, async () => {
           const row = await kit.invitedListed(R.newUser.email, 120000);
           s.observe(row.replace(/[\w.+-]+@[\w.-]+/g, x => maskEmail(x)));
           expect(row).toMatch(/Subcontractor/);
           // A pending invite row reads "Invited - <email> - <role>" with no organisation (20 Nov 2026).
-          if (SUBCON_LOGIN === 'invite') { expect(row).toMatch(/Active/); expect(row).toContain(R.newUser.organization); }
+          if (subconLogin === 'invite') { expect(row).toMatch(/Active/); expect(row).toContain(R.newUser.organization); }
           else expect(row).toMatch(/Invited/);
         });
       });
@@ -1011,7 +1030,7 @@ test('SCP – End-to-end smoke', async ({ page }) => {
       // ================= TC-18 Inspector =================
       // Runs after the new user accepted the invite (TC-16): an invited user is not offered as a project member before.
       await scenario('inspector', ['material', 'user', 'subconApproval'], async s => {
-        const inspector = SUBCON_LOGIN === 'invite'
+        const inspector = subconLogin === 'invite'
           ? { email: R.newUser.email, label: `the new user, organisation ${R.newUser.organization}`, name: R.newUser.displayName }
           : { email: SUBCON.email, label: `the existing Subcontractor account, organisation ${USER_ORG}`, name: 'Existing Subcontractor' };
         await s.step(`FDI Config › "Add Inspector": project member ${maskEmail(inspector.email)} (${inspector.label}), role "${INSPECTOR_ROLE}" if offered, scope "Specific Materials" = ${M[0].name} → inspector row listed`, async () => {
@@ -1019,12 +1038,12 @@ test('SCP – End-to-end smoke', async ({ page }) => {
           s.observe(r.created ? `${r.member} as ${r.role}: ${r.row}` : `Already listed: ${r.row}`);
           if (r.created) record('FDI Configuration', 'Inspector mapping', '', `${inspector.name} → ${M[0].name}`, 'Project Admin', `Role ${r.role}`);
         }, { critical: true, evidence: true });
-        await s.step(`Inspectors table → ${maskEmail(inspector.email)} covers ${M[0].name} (scoped to it, or "All Materials"${SUBCON_LOGIN === 'invite' ? '' : ' for the existing account'}); status recorded`, async () => {
+        await s.step(`Inspectors table → ${maskEmail(inspector.email)} covers ${M[0].name} (scoped to it, or "All Materials"${subconLogin === 'invite' ? '' : ' for the existing account'}); status recorded`, async () => {
           const row = await v2.inspectorRow(inspector.email).innerText();
           s.observe(row.replace(/\s+/g, ' '));
           // A new user is added scoped to the run material. The existing account was already an inspector for
           // "All Materials" (20 Nov 2026), so "Add Inspector" leaves it unchanged.
-          if (SUBCON_LOGIN === 'invite') expect(row).toContain(M[0].name);
+          if (subconLogin === 'invite') expect(row).toContain(M[0].name);
           else expect(row.includes(M[0].name) || /All Materials/i.test(row), `${M[0].name} or All Materials`).toBe(true);
         }, { critical: true });
         await s.step(`Project Admin ${maskEmail(PA.email)} → an enabled inspector covering ${M[0].name} (performs the inspection in TC-21)`, async () => {
