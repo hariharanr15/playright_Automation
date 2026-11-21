@@ -333,7 +333,14 @@ const KNOWN_DEFECTS = [
     confirmation: 'pending',
     title: 'Component header shows the unit of measure',
     signature: /^Required QTY shows "undefined" instead of the unit/,
-    summary: 'PENDING TEAM CONFIRMATION. Intermittent: after reloading the component view, the header shows "Required QTY: 12 undefined" instead of "12 Pieces" (21 Nov 2026 17:02 run, both attempts; passed in other runs, sometimes only on retry). Question: is the unit loaded after the header is drawn?' }
+    summary: 'PENDING TEAM CONFIRMATION. Intermittent: after reloading the component view, the header shows "Required QTY: 12 undefined" instead of "12 Pieces" (21 Nov 2026 17:02 run, both attempts; passed in other runs, sometimes only on retry). Question: is the unit loaded after the header is drawn?' },
+  // Not reproduced by the suites any more: they use the server date for PO Date and the Created At filter (poToday in
+  // tests/pm-flow/support/pl-flow.js). The signature only matches if a test is changed back to the browser date.
+  { id: 'SCP-DEF-074', recordedOn: '2026-11-22', modules: ['Procurement Log'], scenarioIds: ['PL-REG-CMP-02', 'PL-REG-CMP-04', 'PL-REG-LST-02', 'TC-10'], reportNotReproduced: false,
+    confirmation: 'pending',
+    title: 'PO Date "today" rejected between 00:00 and 05:30 IST (server uses the UTC date)',
+    signature: /^Add Component was not saved; the form shows "Invalid data provided/,
+    summary: 'PENDING TEAM CONFIRMATION. From 00:00 to 05:30 IST, "Add Component" with PO Date = today (the date the date picker offers as today) is refused with "Invalid data provided."; the server answers 400 "PO date cannot be in the future. Use today\'s date or an earlier date." because it compares with its UTC date (still yesterday). The same window makes the Procurement Log "Start date" = today filter hide records created today, and Alerts/Notifications show the previous day\'s date on items created that night. Found by the overnight run of 21/22 Nov 2026 (PL-REG-CMP-02/04/05/06/08/10, PL-REG-LST-02, E2E TC-10 and the cases after it) and confirmed by a probe at 02:15 IST. Question: should "today" follow the user\'s (project) time zone?' }
 ];
 
 // Label for reports: "SCP-DEF-053 (pending confirmation)" for entries whose expected behaviour the client/team has not

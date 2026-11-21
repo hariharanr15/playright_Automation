@@ -57,6 +57,8 @@ const SYMBOL = { INR: '₹', USD: '$', GBP: '£', EUR: '€', AED: 'AED', AUD: '
 const today = new Date(stamp.getFullYear(), stamp.getMonth(), stamp.getDate());
 const plusDays = d => new Date(today.getFullYear(), today.getMonth(), today.getDate() + d);
 const TODAY = ddmmyyyy(today);
+// PO date accepted by the server (poToday in pl-flow.js, SCP-DEF-074); Expected Delivery is counted from it.
+const PO_DAY = require('./support/pl-flow').poToday();
 
 const meta = (id, module, title, navPath) => ({ id, module, submodule: module, suite: SUITE, title, navPath });
 const S = {
@@ -116,7 +118,7 @@ test('SCP – End-to-end smoke', async ({ page }) => {
       { key: 'new', name: null, qty: 10, value: 1000, weeks: 1, roj: plusDays(28) },
       { key: 'existing', name: MATERIAL_2, qty: 5, value: 500, weeks: 2, roj: plusDays(35) }
     ];
-    for (const m of M) { m.expected = plusDays(7 * m.weeks); m.po = `${RUN}-PO-${m.key.toUpperCase()}`; }
+    for (const m of M) { m.expected = new Date(PO_DAY.getFullYear(), PO_DAY.getMonth(), PO_DAY.getDate() + 7 * m.weeks); m.po = `${RUN}-PO-${m.key.toUpperCase()}`; }
     R.materials = M;
     const sub = R.submittal;
     const sessions = []; const recordsTable = []; const dashboard = { rows: [] }; const home = {}; const analytics = { before: {}, after: {} };
@@ -603,7 +605,8 @@ test('SCP – End-to-end smoke', async ({ page }) => {
         }, { critical: true });
         await s.step(`Procurement Log: search the submittal → still exactly one submittal (no new one); Material Name "${M[0].name} +1"`, async () => {
           await k.openLog(); await k.search(sub.number);
-          expect(await k.rows().filter({ has: page.getByRole('cell', { name: sub.number, exact: true }) }).count(), 'One submittal').toBe(1);
+          // The search result can arrive after the count is first read (22 Nov 2026 03:10 run): wait for it.
+          await expect.poll(() => k.rows().filter({ has: page.getByRole('cell', { name: sub.number, exact: true }) }).count(), { message: 'One submittal', timeout: 20000 }).toBe(1);
           const v = await kit.submittalRowValues(sub.number, sub.description);
           s.observe(`Material Name "${v['Material Name']}"`);
           expect(v['Material Name']).toContain(M[0].name);
@@ -614,10 +617,10 @@ test('SCP – End-to-end smoke', async ({ page }) => {
       // ================= TC-10 Components and lead time =================
       await scenario('components', ['secondMaterial'], async s => {
         for (const m of M) {
-          await s.step(`Drawer › "Add Component": material ${m.name}, Date Req. on Site ${ddmmyyyy(m.roj)}, QTY ${m.qty}, Value ${m.value}, PO ${m.po}, PO Date ${TODAY} → toast "Schedule added successfully!", status "Ordered"`, async () => {
+          await s.step(`Drawer › "Add Component": material ${m.name}, Date Req. on Site ${ddmmyyyy(m.roj)}, QTY ${m.qty}, Value ${m.value}, PO ${m.po}, PO Date ${ddmmyyyy(PO_DAY)} → toast "Schedule added successfully!", status "Ordered"`, async () => {
             await drawer();
             if (await k.componentRow(m.name).count()) s.observe('Component already created by the first attempt – not created again');
-            else await k.addComponent({ material: m.name, rojDate: m.roj, qty: m.qty, value: m.value, po: m.po, poDate: today });
+            else await k.addComponent({ material: m.name, rojDate: m.roj, qty: m.qty, value: m.value, po: m.po, poDate: PO_DAY });
             expect(await k.componentStatus(m.name)).toBe('Ordered');
           }, { critical: true, evidence: true });
         }
@@ -1218,17 +1221,22 @@ test('SCP – End-to-end smoke', async ({ page }) => {
       // ================= TC-23B Alerts, notifications, tasks =================
       await scenario('inbox', ['grn'], async s => {
         const NO = esc(sub.number);
+        // From 00:00 to 05:30 IST the inbox dates items with the server's UTC date, the day before (SCP-DEF-074): that date
+        // is accepted too and noted.
+        const SERVER_DAY = ddmmyyyy(require('./support/pl-flow').poToday());
+        if (SERVER_DAY !== TODAY) s.observe(`Server date ${SERVER_DAY} differs from the browser date ${TODAY}; items dated ${SERVER_DAY} count as today (SCP-DEF-074)`);
+        const datedToday = text => text.includes(TODAY) || text.includes(SERVER_DAY);
         const check = async (tab, pattern, label) => {
           const rows = await kit.inboxRows(tab, pattern);
           s.observe(`${tab}: ${rows.length} match(es)${rows[0] ? ` – "${rows[0].text.slice(0, 170)}"` : ''}`);
           expect(rows.length, `${label} in ${tab}`).toBeGreaterThan(0);
-          expect(rows[0].text, `${label} dated today`).toContain(TODAY);
+          expect(datedToday(rows[0].text), `${label} dated today (${TODAY}${SERVER_DAY !== TODAY ? ` or server date ${SERVER_DAY}` : ''})`).toBe(true);
           return rows;
         };
         // Alerts users get for this flow (confirmed by the user, 11 Nov 2026): "Pre-Shipping Checklist has been pending.",
         // "Pre-Shipping Checklist has been approved." and "Delivery of N units of … logged for submittal …".
         await s.step(`Alerts → "Pre-Shipping Checklist has been pending." at least ${M.length} times today (one per booking)`, async () => {
-          const rows = (await kit.inboxRows('Alerts', /Pre-Shipping Checklist has been pending/i)).filter(r => r.text.includes(TODAY));
+          const rows = (await kit.inboxRows('Alerts', /Pre-Shipping Checklist has been pending/i)).filter(r => datedToday(r.text));
           s.observe(`${rows.length} checklist-pending alert(s) dated today on the first pages`);
           expect(rows.length).toBeGreaterThanOrEqual(M.length);
         }, { evidence: true });
@@ -1237,7 +1245,7 @@ test('SCP – End-to-end smoke', async ({ page }) => {
           await s.step(`Notifications → "Delivery of ${m.qty} units of ${m.name} has been received at site for submittal ${sub.number}", dated today`, () => check('Notifications', new RegExp(`Delivery of ${m.qty} units of ${esc(m.name)} has been received at site for submittal ${NO}`, 'i'), `${m.name} received notification`));
         }
         await s.step(`Alerts → "Pre-Shipping Checklist has been approved." at least ${M.length} times today (one per booking)`, async () => {
-          const rows = (await kit.inboxRows('Alerts', /Pre-Shipping Checklist has been approved/i)).filter(r => r.text.includes(TODAY));
+          const rows = (await kit.inboxRows('Alerts', /Pre-Shipping Checklist has been approved/i)).filter(r => datedToday(r.text));
           s.observe(`${rows.length} checklist-approved alert(s) dated today on the first pages`);
           expect(rows.length).toBeGreaterThanOrEqual(M.length);
         });

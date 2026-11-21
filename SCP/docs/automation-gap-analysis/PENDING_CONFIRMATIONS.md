@@ -96,6 +96,8 @@ These failed in **every** full regression run from 17 to 21 Nov 2026 with the sa
 
 **19. PL-REG-DLV-16** – Open a component view (click the material cell), press F5 and read **Required QTY** in the header. Repeat a few times.
 
+**20. SCP-DEF-074 (found by the overnight run, 22 Nov 2026)** – Between 00:00 and 05:30 IST, open any submittal › **Add Component** › choose PO Date = today in the date picker › **ADD**. The dialog shows "Invalid data provided." and the server replies "PO date cannot be in the future. Use today's date or an earlier date.", because it compares with its UTC date, which is still the day before. In the same window, the Procurement Log **Start date** = today filter hides records created that day, and Alerts/Notifications show the previous day's date on items created that night. Question: should "today" follow the user's or project's time zone? The tests now use the server's date so night runs keep working. Daytime runs and the demo are not affected.
+
 ## Corrected test (not an application issue)
 
 **INV-REG-18** compared the upload error file's "available" figure (stock at the row's From Location, e.g. Gate 5 = 59) with the ledger Closing Balance (whole site, 582). These can never be equal. Since 21 Nov it compares with the Add Activity hint for the same location, which is the figure the save check uses (INV-R3), minus the valid rows above the invalid row in the file (item 8).

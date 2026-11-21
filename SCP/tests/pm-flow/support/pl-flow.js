@@ -9,6 +9,15 @@ const { SiteSelectorPage } = require('../../../pages/site-selector.page');
 const SITE = process.env.SCP_PL_SITE || process.env.SCP_DEMO_SITE || 'Warehoust _NR';
 const SUPPLIER = process.env.SCP_PL_SUPPLIER || 'LG';
 const MATERIAL = process.env.SCP_PL_MATERIAL || '43 Inches';
+// The server checks "PO date cannot be in the future" against its own UTC date, so from 00:00 to 05:30 IST the browser's
+// "today" is rejected (SCP-DEF-074, confirmed by a probe on 22 Nov 2026 at 02:15 IST). PO dates therefore use the earlier
+// of the browser date and the server date; outside that window both are the same day.
+function poToday() {
+  const now = new Date();
+  const local = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const utc = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return utc < local ? utc : local;
+}
 
 function plKit(page) {
   const main = page.locator('main');
@@ -129,9 +138,17 @@ function plKit(page) {
         const exact = listbox().getByRole('option', { name: material || MATERIAL, exact: true });
         await ((await exact.count()) ? exact.first() : listbox().getByRole('option').first()).click();
       }
-      if (po) { await field('PO no.').fill(po); await kit.day(field('PO Date'), poDate); }
+      if (po) { await field('PO no.').fill(po); await kit.day(field('PO Date'), poDate && poDate > poToday() ? poToday() : poDate); }
       await m.getByRole('button', { name: 'ADD', exact: true }).click();
-      await toast('Schedule added successfully!');
+      try {
+        await toast('Schedule added successfully!');
+      } catch (error) {
+        // Show the form's own message and close the dialog, so a retry is not blocked by the open dialog.
+        const message = ((await m.innerText().catch(() => '')).match(/Invalid data provided\.?|[^\n]*\b(?:required|cannot|must)\b[^\n]*/i) || [])[0];
+        await kit.closeDialog('Add Component').catch(() => null);
+        if (message) throw new Error(`Add Component was not saved; the form shows "${message.trim()}"`);
+        throw error;
+      }
     },
     componentRow(material = MATERIAL) {
       return page.getByRole('row').filter({ has: page.getByRole('checkbox', { name: 'Select this component' }) }).filter({ hasText: material }).first();
@@ -202,4 +219,4 @@ function plKit(page) {
   return kit;
 }
 
-module.exports = { plKit, SITE, SUPPLIER, MATERIAL };
+module.exports = { plKit, poToday, SITE, SUPPLIER, MATERIAL };

@@ -1,6 +1,6 @@
 # SCP automation – demo run guide
 
-**Updated:** 21 Nov 2026 · **Environment:** staging, project **NRVC_Hall**, site **Warehoust _NR** · **Run from:** the `SCP` folder
+**Updated:** 22 Nov 2026 · **Environment:** staging, project **NRVC_Hall**, site **Warehoust _NR** · **Run from:** the `SCP` folder
 
 ## 1. Before you run
 
@@ -57,6 +57,7 @@
 | Shared staging data grows (sites, run submittals, system messages) | Slower pages; leftover banners on screen | Check System Messages for active test messages before presenting |
 | **International Shipments is very slow** ("Loading international shipments…") | On 21 Nov 2026 the page needed **148–158 s** to show its data (it was under 90 s earlier the same day) | The tests wait up to 3 min and print "SLOW PAGE: …" in the report. For a live demo, open the page in advance or show the recorded run |
 | A partial re-run (`--only=` with System Messages cases) leaves its test banners active | "Project notice" banners from the run on every page until the next day; they can cover buttons | Run `node scripts/run-pm-flow.js regression2 --only=PM-REG-SYS-00 --headless` afterwards; it deactivates every active "PMR2-…" test message |
+| A run between 00:00 and 05:30 IST | The server's date is still the previous day (UTC): "PO date cannot be in the future" for today's PO Date, and that night's alerts are dated the day before (SCP-DEF-074) | The tests use the server's date in that window and note it. Prefer daytime runs; the demo is not affected |
 | A suite stopped with Ctrl+C or TaskStop leaves browser processes running | Next run collides with it | Use the process check in section 1 and stop the leftovers |
 
 ## 6. Related documents

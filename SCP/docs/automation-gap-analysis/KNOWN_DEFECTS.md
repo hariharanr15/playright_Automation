@@ -7,7 +7,7 @@ A test that fails exactly as described here is reported as **Known Defect** inst
 - **Registered**: agreed with the user/team, or a confirmed rule that the application breaks.
 - **Pending confirmation**: today's behaviour looks logically wrong, but the expected behaviour has not been confirmed by the client/team yet. See `PENDING_CONFIRMATIONS.md`. These entries are reviewed (kept, changed or removed) once the team answers.
 
-**Total:** 73 entries · 57 registered · 16 pending confirmation. Nothing here is raised in Jira.
+**Total:** 74 entries · 57 registered · 17 pending confirmation. Nothing here is raised in Jira.
 
 ## Project Management
 
@@ -125,6 +125,7 @@ A test that fails exactly as described here is reported as **Known Defect** inst
 | SCP-DEF-068 | Pending confirmation | 2026-11-21 | PL-REG-ALR-02 | Create Alert validates required fields | PENDING TEAM CONFIRMATION. Row menu › Alert › Add Alert › Submit with empty fields shows the server message "Failed to create alert. Please try again." instead of required-field messages (OBS-PL-28). Failed in every Procurement Log part 3 run (17–21 Nov 2026). |
 | SCP-DEF-072 | Pending confirmation | 2026-11-21 | PL-REG-CMP-18 | Delete component | PENDING TEAM CONFIRMATION. Submittal page › component row "Other Actions ▾" › Delete › confirm "Delete": no message is shown and the component row is still listed after a reload (component with lead time Confirmed, not ordered). Failed in 4 of the last 5 Procurement Log part 2 runs (17–21 Nov 2026), passed on 18 Nov. Question: may a component with a confirmed lead time be deleted? If not, should a message say so? |
 | SCP-DEF-073 | Pending confirmation | 2026-11-21 | PL-REG-DLV-16 | Component header shows the unit of measure | PENDING TEAM CONFIRMATION. Intermittent: after reloading the component view, the header shows "Required QTY: 12 undefined" instead of "12 Pieces" (21 Nov 2026 17:02 run, both attempts; passed in other runs, sometimes only on retry). Question: is the unit loaded after the header is drawn? |
+| SCP-DEF-074 | Pending confirmation | 2026-11-22 | PL-REG-CMP-02, PL-REG-CMP-04, PL-REG-LST-02, TC-10 | PO Date "today" rejected between 00:00 and 05:30 IST (server uses the UTC date) | PENDING TEAM CONFIRMATION. From 00:00 to 05:30 IST, "Add Component" with PO Date = today (the date the date picker offers as today) is refused with "Invalid data provided."; the server answers 400 "PO date cannot be in the future. Use today's date or an earlier date." because it compares with its UTC date (still yesterday). The same window makes the Procurement Log "Start date" = today filter hide records created today, and Alerts/Notifications show the previous day's date on items created that night. Found by the overnight run of 21/22 Nov 2026 (PL-REG-CMP-02/04/05/06/08/10, PL-REG-LST-02, E2E TC-10 and the cases after it) and confirmed by a probe at 02:15 IST. Question: should "today" follow the user's (project) time zone? |
 
 ## Other
 

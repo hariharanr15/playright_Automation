@@ -3,7 +3,7 @@
 // Known defects are reported through their registered signatures (config/scp-known-defects.js).
 const { test, expect } = require('@playwright/test');
 const { runPmSuite } = require('./support/pm-flow');
-const { plKit, MATERIAL } = require('./support/pl-flow');
+const { plKit, poToday, MATERIAL } = require('./support/pl-flow');
 
 const SUITE = 'Procurement Log Regression';
 const MODULE = 'Procurement Log';
@@ -13,6 +13,9 @@ const RUN = `PLR${stamp.toISOString().replace(/\D/g, '').slice(2, 12)}`;
 const num = n => `${stamp.toISOString().replace(/\D/g, '').slice(0, 12)}${String(n).padStart(2, '0')}`; // Schedule Id: digits only
 const today = new Date(stamp.getFullYear(), stamp.getMonth(), stamp.getDate());
 const plusDays = d => new Date(today.getFullYear(), today.getMonth(), today.getDate() + d);
+// PO date accepted by the server (see poToday, SCP-DEF-074); Expected Delivery is counted from it.
+const PO_DAY = poToday();
+const poPlus = d => new Date(PO_DAY.getFullYear(), PO_DAY.getMonth(), PO_DAY.getDate() + d);
 
 test.describe.configure({ mode: 'serial' });
 test.setTimeout(60 * 60 * 1000);
@@ -113,11 +116,11 @@ test('Procurement Log – regression part 1', async ({ page, browserName }) => {
       });
     });
     const ordered = await run.scenario(meta('PL-REG-CMP-02', 'Component with PO is Ordered; Expected = PO date + lead time', 'Positive'), async s => {
-      await s.step(`Drawer › "Add Component": Date Req. on Site today + 28 days, QTY 10, Value 1000, PO no. ${RUN}-PO-A, PO Date today, click "ADD" → toast "Schedule added successfully!"`, () => k.addComponent({ rojDate: plusDays(28), qty: 10, value: 1000, po: `${RUN}-PO-A`, poDate: today }), { critical: true });
+      await s.step(`Drawer › "Add Component": Date Req. on Site today + 28 days, QTY 10, Value 1000, PO no. ${RUN}-PO-A, PO Date today, click "ADD" → toast "Schedule added successfully!"`, () => k.addComponent({ rojDate: plusDays(28), qty: 10, value: 1000, po: `${RUN}-PO-A`, poDate: PO_DAY }), { critical: true });
       await s.step(`Component row → Status is "Ordered" and the row shows Expected Delivery = today + 7 days (lead time 1 week)`, async () => {
         expect(await k.componentStatus()).toBe('Ordered');
         const cells = (await k.componentRow().getByRole('cell').allInnerTexts()).map(t => t.trim());
-        expect(cells).toContain(plusDays(7).toLocaleDateString('en-GB'));
+        expect(cells).toContain(poPlus(7).toLocaleDateString('en-GB'));
       });
     });
     await run.scenario(meta('PL-REG-CMP-06', 'Lead Time update moves Expected Delivery', 'Positive'), async s => {
@@ -126,7 +129,7 @@ test('Procurement Log – regression part 1', async ({ page, browserName }) => {
         const m = k.dialog('Update Lead Time', 'Submit');
         await m.getByRole('spinbutton').fill('3'); await m.getByRole('checkbox').check();
         await m.getByRole('button', { name: 'Submit', exact: true }).click();
-        await expect.poll(async () => (await k.componentRow().innerText())).toContain(plusDays(21).toLocaleDateString('en-GB'));
+        await expect.poll(async () => (await k.componentRow().innerText())).toContain(poPlus(21).toLocaleDateString('en-GB'));
         await expect(k.componentRow()).toContainText('Confirmed');
       });
     });

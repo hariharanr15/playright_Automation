@@ -253,3 +253,22 @@ Also on 21 Nov:
 **Housekeeping:** a partial re-run of the System Messages cases left two active test banners; `PM-REG-SYS-00` deactivated them (21:34). No test banner was seen afterwards.
 
 **Reports:** `scripts/non-pass-report.js` now accepts re-run folders after the full-regression folder (a later result replaces the earlier one) and shows failures that match a defect registered after the run as Known Defect ("re-classified").
+
+## 15. Overnight full regression and timezone finding (21/22 Nov 2026)
+
+**Full regression + E2E smoke (23:13–02:03 IST, `reports/full-regression-2026-11-21T17-43-03-393Z`):** every suite up to PM part 2 had 0 failed (PM part 2: 1, PM-REG-SYS-08, intermittent). From PL part 1 on (started 01:17 IST) "Add Component" was refused: PL part 1 4 failed, PL part 3 3 failed, E2E smoke 5 failed + 12 blocked.
+
+**Cause (application, SCP-DEF-074, pending confirmation):** from 00:00 to 05:30 IST the browser date is one day ahead of the server's UTC date. A probe at 02:15 IST got `400 "PO date cannot be in the future. Use today's date or an earlier date."` for PO Date = today (22/11) on Add Component. The same window makes the Procurement Log "Start date = today" filter hide that night's records (PL-REG-LST-02), and Alerts/Notifications date that night's items 21/11 (E2E TC-23B). Daytime runs and the demo are not affected.
+
+**Test changes:**
+
+| Change | Where |
+|---|---|
+| `poToday()` gives the earlier of the browser and server dates. Add Component uses it for PO Date; Expected Delivery checks count from it | `support/pl-flow.js`, `pl-regression.spec.js`, `e2e-smoke.spec.js` |
+| Add Component shows the form's message ("Invalid data provided.") and closes the dialog when the save fails, so a retry is not blocked by the open dialog | `support/pl-flow.js` |
+| LST-02 Start date and TC-23B inbox dates accept the server date in that window and note it | `pl-regression-3.spec.js`, `e2e-smoke.spec.js` |
+| TC-09 waits for the search result instead of reading the row count once | `e2e-smoke.spec.js` |
+
+**Re-runs (02:11–04:02 IST, inside the same window):** PL part 1 15 passed / 0 failed (3 known defects); PL part 3 47 / 0; System Messages cases 8 / 0, then SYS-00 cleaned the test banners; E2E smoke 27 passed, 3 known defects (TC-23/24/25), 0 failed, 0 blocked.
+
+**Consolidated result** (`reports/full-regression-2026-11-21T17-43-03-393Z/NON_PASSED_TEST_CASES.md` and `.pdf`, `KNOWN_DEFECT_TEST_CASES.md` and `.pdf`): 594 cases · 435 passed · 43 known defect · **0 failed · 0 blocked** · 116 skipped.

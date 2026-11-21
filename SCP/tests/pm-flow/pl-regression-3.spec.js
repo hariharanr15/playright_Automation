@@ -6,7 +6,7 @@ const os = require('os');
 const path = require('path');
 const { test, expect } = require('@playwright/test');
 const { runPmSuite } = require('./support/pm-flow');
-const { plKit, MATERIAL, SUPPLIER } = require('./support/pl-flow');
+const { plKit, poToday, MATERIAL, SUPPLIER } = require('./support/pl-flow');
 const { writePdf, writeXlsx, readXlsxRows } = require('./support/pl-files');
 const { InventoryManagementPage } = require('../../pages/inventory-management/inventory-management.page');
 const { SiteSelectorPage } = require('../../pages/site-selector.page');
@@ -108,7 +108,11 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
       await s.step(`Clear search, set "Start date" to today → item count is not larger than before; searching ${P.number} finds exactly 1 row`, async () => {
         await k.search('');
         const before = await k.count();
-        await k.day(page.getByRole('textbox', { name: 'Start date' }), today); await k.settle(1500);
+        // Created At is filtered on the server's UTC date: from 00:00 to 05:30 IST a record created "today" in the browser
+        // is dated yesterday (SCP-DEF-074), so the server's date is used and noted when it differs.
+        const start = poToday();
+        if (start < today) s.observe(`Start date set to ${start.toLocaleDateString('en-GB')} (server date; browser date is ${today.toLocaleDateString('en-GB')}, SCP-DEF-074)`);
+        await k.day(page.getByRole('textbox', { name: 'Start date' }), start); await k.settle(1500);
         const after = await k.count();
         expect(after).toBeLessThanOrEqual(before);
         await k.search(P.number); await expect.poll(k.count).toBe(1);
