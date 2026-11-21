@@ -161,3 +161,68 @@ if (knownDefects.length) {
 const output = path.join(path.resolve(inputs[0]), 'NON_PASSED_TEST_CASES.md');
 fs.writeFileSync(output, lines.join('\n'));
 console.log(`${nonPassed.length} failed/blocked/skipped and ${knownDefects.length} known-defect cases of ${cases.length} -> ${path.relative(process.cwd(), output)}`);
+
+// ---------- Second document: every Known Defect test case with its flow ----------
+// Written next to NON_PASSED_TEST_CASES.md as KNOWN_DEFECT_TEST_CASES.md, for readers who need to follow each case by hand.
+const defectOf = item => {
+  const step = (item.steps || []).find(entry => entry.status === 'Known Defect') || {};
+  const id = (item.defects || [step.defect]).filter(Boolean)[0];
+  return { id, step, entry: KNOWN_DEFECTS.find(defect => defect.id === id) || {} };
+};
+const flowLine = (step, index) => {
+  const [action, expected] = split(step.name);
+  const lineStart = `${index + 1}. ${plain(action)}${expected ? `  \n   _Expected:_ ${plain(expected)}` : ''}`;
+  if (step.status === 'Passed') {
+    const note = observed(step);
+    return `${lineStart}  \n   _Result:_ ✔ as expected${step.retried ? ' (passed on retry)' : ''}${note ? ` · _Noted:_ ${note}` : ''}`;
+  }
+  if (step.status === 'Known Defect') {
+    const actual = [lastError(step), observed(step)].filter(Boolean).join(' · ');
+    return `${lineStart}  \n   _Result:_ ✖ **defect ${defectLabel(step.defect)} reproduced** – ${actual || 'see the report'}`;
+  }
+  const why = [lastError(step), observed(step)].filter(Boolean).join(' · ');
+  return `${lineStart}  \n   _Result:_ ${step.status}${why ? ` – ${why}` : ''}`;
+};
+const kdCases = [...knownDefects].sort((first, second) => String(first.module || 'Other').localeCompare(String(second.module || 'Other'))
+  || String(defectOf(first).id).localeCompare(String(defectOf(second).id)) || String(first.id).localeCompare(String(second.id)));
+const pendingCount = kdCases.filter(item => defectOf(item).entry.confirmation === 'pending').length;
+const kd = [
+  '# SCP – Known Defect test cases',
+  '',
+  `_Generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC by \`scripts/non-pass-report.js\` from the same runs as \`NON_PASSED_TEST_CASES.md\`._`,
+  '',
+  `**${kdCases.length} test case(s)** ended as Known Defect: the application behaved exactly as a recorded defect describes. ${kdCases.length - pendingCount} match a registered defect; **${pendingCount}** match a defect that is **pending confirmation** (today's behaviour looks wrong, but the client/team has not confirmed the expected behaviour yet; see \`docs/automation-gap-analysis/PENDING_CONFIRMATIONS.md\`). Nothing is raised in Jira.`,
+  '',
+  '**How to read a case:** the flow lists every step the test performed, in order, with the expected result. Steps marked ✔ behaved as expected; the step marked ✖ is where the defect shows. Run tags such as `PLT2611211408` are the names the test gave to the data it created; use any equivalent record when repeating by hand.',
+  '',
+  '## Index',
+  '',
+  '| # | Module | Test case | Defect | Status | What goes wrong |',
+  '|---|---|---|---|---|---|',
+  ...kdCases.map((item, index) => {
+    const { id, entry } = defectOf(item);
+    return `| ${index + 1} | ${cell(item.module || 'Other')} | ${cell(item.id)} – ${cell(item.title)} | ${cell(id)} | ${entry.confirmation === 'pending' ? 'Pending confirmation' : 'Registered'}${item.reclassified ? ' (re-classified)' : ''} | ${cell(plain(entry.summary || '').replace(/^PENDING TEAM CONFIRMATION\. /, '').slice(0, 160))}${(entry.summary || '').length > 170 ? '…' : ''} |`;
+  }),
+  ''
+];
+let currentModule = null;
+kdCases.forEach((item, index) => {
+  const { id, step, entry } = defectOf(item);
+  if ((item.module || 'Other') !== currentModule) { currentModule = item.module || 'Other'; kd.push(`## ${currentModule}`, ''); }
+  const [, expectedAtDefect] = split(step.name || '');
+  kd.push(`### ${index + 1}. ${item.id} – ${plain(item.title)}`, '');
+  kd.push('| | |', '|---|---|');
+  kd.push(`| **Defect** | ${cell(defectLabel(id))}${entry.recordedOn ? ` · recorded ${cell(entry.recordedOn)}` : ''}${item.reclassified ? ' · re-classified (registered after this run)' : ''} |`);
+  kd.push(`| **Suite** | ${cell(item.suiteTitle)} |`);
+  if (item.navPath) kd.push(`| **Where in the app** | ${cell([].concat(item.navPath).join(' › '))} |`);
+  kd.push(`| **Should happen** | ${cell(expectedAtDefect || 'see the flow')} |`);
+  kd.push(`| **Happens today** | ${cell([lastError(step), observed(step)].filter(Boolean).join(' · ') || 'see the flow')} |`);
+  if (entry.summary) kd.push(`| **Defect description** | ${cell(plain(entry.summary).replace(/^PENDING TEAM CONFIRMATION\. /, ''))} |`);
+  kd.push('', '**Flow**', '');
+  if ((item.steps || []).length) item.steps.forEach((entry2, stepIndex) => kd.push(flowLine(entry2, stepIndex)));
+  else kd.push('_No steps recorded._');
+  kd.push('');
+});
+const kdOutput = path.join(path.resolve(inputs[0]), 'KNOWN_DEFECT_TEST_CASES.md');
+fs.writeFileSync(kdOutput, kd.join('\n'));
+console.log(`${kdCases.length} known-defect test cases with flows -> ${path.relative(process.cwd(), kdOutput)}`);
