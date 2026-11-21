@@ -42,7 +42,8 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
     const header = async (scope = main) => (await scope.getByRole('columnheader').allInnerTexts()).map(t => t.trim().toLowerCase());
     const col = async (row, name, scope = main) => (await row.getByRole('cell').allInnerTexts())[(await header(scope)).indexOf(name.toLowerCase())]?.trim();
     const toast = (t, timeout) => k.toast(t, timeout);
-    const anyToast = async () => (await page.getByRole('status').allInnerTexts()).join(' | ');
+    // System Message banners ("Project notice" / "Platform-wide") also have role status; they are not toasts.
+    const anyToast = async () => (await page.getByRole('status').allInnerTexts()).filter(text => !/^\s*(Project notice|Platform-wide)/i.test(text)).join(' | ');
     const open = async (route, name, group) => {
       await page.keyboard.press('Escape').catch(() => null);
       await k.menu(name, group).catch(() => null);
@@ -270,6 +271,8 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
           const m = page.getByRole('heading', { name: 'Add Submittal' }).locator('xpath=../..');
           await k.pick('Choose Suppliers', SUP, m);
           await m.getByRole('button', { name: 'Choose Materials' }).click();
+          // The material list loads after the supplier is chosen; wait for it before reading (empty list on 21 Nov 2026 run).
+          await listbox().getByRole('option').first().waitFor({ timeout: 15000 }).catch(() => null);
           const opts = (await listbox().getByRole('option').allInnerTexts()).map(t => t.trim()).filter(Boolean);
           await page.keyboard.press('Escape'); await k.closeDialog('Add Submittal').catch(() => null);
           expect(opts).toEqual([k.MATERIAL]);
@@ -625,7 +628,17 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
     const SHP = 'International Shipments';
     const ESH = 'Enterprise Shipments';
     const entShip = () => open('/enterprise-shipments', ESH, 'Enterprise');
-    const intlShip = async () => { await open('/international-shipments', SHP); await expect(page.getByText('Total International').first()).toBeVisible({ timeout: 90000 }); }; // a loading text can linger after the data shows
+    // The page shows "Loading international shipments…" until the data arrives; on 21 Nov 2026 this took more than 90 s after a
+    // long run (shared staging data). Wait up to 3 min and record slow loads, so a slow page is visible in the report.
+    const slowLoads = [];
+    const intlShip = async () => {
+      const started = Date.now();
+      await open('/international-shipments', SHP);
+      await expect(page.getByText('Total International').first()).toBeVisible({ timeout: 180000 }); // a loading text can linger after the data shows
+      const seconds = Math.round((Date.now() - started) / 1000);
+      if (seconds > 30) slowLoads.push(seconds);
+    };
+    const noteSlowLoads = s => { if (slowLoads.length) s.observe(`SLOW PAGE: International Shipments needed ${slowLoads.splice(0).join(' s, ')} s to show its data`); };
     let shipSub = '';
     const shipRow = () => k.rows().filter({ hasText: shipSub }).first();
     await run.scenario(meta('SHP-REG-01', SHP, 'Log shipment validation', 'Negative', { navPath: ['Enterprise', ESH] }), async s => {
@@ -697,6 +710,7 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
           if (!Number.isNaN(tile)) expect(await inTransit()).toBe(tile + 1);
         });
         await s.step(`Reopen Enterprise Shipments → the logged row's Status shows "In Transit"`, async () => { await entShip(); expect(await col(shipRow(), 'Status')).toMatch(/In Transit/i); });
+        noteSlowLoads(s);
       });
       await run.scenario(meta('SHP-REG-06', SHP, 'Status change confirmation', 'Positive'), async s => {
         await s.step(`International Shipments: set the row's status select to "Shipped" → a confirmation toast appears`, async () => {
@@ -704,9 +718,11 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
           const t = await anyToast(); s.observe(`Toast: ${t || '(none)'}`);
           expect(t, 'Status change gives no confirmation (OBS-SHP-2)').toBeTruthy();
         });
+        noteSlowLoads(s);
       });
       await run.scenario(meta('SHP-REG-08', SHP, 'Required Date from procurement', 'Integration'), async s => {
         await s.step(`International Shipments: read "Required Date" of the logged row → it is not "-"`, async () => { await intlShip(); const v = await col(shipRow(), 'Required Date'); s.observe(`Required Date: ${v}`); expect(v, 'Required Date is "-" (OBS-PL-19)').not.toBe('-'); });
+        noteSlowLoads(s);
       });
       await run.scenario(meta('SHP-REG-10', SHP, 'Search / filters', 'Positive', { navPath: ['Enterprise', ESH] }), async s => {
         await s.step(`Enterprise Shipments: type the submittal in "Search submittal…" → every row contains it; clear the field`, async () => {
@@ -730,6 +746,7 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
           await expect(page.getByText(/error|something went wrong/i)).toHaveCount(0);
         });
       }
+      noteSlowLoads(s);
     });
 
     // ======================= Management Dashboard =======================

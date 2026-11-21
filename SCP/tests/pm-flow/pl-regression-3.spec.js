@@ -9,6 +9,7 @@ const { runPmSuite } = require('./support/pm-flow');
 const { plKit, MATERIAL, SUPPLIER } = require('./support/pl-flow');
 const { writePdf, writeXlsx, readXlsxRows } = require('./support/pl-files');
 const { InventoryManagementPage } = require('../../pages/inventory-management/inventory-management.page');
+const { SiteSelectorPage } = require('../../pages/site-selector.page');
 
 const SUITE = 'Procurement Log Regression 3';
 const MODULE = 'Procurement Log';
@@ -480,7 +481,7 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
         await page.goto(ids.componentUrl, { waitUntil: 'domcontentloaded' });
         await page.getByRole('button', { name: '+ Log Delivery' }).last().waitFor({ timeout: 30000 }); await k.settle(1500);
         const v = (await page.getByText('Required QTY', { exact: true }).last().locator('xpath=following-sibling::*[1]').innerText()).trim();
-        s.observe(`Required QTY: ${v}`); expect(v).not.toContain('undefined');
+        s.observe(`Required QTY: ${v}`); expect(v, 'Required QTY shows "undefined" instead of the unit').not.toContain('undefined');
       });
     });
     await run.scenario(meta('PL-REG-DLV-17', 'QR label downloads (PNG and PDF)', 'Positive'), async s => {
@@ -506,7 +507,10 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
     if (grn.status !== 'Passed') { run.skip(int01, 'GRN not generated'); run.skip(int03, 'GRN not generated'); } else {
     await run.scenario(int01, async s => {
       await s.step(`Left menu › "First Delivery Inspections" → exactly one row for ${NEW_MATERIAL}`, async () => {
-        await k.menu('First Delivery Inspections'); await k.settle(4000);
+        // The component drawer from the delivery steps can still cover the left menu: close it with the runner's overlay
+        // recovery and try again. No page reload here: after a reload the new material read 0 in Inventory (INT-03).
+        await k.menu('First Delivery Inspections').catch(async () => { await run.recover(); await k.menu('First Delivery Inspections'); });
+        await expect(page).toHaveURL(/\/first-delivery-inspections/); await k.settle(4000);
         await expect(page.locator('main tbody tr').filter({ hasText: NEW_MATERIAL })).toHaveCount(1, { timeout: 30000 });
       });
     });
@@ -518,10 +522,23 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
       await s.step(`Left menu › "Inventory Management", search ${NEW_MATERIAL} → "Inventory" column equals the received quantity 4`, async () => {
         const receivedQuantity = 4;
         await k.menu('Inventory Management');
+        // Stock is per header site, and a reload can reset the header site (SCP-DEF-058). Read the site the delivery
+        // was logged on (the current one) first; if the quantity is not there, read again on the run site.
         const inventory = new InventoryManagementPage(page);
+        const sites = new SiteSelectorPage(page);
         await k.settle(2000);
-        const stock = await inventory.readListInventory(NEW_MATERIAL);
-        s.observe(`${NEW_MATERIAL} inventory ${stock}`);
+        const readings = [];
+        const readOn = async timeout => {
+          const site = await sites.activeSiteName().catch(() => '?');
+          let stock;
+          await expect.poll(async () => (stock = await inventory.readListInventory(NEW_MATERIAL)), { timeout, intervals: [3000] })
+            .toBe(receivedQuantity).catch(() => null);
+          readings.push(`${site}: ${stock}`);
+          return stock;
+        };
+        let stock = await readOn(12000);
+        if (stock !== receivedQuantity) { await k.keepSite().catch(() => null); await k.settle(1500); stock = await readOn(20000); }
+        s.observe(`${NEW_MATERIAL} inventory · ${readings.join(' · ')}`);
         expect(stock, 'Inventory of the new material differs from the received quantity').toBe(receivedQuantity);
       });
     });
@@ -542,7 +559,7 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
         await expect(r).toHaveCount(1, { timeout: 30000 });
         ids.shipRow = (await r.innerText()).replace(/\s+/g, ' '); s.observe(ids.shipRow);
       });
-      await s.step(`Check the International Shipments row → it contains the component Required Date (today+28 days, dd/mm/yyyy)`, async () => expect(ids.shipRow).toContain(gb(plusDays(28))));
+      await s.step(`Check the International Shipments row → it contains the component Required Date (today+28 days, dd/mm/yyyy)`, async () => expect(ids.shipRow, 'International Shipments row shows the component Required Date').toContain(gb(plusDays(28))));
     });
     await run.scenario(meta('PL-REG-INT-04', 'Log Configuration fields appear as grid columns', 'Integration'), async s => {
       await s.step(`Left menu › "Project Management" › "Procurement Log Configuration": read enabled fields; open Procurement Log → at most 20% of enabled fields are missing as grid columns`, async () => {

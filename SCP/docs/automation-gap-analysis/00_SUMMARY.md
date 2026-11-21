@@ -224,3 +224,32 @@ Also on 21 Nov:
   - `KNOWN_DEFECTS.md` is generated (`npm run defects:report`);
   - the full regression now also writes `NON_PASSED_TEST_CASES.md`, which lists every Failed, Blocked and Skipped case module by module, with steps.
 - **Docs:** `DEMO_RUN_GUIDE.md` added, and 20 register rows updated with the new defect IDs.
+
+## 14. Final pre-demo run and triage (21 Nov 2026)
+
+**Smoke suites (16:26–16:37):** Procurement Log 18/18, All Modules 40/40, PM 19 passed + 1 skipped.
+
+**Full regression + E2E smoke (16:37–20:01, `reports/full-regression-2026-11-21T11-07-08-543Z`):** 600 cases. E2E smoke 27 passed, 3 known defects (TC-23, TC-24, TC-25), 0 failed. 23 cases failed in the module suites. Each was triaged with the run history since 17 Nov:
+
+| Group | Cases | Finding | Action |
+|---|---|---|---|
+| App behaviour, fails in every run | PL-REG-LST-09, CMP-09, DLV-18, EDT-07, ALR-02, DOC-REG-04, DSH-REG-09, PM-REG-SITE-11 | Same result on every run 17–21 Nov | Registered SCP-DEF-064…071, **pending confirmation** (`PENDING_CONFIRMATIONS.md` items 10–17). EDT-07 got an assertion message so it can be matched |
+| App behaviour, fails in most runs | PL-REG-CMP-18 | Component Delete shows no message and the row stays (4 of 5 runs) | SCP-DEF-072, pending confirmation (item 18) |
+| Test: open list covers a button | PL-REG-LST-07, LST-08 | The Status list from LST-06 stayed open over "Filters" | `closeOpenList()` in PL part 2. Passed on re-run |
+| Test: slow page | SHP-REG-05, SHP-REG-11 | International Shipments needed **123–158 s** to load (limit was 90 s) | Wait up to 3 min; the report prints "SLOW PAGE: …". Passed on re-run. Listed as a demo risk |
+| Test: banner read as toast | SL-REG-05 (re-run only) | Active test banners have role "status" like toasts | Toast readers ignore "Project notice"/"Platform-wide" banners |
+| Test: list not loaded | SL-REG-08 | Material options read before they loaded | Wait for the first option. Passed on re-run |
+| Test: dialog closed by itself | PL-REG-DLV-02 (re-run only) | Add Delivery closed between the check and the click | `closeDialog()` uses a short optional click + Escape. Passed on re-run |
+| Test: drawer covers the menu | PL-REG-INT-01 (re-run only) | Component drawer over the left menu | Route fallback with `keepSite` |
+| Intermittent | T548-05, T548-14 | Rename/Delete button not found once | Full Tickets re-run: 46 passed, 0 failed. Watch |
+| Intermittent | PM-REG-SYS-08, SYS-12 | Banner of the run message not shown in the full run | Passed on re-run (banners shown, colours differ). Watch |
+
+**Re-runs after the fixes (20:46–23:00):** Tickets 46 passed / 0 failed; All Modules 57 / 0; PL part 2 30 / 1 (CMP-18, now SCP-DEF-072); PL part 1 15 / 0; PL part 3 46 / 0 (17:29Z run). PL part 3 needed three more fixes on the way: INT-01 (drawer over the menu, closed with the runner's overlay recovery), INT-03 (stock read on the delivery's site, then on the run site) and DLV-16 (intermittent "12 undefined", SCP-DEF-073, pending confirmation).
+
+**Consolidated result** (`reports/full-regression-2026-11-21T11-07-08-543Z/NON_PASSED_TEST_CASES.md`, full run + re-runs): 594 cases · 433 passed · 45 known defect · **0 failed · 0 blocked** · 116 skipped (all with a written reason).
+
+**Watch item (not a failure):** in the passing PL part 3 run the header site was "Site T2 Pmr2-…" instead of "Warehoust _NR" when the delivery was logged, so the GRN stock went to that site (SCP-DEF-058, header site resets). After a page reload the new material showed 0 on Warehoust _NR. The flow is correct for the site it ran on; the site reset is the open defect.
+
+**Housekeeping:** a partial re-run of the System Messages cases left two active test banners; `PM-REG-SYS-00` deactivated them (21:34). No test banner was seen afterwards.
+
+**Reports:** `scripts/non-pass-report.js` now accepts re-run folders after the full-regression folder (a later result replaces the earlier one) and shows failures that match a defect registered after the run as Known Defect ("re-classified").

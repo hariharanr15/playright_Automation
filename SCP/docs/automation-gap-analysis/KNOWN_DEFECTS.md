@@ -7,7 +7,7 @@ A test that fails exactly as described here is reported as **Known Defect** inst
 - **Registered**: agreed with the user/team, or a confirmed rule that the application breaks.
 - **Pending confirmation**: today's behaviour looks logically wrong, but the expected behaviour has not been confirmed by the client/team yet. See `PENDING_CONFIRMATIONS.md`. These entries are reviewed (kept, changed or removed) once the team answers.
 
-**Total:** 63 entries · 57 registered · 6 pending confirmation. Nothing here is raised in Jira.
+**Total:** 73 entries · 57 registered · 16 pending confirmation. Nothing here is raised in Jira.
 
 ## Project Management
 
@@ -30,6 +30,7 @@ A test that fails exactly as described here is reported as **Known Defect** inst
 | SCP-DEF-041 | Registered | 2026-10-31 | Project Management | Procurement Log Configuration: field names are unique | Procurement Log Configuration > Add Log Fields accepts the name of a standard field ("Spec Section No"): it is stored as another non-custom "spec_section_no" field (no "(Custom)" label) and the standard field moves to the end of the column order (NRVC_Hall, 31 Oct 2026; the automation disables the added duplicates again). Product owner: names are unique (R2). Scenario PM-REG-PLC-08. |
 | SCP-DEF-059 | Registered | 2026-11-21 | PM-REG-SYS-05 | System Messages: Ends before Starts | System Messages › New message with Ends earlier than Starts: the message is not created, but no error or warning is shown. Rule R27 / REQ-PM-091 is confirmed (product owner, 30 Oct 2026). Observed 20 Nov 2026, NRVC_Hall. |
 | SCP-DEF-063 | Pending confirmation | 2026-11-21 | PM-REG-PSC-02 | PreShipping Checklist: Enabled tick saves automatically | PENDING TEAM CONFIRMATION. PreShipping Checklist: unticking "Enabled" on the last question (Count 1) shows no message and the box is ticked again after a reload (both attempts, 21 Nov 2026, NRVC_Hall). Switching a question ON was saved on 13 and 17 Nov. Question: may a question that is already in use be disabled? |
+| SCP-DEF-071 | Pending confirmation | 2026-11-21 | PM-REG-SITE-11 | Export sites | PENDING TEAM CONFIRMATION. Site Details › Export: the .xlsx has fewer distinct sites than the page (79 vs 92 on 21 Nov 2026), includes a row from another project and shows an internal ID in the Location Type column. Failed in every PM regression run (17–21 Nov 2026). Possible cross-project data in the export; to be assessed by the team. |
 
 ## Inventory Management
 
@@ -53,6 +54,7 @@ A test that fails exactly as described here is reported as **Known Defect** inst
 | SCP-DEF-003 | Registered | 2026-10-25 | Management Dashboard | ageing request honours the selected date range/Task Chart fixed October 2025 start | Dashboard ageing requests ignore the selected date range (Task Chart sends no from_date/to_date, so out-of-range tasks are counted: pie and status-breakdown totals then differ from the in-range count, e.g. 35 vs 33 on 31 Oct 2026). |
 | SCP-DEF-010 | Registered | 2026-10-28 | Management Dashboard | Management Dashboard: required Alerts distribution/category/ageing charts | The Alerts section does not render the required distribution, category and ageing charts. |
 | SCP-DEF-049 | Registered | 2026-11-11 | TC-24 | Management Dashboard spend matches the Procurement Log value in the project currency | The Materials table "Spend" of a category rises by the sum of QTY × component Value and is shown in $, while the Procurement Log shows the component Value as the total in ₹ ("Value Delivered" ₹1,000.00 for QTY 10, Value 1000). E2E2611111224-SUB (10 × ₹1,000 and 5 × ₹500 components) raised the spend of its category by $12,500 against ₹1,500 delivered (NRVC_Hall, 11 Nov 2026). |
+| SCP-DEF-070 | Pending confirmation | 2026-11-21 | DSH-REG-09 | Trigger Alert reaches the user | PENDING TEAM CONFIRMATION. The "Delivery for Item …" trigger alert set up by the run is not listed in Management Dashboard › Notifications, neither on the first page nor with filter All + search (PL-R14, OBS-DSH-1). Failed in every All Modules regression run (17–21 Nov 2026). Question: is the alert delivered as a notification, and when? |
 
 ## Enterprise
 
@@ -85,6 +87,7 @@ A test that fails exactly as described here is reported as **Known Defect** inst
 | ID | Status | Recorded | Applies to | Test / title | What happens |
 |---|---|---|---|---|---|
 | SCP-DEF-011 | Registered | 2026-10-28 | Document Management | Spec Documents: exact existing document download filenames and byte sizes | Downloading an existing specification document returns HTTP 404. |
+| SCP-DEF-069 | Pending confirmation | 2026-11-21 | DOC-REG-04 | Uploaded By is the real user | PENDING TEAM CONFIRMATION. All Documents, Category "PO File": the Uploaded By column shows "Unknown" (Category "Pdf": "test") instead of the uploading user (OBS-DOC-1/2). Failed in every All Modules regression run (17–21 Nov 2026). |
 
 ## First Delivery Inspection
 
@@ -115,6 +118,13 @@ A test that fails exactly as described here is reported as **Known Defect** inst
 | SCP-DEF-047 | Registered | 2026-11-02 | Procurement Log | Export matches the Procurement Log grid columns | Procurement Log Export (Submittal_Report_<date>.xlsx) has 47 Procore-style columns instead of the grid columns: custom fields missing, "Supplier" empty while "Supplier Name" is filled, literal "None", raw status values and unformatted dates (NRVC_Hall, 2 Nov 2026). Product owner: export must match the grid incl. custom fields (PL-R9). Discovery OBS-PL-9. |
 | SCP-DEF-060 | Registered | 2026-11-21 | PL-REG-DLV-19 | Required Remaining Qty subtracts logged deliveries (PL-R15) | "+ Log Delivery" shows Required Remaining Qty "12 Pieces" after 4 of 12 were logged; confirmed rule PL-R15 expects 8. Failed in every Procurement Log part 3 run (14/14 up to 21 Nov 2026), NRVC_Hall. |
 | SCP-DEF-061 | Registered | 2026-11-21 | PL-REG-CMP-19 | Values use the project currency symbol | The expanded component "Value" shows "$1,000.00" on a project whose currency is INR; confirmed rule R58 expects the project currency symbol (₹). Failed in every Procurement Log part 3 run (14/14 up to 21 Nov 2026), NRVC_Hall. |
+| SCP-DEF-064 | Pending confirmation | 2026-11-21 | PL-REG-LST-09 | Advanced Filter numeric operator | PENDING TEAM CONFIRMATION. Procurement Log › Filters › Add Condition on a custom number field ("Total Count …") with ">=" 7 returns no rows although the run submittal holds 7. Failed in every Procurement Log part 3 run (17 Nov – 21 Nov 2026), NRVC_Hall. Note: the log has four "Total Count …" custom fields; question: is ">=" supported on custom number fields? |
+| SCP-DEF-065 | Pending confirmation | 2026-11-21 | PL-REG-CMP-09 | Update Status to Ordered At Risk | PENDING TEAM CONFIRMATION. Component › Other Actions › Update Status "Ordered At Risk" with a comment, ADD: after reopening the submittal the component status is still "Ordered". Failed in every Procurement Log part 3 run (17–21 Nov 2026). Question: may an Ordered component move to Ordered At Risk? |
+| SCP-DEF-066 | Pending confirmation | 2026-11-21 | PL-REG-DLV-18 | Files tab lists the component files | PENDING TEAM CONFIRMATION. Component view: clicking the "Files" tab keeps the delivery table (Location column) on screen; the files list does not appear (OBS-PL-30). Failed in every Procurement Log part 3 run (17–21 Nov 2026). |
+| SCP-DEF-067 | Pending confirmation | 2026-11-21 | PL-REG-EDT-07 | International Shipments shows the procurement date and status | PENDING TEAM CONFIRMATION. After Flag International the International Shipments row shows Required Date "-" and status "Pending Order" although the component has a Required Date and is Ordered (OBS-PL-19). Failed in every Procurement Log part 3 run (17–21 Nov 2026). |
+| SCP-DEF-068 | Pending confirmation | 2026-11-21 | PL-REG-ALR-02 | Create Alert validates required fields | PENDING TEAM CONFIRMATION. Row menu › Alert › Add Alert › Submit with empty fields shows the server message "Failed to create alert. Please try again." instead of required-field messages (OBS-PL-28). Failed in every Procurement Log part 3 run (17–21 Nov 2026). |
+| SCP-DEF-072 | Pending confirmation | 2026-11-21 | PL-REG-CMP-18 | Delete component | PENDING TEAM CONFIRMATION. Submittal page › component row "Other Actions ▾" › Delete › confirm "Delete": no message is shown and the component row is still listed after a reload (component with lead time Confirmed, not ordered). Failed in 4 of the last 5 Procurement Log part 2 runs (17–21 Nov 2026), passed on 18 Nov. Question: may a component with a confirmed lead time be deleted? If not, should a message say so? |
+| SCP-DEF-073 | Pending confirmation | 2026-11-21 | PL-REG-DLV-16 | Component header shows the unit of measure | PENDING TEAM CONFIRMATION. Intermittent: after reloading the component view, the header shows "Required QTY: 12 undefined" instead of "12 Pieces" (21 Nov 2026 17:02 run, both attempts; passed in other runs, sometimes only on retry). Question: is the unit loaded after the header is drawn? |
 
 ## Other
 

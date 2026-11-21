@@ -91,7 +91,10 @@ function plKit(page) {
     },
     async closeDialog(heading) {
       const h = page.getByRole('heading', { name: heading, exact: true });
-      if (await h.isVisible().catch(() => false)) await h.locator('xpath=..').getByRole('button').first().click();
+      // The dialog may close by itself between the check and the click (seen 21 Nov 2026 on Add Delivery), so the click is
+      // short and optional; Escape is the fallback.
+      if (await h.isVisible().catch(() => false)) await h.locator('xpath=..').getByRole('button').first().click({ timeout: 5000 }).catch(() => null);
+      if (await h.isVisible().catch(() => false)) await page.keyboard.press('Escape');
       await expect(h).toBeHidden({ timeout: 10000 });
     },
     async addSubmittal({ spec, description, scheduleId, number, supplier = SUPPLIER, materials = [MATERIAL] }) {

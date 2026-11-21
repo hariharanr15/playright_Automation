@@ -1,6 +1,6 @@
 # SCP – Items pending client / team confirmation
 
-**Created:** 21 Nov 2026 · **Module:** Inventory Management · **Suite:** `npm run inventory:regression`
+**Created:** 21 Nov 2026 · **Modules:** Inventory Management (items 1–8), Project Management (9, 17), Procurement Log (10–14, 18, 19), Document Management (15), Management Dashboard (16)
 **Environment:** staging, project NRVC_Hall, site "Warehoust _NR", material "43 Inches"
 
 ## Why this list exists
@@ -58,6 +58,43 @@ Sign in → Supply Chain Planner → header project **NRVC_Hall** → header sit
 **6. INV-REG-22 – Export**
 1. On the Inventory Management list, click **Export** and open the xlsx.
 2. Check the header row.
+
+## Other modules (added 21 Nov 2026 after the full regression)
+
+These failed in **every** full regression run from 17 to 21 Nov 2026 with the same behaviour, so they are app behaviour, not test timing. Shared steps: sign in → project **NRVC_Hall**. For Procurement Log items, use any submittal created by a run (e.g. `PLT2611211408-SUB-P`, material 43 Inches, supplier LG).
+
+| # | Defect ID | Test | Status | What we see today | Question for the team |
+|---|---|---|---|---|---|
+| 10 | SCP-DEF-064 | PL-REG-LST-09 | Pending confirmation | Filters › Add Condition on the custom number field "Total Count …" with ">=" 7 returns no rows, although the submittal holds 7. There are four "Total Count …" custom fields in the log configuration. | Is ">=" supported on custom number fields? Which "Total Count" field is the real one? |
+| 11 | SCP-DEF-065 | PL-REG-CMP-09 | Pending confirmation | Update Status "Ordered At Risk" with a comment, ADD: after reopening, the component is still "Ordered". | May an Ordered component move to Ordered At Risk? If not, should a message say so? |
+| 12 | SCP-DEF-066 | PL-REG-DLV-18 | Pending confirmation | In the component view, clicking the "Files" tab leaves the delivery table on screen (OBS-PL-30). | Should the Files tab show the PO file, GRN and checklist PDFs? |
+| 13 | SCP-DEF-067 | PL-REG-EDT-07 | Pending confirmation | After Flag International, International Shipments shows Required Date "-" and status "Pending Order" for a component that has a Required Date and is Ordered (OBS-PL-19). | Should International Shipments show the component's Required Date and procurement status? |
+| 14 | SCP-DEF-068 | PL-REG-ALR-02 | Pending confirmation | Add Alert › Submit with empty fields shows "Failed to create alert. Please try again." (OBS-PL-28). | Should the form show required-field messages instead of a server error? |
+| 15 | SCP-DEF-069 | DOC-REG-04 | Pending confirmation | All Documents, Category "PO File": Uploaded By is "Unknown"; Category "Pdf": "test" (OBS-DOC-1/2). | Should Uploaded By show the user who uploaded the PO file? |
+| 16 | SCP-DEF-070 | DSH-REG-09 | Pending confirmation | The "Delivery for Item …" trigger alert created by the run never appears in Management Dashboard › Notifications (PL-R14, OBS-DSH-1). | Is a trigger alert delivered as a notification, and how soon? |
+| 17 | SCP-DEF-071 | PM-REG-SITE-11 | Pending confirmation | Site Details › Export: 79 distinct sites in the file vs 92 on the page, one row from another project, and Location Type shown as an internal ID. | Should the export match the page, for this project only, with readable Location Types? (Possible cross-project data; for the team to assess.) |
+| 18 | SCP-DEF-072 | PL-REG-CMP-18 | Pending confirmation | Component row › Other Actions › Delete › confirm: no message, and the component is still listed after a reload (lead time Confirmed, not ordered). Failed in 4 of the last 5 runs. | May a component with a confirmed lead time be deleted? If not, should a message say so? |
+| 19 | SCP-DEF-073 | PL-REG-DLV-16 | Pending confirmation (intermittent) | After reloading the component view the header sometimes shows "Required QTY: 12 undefined" instead of "12 Pieces". | Is the unit loaded after the header is drawn? It should always show the unit. |
+
+**10. PL-REG-LST-09** – Procurement Log › **Filters** › **Add Condition** › field "Total Count …", operator **>=**, value **7** › **Apply Filter**. Expected (not confirmed): the submittal with 7 is listed.
+
+**11. PL-REG-CMP-09** – Open the submittal › component row **Other Actions ▾** › **Update Status** › "Ordered At Risk", comment, **ADD**. Reopen the submittal and read the component status.
+
+**12. PL-REG-DLV-18** – Open a delivered component › click the **Files** tab. Expected (not confirmed): the files list replaces the delivery table.
+
+**13. PL-REG-EDT-07** – Procurement Log › row menu › **Flag International** (country South Korea) › sidebar **International Shipments** › read the row's Required Date and status.
+
+**14. PL-REG-ALR-02** – Procurement Log › row menu › **Alert** › **Add Alert** › **Submit** without filling anything.
+
+**15. DOC-REG-04** – Document Management › **All Documents** › Category **PO File** › read **Uploaded By** of the first row.
+
+**16. DSH-REG-09** – Create a trigger alert on a submittal ("Delivery for Item …"), then Management Dashboard › **Notifications** › filter **All**, search "Delivery for Item".
+
+**17. PM-REG-SITE-11** – Project Management › **Site Details** › **Export**. Compare the distinct site names with the page, and read the Location Type column.
+
+**18. PL-REG-CMP-18** – Open a run submittal (e.g. `PLS…-SUB-N`) › component row **Other Actions ▾** › **Delete** › confirm **Delete**. Reload and check the component list.
+
+**19. PL-REG-DLV-16** – Open a component view (click the material cell), press F5 and read **Required QTY** in the header. Repeat a few times.
 
 ## Corrected test (not an application issue)
 

@@ -68,6 +68,13 @@ test('Procurement Log – regression part 2', async ({ page, browserName }) => {
     const k = plKit(page);
     const { main } = k;
     const btn = name => main.getByRole('button', { name, exact: true }).first();
+    // A status list left open (Escape does not always close it) covers the "Filters" button; close it before the next click.
+    const closeOpenList = async () => {
+      for (let i = 0; i < 3 && await k.listbox().isVisible().catch(() => false); i++) {
+        await page.keyboard.press('Escape'); await k.settle(300);
+        if (await k.listbox().isVisible().catch(() => false)) await page.getByRole('heading', { name: 'Procurement Log' }).first().click();
+      }
+    };
     const E = { spec: `${RUN}-SPEC-E`, description: `${RUN} edit flag alert`, scheduleId: num(1), number: `${RUN}-SUB-E` };
     const N = { spec: `${RUN}-SPEC-N`, description: `${RUN} not ordered`, scheduleId: num(2), number: `${RUN}-SUB-N` };
     const X = { spec: `${RUN}-SPEC-X`, description: `${RUN} row delete`, scheduleId: num(3), number: `${RUN}-SUB-X` };
@@ -101,12 +108,12 @@ test('Procurement Log – regression part 2', async ({ page, browserName }) => {
         expect(new Set(vals)).toEqual(new Set(['Delivered']));
         await expect(main.getByRole('button', { name: /^Status1/ })).toBeVisible();
       });
-      await s.step(`Click "Status1" filter, untick "Delivered", close the list → filter removed`, async () => { await main.getByRole('button', { name: /^Status1/ }).click(); await k.listbox().getByRole('option', { name: 'Delivered', exact: true }).click(); await page.keyboard.press('Escape'); await k.settle(1000); });
+      await s.step(`Click "Status1" filter, untick "Delivered", close the list → filter removed`, async () => { await main.getByRole('button', { name: /^Status1/ }).click(); await k.listbox().getByRole('option', { name: 'Delivered', exact: true }).click(); await page.keyboard.press('Escape'); await k.settle(1000); await closeOpenList(); });
     });
     await run.scenario(meta('PL-REG-LST-07', 'Advanced Filter Contains ignores case', 'Positive'), async s => {
       let upper;
       const apply = async value => {
-        await btn('Filters').click(); await btn('Add Condition').click();
+        await closeOpenList(); await btn('Filters').click(); await btn('Add Condition').click();
         const row = page.getByRole('textbox', { name: 'Value' }).locator('xpath=..');
         await row.locator('select').nth(1).selectOption('Supplier Name'); await row.locator('select').nth(2).selectOption('Contains');
         await page.getByRole('textbox', { name: 'Value' }).fill(value); await btn('Apply Filter').click(); await k.settle(1500);
@@ -337,7 +344,9 @@ test('Procurement Log – regression part 2', async ({ page, browserName }) => {
           await k.componentRow().getByRole('button', { name: 'Other Actions ▾' }).click();
           await page.getByRole('menuitem', { name: 'Delete' }).click();
           await page.getByRole('button', { name: 'Delete', exact: true }).click();
-          await expect(page.getByRole('row').filter({ has: page.getByRole('checkbox', { name: 'Select this component' }) })).toHaveCount(0, { timeout: 15000 });
+          await page.getByRole('status').first().waitFor({ timeout: 8000 }).catch(() => null);
+          s.observe(`Message after Delete: ${(await page.getByRole('status').allInnerTexts().catch(() => [])).filter(text => !/^\s*(Project notice|Platform-wide)/i.test(text)).join(' | ').replace(/\s+/g, ' ') || '(none)'}`);
+          await expect(page.getByRole('row').filter({ has: page.getByRole('checkbox', { name: 'Select this component' }) }), 'Component row still listed after Delete').toHaveCount(0, { timeout: 15000 });
         });
       });
     } else for (const id of ['PL-REG-CMP-15', 'PL-REG-CMP-13', 'PL-REG-CMP-12', 'PL-REG-CMP-17', 'PL-REG-CMP-16', 'PL-REG-DLV-02', 'PL-REG-CMP-18']) run.skip(meta(id, 'Component scenario', 'Positive'), 'No Not Ordered component');

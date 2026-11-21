@@ -5,10 +5,13 @@
 // Usage (from SCP):
 //   node scripts/non-pass-report.js reports/full-regression-<timestamp>
 //   node scripts/non-pass-report.js reports/pm-flow/<suite-run> [reports/pm-flow/<another-run> …]
+//   node scripts/non-pass-report.js reports/full-regression-<timestamp> reports/pm-flow/<re-run> …
+// Folders are read in the order given: a case that appears again in a later folder (a re-run) replaces the earlier result.
+// A Failed case whose error matches a defect registered after the run is shown as Known Defect ("re-classified").
 // Output: NON_PASSED_TEST_CASES.md in the first folder given.
 const fs = require('fs');
 const path = require('path');
-const { defectLabel } = require('../config/scp-known-defects');
+const { KNOWN_DEFECTS, defectLabel } = require('../config/scp-known-defects');
 
 const inputs = process.argv.slice(2);
 if (!inputs.length) {
@@ -23,10 +26,11 @@ for (const input of inputs) {
   const suitesFile = path.join(folder, 'suites.json');
   if (fs.existsSync(suitesFile)) {
     for (const suite of JSON.parse(fs.readFileSync(suitesFile, 'utf8')).suites || []) {
-      if (suite.reportDir && fs.existsSync(path.join(suite.reportDir, 'results.json'))) runs.push({ title: suite.title || suite.suite, dir: suite.reportDir });
+      if (suite.reportDir && fs.existsSync(path.join(suite.reportDir, 'results.json'))) runs.push({ title: suite.title || suite.suite, key: suite.suite || path.basename(suite.reportDir).replace(/-\d{4}-\d\d-\d\dT.*$/, ''), dir: suite.reportDir });
     }
   } else if (fs.existsSync(path.join(folder, 'results.json'))) {
-    runs.push({ title: path.basename(folder).replace(/-\d{4}-\d\d-\d\dT.*$/, ''), dir: folder });
+    const key = path.basename(folder).replace(/-\d{4}-\d\d-\d\dT.*$/, '');
+    runs.push({ title: key, key, dir: folder });
   }
 }
 if (!runs.length) {
@@ -46,13 +50,37 @@ const observed = step => plain(step.reason || '').replace(/^Observed: /, '').rep
 const STATUS_ORDER = { Failed: 0, Blocked: 1, Skipped: 2 };
 
 // ---------- Read the scenarios ----------
-const cases = [];
+// Same rule as the runner: a defect applies when it lists the scenario, or (without a scenario list) the module.
+const registeredDefect = item => {
+  const step = (item.steps || []).find(entry => entry.status === 'Failed');
+  const error = plain(((step && step.attempts) || []).slice(-1)[0]?.error || '');
+  if (!error) return null;
+  return KNOWN_DEFECTS.find(defect => defect.signature
+    && (defect.scenarioIds ? defect.scenarioIds.includes(item.id) : (defect.modules || []).includes(item.module))
+    && defect.signature.test(error)) || null;
+};
+const byId = new Map();
+let replaced = 0;
+let reclassified = 0;
 for (const run of runs) {
   const result = JSON.parse(fs.readFileSync(path.join(run.dir, 'results.json'), 'utf8'));
   for (const scenario of result.scenarios || result) {
-    cases.push({ ...scenario, suiteTitle: run.title, runDir: run.dir });
+    // A partial re-run lists the cases it did not select as Skipped "not selected"; they must not hide the real result.
+    const id = `${run.key}|${scenario.id}`;
+    if (byId.has(id) && scenario.status === 'Skipped') continue;
+    if (byId.has(id)) replaced++;
+    const item = { ...scenario, suiteTitle: run.title, runDir: run.dir };
+    if (item.status === 'Failed') {
+      const defect = registeredDefect(item);
+      if (defect) {
+        item.status = 'Known Defect'; item.defects = [defect.id]; item.reclassified = true; reclassified++;
+        const step = item.steps.find(entry => entry.status === 'Failed'); step.status = 'Known Defect'; step.defect = defect.id;
+      }
+    }
+    byId.set(id, item);
   }
 }
+const cases = [...byId.values()];
 const totals = {};
 for (const item of cases) totals[item.status] = (totals[item.status] || 0) + 1;
 const nonPassed = cases.filter(item => item.status in STATUS_ORDER);
@@ -64,6 +92,8 @@ const lines = [
   '',
   `_Generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC by \`scripts/non-pass-report.js\` from ${runs.length} suite run(s)._`,
   '',
+  ...(replaced ? [`_${replaced} result(s) come from a later re-run of the same case (the re-run replaces the first result)._`, ''] : []),
+  ...(reclassified ? [`_${reclassified} case(s) failed before their defect was registered and are shown as Known Defect ("re-classified")._`, ''] : []),
   '## Summary',
   '',
   '| Result | Test cases |',
@@ -123,7 +153,7 @@ if (knownDefects.length) {
   lines.push('## For reference: Known Defect results', '', '| Module | ID | Test case | Defect | What was observed |', '|---|---|---|---|---|');
   for (const item of knownDefects.sort((first, second) => String(first.module).localeCompare(String(second.module)) || String(first.id).localeCompare(String(second.id)))) {
     const step = (item.steps || []).find(entry => entry.status === 'Known Defect') || {};
-    lines.push(`| ${cell(item.module)} | ${cell(item.id)} | ${cell(item.title)} | ${cell((item.defects || [step.defect]).filter(Boolean).map(defectLabel).join(', '))} | ${cell(lastError(step) || observed(step))} |`);
+    lines.push(`| ${cell(item.module)} | ${cell(item.id)} | ${cell(item.title)} | ${cell((item.defects || [step.defect]).filter(Boolean).map(defectLabel).join(', '))}${item.reclassified ? ' (re-classified)' : ''} | ${cell(lastError(step) || observed(step))} |`);
   }
   lines.push('');
 }

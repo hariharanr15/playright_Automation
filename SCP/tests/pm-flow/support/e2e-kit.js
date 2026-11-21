@@ -30,7 +30,8 @@ function e2eKit(page, { config, navigator, outDir }) {
   const k = plKit(page);
   const { main, listbox, settle, toast } = k;
   const layers = () => page.locator(OVERLAY).filter({ visible: true });
-  const anyToast = async () => clean((await page.getByRole('status').allInnerTexts().catch(() => [])).join(' | '));
+  // System Message banners ("Project notice" / "Platform-wide") also have role status; they are not toasts.
+  const anyToast = async () => clean((await page.getByRole('status').allInnerTexts().catch(() => [])).filter(text => !/^\s*(Project notice|Platform-wide)/i.test(text)).join(' | '));
   const button = (name, scope = main) => scope.getByRole('button', { name, exact: true }).first();
   // Searches a list only after it has loaded (a late load replaced an early search result on 11 Nov), then waits for the row.
   // Returns false when the row does not appear within 8 s (used to check whether a record already exists).
