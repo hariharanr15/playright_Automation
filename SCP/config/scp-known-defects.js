@@ -210,7 +210,8 @@ const KNOWN_DEFECTS = [
     signature: /^New supplier user cannot see its submittal/,
     summary: 'Supplier List row action "Promote to SSO Organisation" shows no dialog and sends no request, so a supplier added in Supplier List never becomes an SSO organisation. A user invited with role Supplier who sets up an SSO organisation with the same name ("Supplier E2E2611110828") sees 0 submittals in the Procurement Log, including the submittal of that supplier and its delivery opened by direct URL, and so cannot complete the pre-shipping checklist (NRVC_Hall, 11 Nov 2026).' },
   // 11 Nov 2026: found by the end-to-end smoke; registered as a known issue with user approval.
-  { id: 'SCP-DEF-049', recordedOn: '2026-11-11', modules: ['Management Dashboard'], reportNotReproduced: true,
+  // scenarioIds: the E2E TC-24 (module "Analytics") repeats the dashboard spend check and fails with the same signature.
+  { id: 'SCP-DEF-049', recordedOn: '2026-11-11', modules: ['Management Dashboard'], scenarioIds: ['TC-24'], reportNotReproduced: true,
     title: 'Management Dashboard spend matches the Procurement Log value in the project currency',
     signature: /^Dashboard spend differs from the Procurement Log Value Delivered/,
     summary: 'The Materials table "Spend" of a category rises by the sum of QTY × component Value and is shown in $, while the Procurement Log shows the component Value as the total in ₹ ("Value Delivered" ₹1,000.00 for QTY 10, Value 1000). E2E2611111224-SUB (10 × ₹1,000 and 5 × ₹500 components) raised the spend of its category by $12,500 against ₹1,500 delivered (NRVC_Hall, 11 Nov 2026).' },
@@ -226,7 +227,40 @@ const KNOWN_DEFECTS = [
   { id: 'SCP-DEF-052', recordedOn: '2026-11-13', modules: ['User Management'], reportNotReproduced: true,
     title: 'Filter narrows rows',
     signature: /^Filter tabs offer no values \(OBS-UM-4\)/,
-    summary: 'User Management "Filter" dialog: the "status" tab offers no values (no "Invited" option), so the list cannot be filtered by status (UM-REG-11, NRVC_Hall, 13 Nov 2026).' }
+    summary: 'User Management "Filter" dialog: the "status" tab offers no values (no "Invited" option), so the list cannot be filtered by status (UM-REG-11, NRVC_Hall, 13 Nov 2026).' },
+  // 21 Nov 2026: Inventory regression findings captured so the flow can run while the client is unavailable.
+  // confirmation: 'pending' = the expected behaviour is not yet confirmed by the client/team; the entry records
+  // today's behaviour and must be reviewed (kept, changed or removed) once the team answers. See
+  // docs/automation-gap-analysis/PENDING_CONFIRMATIONS.md. Nothing is raised in Jira.
+  { id: 'SCP-DEF-053', recordedOn: '2026-11-21', modules: ['Inventory Management'], scenarioIds: ['INV-REG-12'], reportNotReproduced: true,
+    confirmation: 'pending',
+    title: 'Available stock hint = location balance',
+    signature: /^Form "Available at" hint differs from the Location view/,
+    summary: 'PENDING TEAM CONFIRMATION. Add Activity shows "Available at Gate 5: 68 Pieces" while the material Location view shows Gate 5 = 94, read 7 s apart with no activity between (43 Inches, Warehoust _NR, NRVC_Hall, 21 Nov 2026). The save check uses the form figure. The Location view rows also add up to more than the site total. OBS-INV-14.' },
+  { id: 'SCP-DEF-054', recordedOn: '2026-11-21', modules: ['Inventory Management'], scenarioIds: ['INV-REG-09'], reportNotReproduced: true,
+    confirmation: 'pending',
+    title: 'QTY with 3 decimals',
+    signature: /^Unexpected rejection message \(OBS-INV-10\)/,
+    summary: 'PENDING TEAM CONFIRMATION. QTY 1.555 is rejected and the stock is unchanged, but the message is only "Invalid data provided. Invalid data provided." (generic and shown twice). Decimal limit and wording are not confirmed. OBS-INV-10.' },
+  { id: 'SCP-DEF-055', recordedOn: '2026-11-21', modules: ['Inventory Management'], scenarioIds: ['INV-REG-15'], reportNotReproduced: true,
+    confirmation: 'pending',
+    title: 'Grid refreshes after an activity',
+    signature: /^Grid inventory is stale after a manual activity/,
+    summary: 'PENDING TEAM CONFIRMATION. After a Loss of 1 the Inventory Management list still shows the old quantity (587, expected 586) until a full page reload. OBS-INV-4.' },
+  { id: 'SCP-DEF-056', recordedOn: '2026-11-21', modules: ['Inventory Management'], scenarioIds: ['INV-REG-20'], reportNotReproduced: true,
+    confirmation: 'pending',
+    title: 'Ledger columns',
+    signature: /^Ledger Submittal column shows the Spec Section No/,
+    summary: 'PENDING TEAM CONFIRMATION. The ledger "Submittal" column shows the Spec Section No (PLD1102-SPEC-07) instead of the Submittal No (PLD1102-SUB-07). Either the column name or the value is wrong. OBS-INV-1.' },
+  { id: 'SCP-DEF-057', recordedOn: '2026-11-21', modules: ['Inventory Management'], scenarioIds: ['INV-REG-22'], reportNotReproduced: true,
+    title: 'Export is the balance list (INV-R2)',
+    signature: /^Export is the activity log, not the balance list/,
+    summary: 'Inventory Management "Export" downloads the activity log (Inventory Activity ID, Action, From/To Location, Action Quantity, …) instead of the stock balance list (Material ID, Material Name, Inventory). Rule INV-R2 is confirmed. OBS-INV-8.' },
+  { id: 'SCP-DEF-058', recordedOn: '2026-11-21', modules: ['Inventory Management'], scenarioIds: ['INV-REG-23'], reportNotReproduced: true,
+    confirmation: 'pending',
+    title: 'Site isolation',
+    signature: /^Header site reverts after a reload/,
+    summary: 'PENDING TEAM CONFIRMATION. After choosing another site in the header and reloading, the header shows a different site (chose Site T2 Pmr2-2611011614, after reload Site T2 Pmr2-2611201108). Site isolation of locations itself works. OBS-INV-12.' }
 ];
 
 module.exports = { KNOWN_DEFECTS };

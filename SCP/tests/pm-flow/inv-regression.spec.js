@@ -1,426 +1,840 @@
-// Inventory Management regression – INV-REG-01…25 (docs/functional-discovery/INV_SCENARIOS.md). Stock comes from the
-// Procurement regression runs (43 Inches delivered to the first location of the site). Writes approved on NRVC_Hall:
-// activities, uploads and one extra location for Internal Movement (INV-R4). The activity date input is never clicked
-// (SCP-DEF-002 freezes the tab); after a Submittal change the Schedule list is given time to reload (OBS-INV-3).
+// =====================================================================================================================
+// Inventory Management – regression (INV-REG-01 … INV-REG-25)
+//
+// What this suite proves: stock in SCP moves correctly. Every activity a site team records (issue to construction,
+// loss, return, incoming load, movement between locations, bulk upload) must change the stock ledger by exactly the
+// recorded quantity, invalid entries must be rejected without changing stock, and Inventory must stay consistent
+// with the Procurement Log.
+//
+// Human-readable test cases: docs/functional-discovery/steps/INV_REGRESSION_STEPS.md (same IDs and steps).
+// Test data: test-data/inventory-regression.json. Material, supplier and site: tests/pm-flow/support/pl-flow.js.
+//
+// Preconditions
+//  - Project Admin on the project in .env (NRVC_Hall); test site "Warehoust _NR" unless SCP_PL_SITE says otherwise.
+//  - The test material ("43 Inches") has stock at the first location of the site. The Procurement regression creates
+//    it through delivery → GRN, so run it before this suite.
+//  - Writes approved on NRVC_Hall: manual activities, uploads, and one extra location for Internal Movement (INV-R4).
+//
+// Safety rules
+//  - The Add Activity date field is never clicked: it freezes the browser tab (known defect SCP-DEF-002).
+//  - Steps that save something run once (`attempts: 1`). A retry could record the same activity twice.
+//
+// How to run: npm run inventory:regression   → report in reports/pm-flow/inv-regression-<time>/report.html
+// =====================================================================================================================
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { test, expect } = require('@playwright/test');
 const { runPmSuite } = require('./support/pm-flow');
-const { plKit } = require('./support/pl-flow');
+const { plKit, SITE } = require('./support/pl-flow');
 const { writeXlsx, readXlsxRows } = require('./support/pl-files');
 const { SiteSelectorPage } = require('../../pages/site-selector.page');
+const { InventoryManagementPage } = require('../../pages/inventory-management/inventory-management.page');
+const { InventoryBulkUploadPage } = require('../../pages/inventory-management/inventory-bulk-upload.page');
+const { SiteDetailsPage } = require('../../pages/project-management/site-details.page');
+const testData = require('../../test-data/inventory-regression.json');
 
 const SUITE = 'Inventory Management Regression';
 const MODULE = 'Inventory Management';
-const meta = (id, title, kind, extra = {}) => ({ id, module: MODULE, submodule: kind, suite: SUITE, title: `[${kind}] ${title}`, navPath: [MODULE], ...extra });
-const digits = new Date().toISOString().replace(/\D/g, '');
-const RUN = `INR${digits.slice(2, 12)}`;
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'inv-reg-'));
-const SITE2 = process.env.SCP_INV_SITE2;
-// Run submittals of the Procurement runs; imported ones (-SUB-I1/I2) have no schedule lines, so the form tries several.
-const RUN_SUBMITTAL = /^PL[DTRS]\d+-SUB-\w+$/;
-const PREFERRED = /^PLD1102-SUB-0[17]$/;
-const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Every record this run creates carries the run tag (for example "INR2611211030"), so it can be found again.
+const RUN_TAG = `INR${new Date().toISOString().replace(/\D/g, '').slice(2, 12)}`;
+const SECOND_LOCATION_NAME = `Loc ${RUN_TAG}`;
+const SECOND_SITE = process.env.SCP_INV_SITE2;
+const TEMP_FOLDER = fs.mkdtempSync(path.join(os.tmpdir(), 'inv-reg-'));
+
+// Patterns from the test data file.
+const RUN_SUBMITTAL = new RegExp(testData.submittals.runSubmittalPattern);
+const PREFERRED_SUBMITTAL = new RegExp(testData.submittals.preferredSubmittalPattern);
+const PLACEHOLDER_OR_RUN_LOCATION = new RegExp(testData.locations.placeholderOrRunLocationPattern, 'i');
+const MESSAGES = Object.fromEntries(Object.entries(testData.expectedMessages)
+  .filter(([key]) => key !== '_comment')
+  .map(([key, pattern]) => [key, new RegExp(pattern)]));
+const CHANGES = testData.stockChanges;
+const INVALID = testData.invalidQuantities;
+
+// Report entry for one scenario: ID, module, kind (Positive / Negative / Integration …) and title.
+const scenarioInfo = (id, title, kind, extra = {}) => ({
+  id, module: MODULE, submodule: kind, suite: SUITE, title: `[${kind}] ${title}`, navPath: [MODULE], ...extra
+});
+
+// A "real" location is one that can hold stock: not a placeholder entry and not a location created by an earlier run.
+const isRealLocation = option => !PLACEHOLDER_OR_RUN_LOCATION.test(option);
+const isNotPlaceholder = option => !/^(Choose|Select)/.test(option);
 
 test.describe.configure({ mode: 'serial' });
 test.setTimeout(90 * 60 * 1000);
 
 test('Inventory Management – regression', async ({ page, browserName }) => {
   await runPmSuite({ page, browserName, suite: SUITE, scenarios: async ({ run, config }) => {
-    const k = plKit(page);
-    const { main, listbox } = k;
-    const M = k.MATERIAL;
-    const btn = (name, scope = main) => scope.getByRole('button', { name, exact: true }).first();
-    const anyToast = async () => (await page.getByRole('status').allInnerTexts()).join(' | ');
-    const invCount = async () => Number(((await main.innerText()).match(/(\d+) items?/) || [])[1] || NaN);
-    const search = page.getByRole('textbox', { name: 'Search inventory…' });
-    const home = async () => {
-      await page.keyboard.press('Escape').catch(() => null);
-      await page.goto('/inventory-management', { waitUntil: 'domcontentloaded' });
-      await k.keepSite(); // the reload resets the header venue to the newest site (OBS-INV-12); locations follow the venue
-      await expect.poll(invCount, { timeout: 30000 }).toBeGreaterThan(0);
-    };
-    const gridQty = async () => { await search.fill(M); await k.settle(800); const r = k.rows().filter({ has: page.getByRole('cell', { name: M, exact: true }) }).first(); return Number((await r.getByRole('cell').nth(3).innerText()).replace(/,/g, '')); };
-    const view = async name => {
-      await search.fill(M); await k.settle(800);
-      await k.rows().filter({ has: page.getByRole('cell', { name: M, exact: true }) }).first().locator('img[alt="Menu"]').click();
-      await page.getByRole('menuitem', { name, exact: true }).click();
-      await k.settle(1500);
-    };
-    const ledger = async () => { await home(); await view('Actions'); };
-    const closing = async () => { await k.settle(1500); return Number(((await page.locator('body').innerText()).match(/Closing Balance\s*:?\s*(-?[\d,.]+)/) || [])[1]?.replace(/,/g, '')); };
-    const ledgerRows = () => page.getByRole('row').filter({ has: page.locator('td') });
-    // Picker by label: button → listbox option, select → label, input → fill. Returns the options offered.
-    const pick = async (label, choose) => {
-      const el = page.getByText(new RegExp(`^${esc(label)}\\s*\\*?$`)).last().locator('xpath=following::*[self::input[not(@type="checkbox") and not(@readonly)] or self::textarea or self::select or self::button or @role="button"][1]');
-      const tag = await el.evaluate(e => e.tagName);
-      if (tag === 'INPUT' || tag === 'TEXTAREA') { await el.fill(String(choose)); return []; }
-      if (tag === 'SELECT') {
-        const opts = (await el.locator('option').allInnerTexts()).map(t => t.trim()).filter(Boolean);
-        const want = typeof choose === 'function' ? opts.find(choose) : choose;
-        if (want !== undefined) await el.selectOption({ label: want });
-        return opts;
-      }
-      await el.click(); await k.settle(400);
-      const opts = (await listbox().getByRole('option').allInnerTexts()).map(t => t.trim()).filter(Boolean);
-      const want = typeof choose === 'function' ? opts.find(choose) : choose;
-      if (want === undefined) { await page.keyboard.press('Escape'); return opts; }
-      await listbox().getByRole('option', { name: want, exact: true }).first().click();
-      return opts;
-    };
-    const firstNot = bad => o => !bad.test(o);
-    const ctx = {};
-    // Add Activity on the ledger of M. `submittal`/`schedule` are matchers on the option text.
-    const activity = async ({ action, from, to, qty, comments = `${RUN} ${action}`, submittal = o => RUN_SUBMITTAL.test(o), schedule = () => true, waitSchedule = true, submit = true }) => {
-      await page.getByRole('button', { name: 'Add Activity' }).last().click();
-      await page.getByRole('button', { name: 'ADD', exact: true }).last().waitFor();
-      await pick('Item', M);
-      await pick('Action', action);
-      ctx.locations = await pick('From Location', from || firstNot(/^(All Locations|Choose|Select|Loc INR)/i));
-      if (to) await pick('To Location', to);
-      await pick('QTY', qty);
-      await pick('Comments', comments);
-      ctx.suppliers = await pick('Supplier', firstNot(/^(Choose|Select)/));
-      ctx.subcontractors = await pick('Subcontractor', firstNot(/^(Choose|Select)/));
-      ctx.submittals = await pick('Submittal', () => undefined);
-      const cands = typeof submittal === 'string' ? [submittal] : [...ctx.submittals.filter(o => submittal(o) && PREFERRED.test(o)), ...ctx.submittals.filter(o => submittal(o) && !PREFERRED.test(o)).reverse()].slice(0, 12);
-      ctx.schedules = []; ctx.sub = undefined;
-      for (const c of cands) {
-        await pick('Submittal', c);
-        if (waitSchedule) await page.waitForTimeout(2000); // the schedule list reloads ~1 s after the submittal changes
-        ctx.schedules = await pick('Schedule', schedule);
-        if (ctx.schedules.length) { ctx.sub = c; break; }
-      }
-      if (submit) { await page.getByRole('button', { name: 'ADD', exact: true }).last().click(); await k.settle(2000); }
-    };
-    const dialogOpen = () => page.getByRole('button', { name: 'ADD', exact: true }).last().isVisible().catch(() => false);
-    const closeActivity = async () => { if (await dialogOpen()) { await page.keyboard.press('Escape'); await k.settle(500); } };
-    const msg = async () => `${await anyToast()} ${await page.getByText(/required|cannot|not enough|must be|invalid/i).allInnerTexts().catch(() => [])}`.trim();
-    const fromLoc = () => (ctx.locations || []).find(firstNot(/^(All Locations|Choose|Select|Loc INR)/i));
+    // ---------- Page objects and shared helpers ----------
+    const procurement = plKit(page); // sign-in and Procurement Log navigation shared with the Procurement suites
+    const MATERIAL = procurement.MATERIAL;
+    const inventory = new InventoryManagementPage(page);
+    const upload = new InventoryBulkUploadPage(page);
+    const siteSelector = new SiteSelectorPage(page);
+    const siteDetails = new SiteDetailsPage(page);
 
-    const login = await run.scenario(meta('INV-REG-SETUP', `Sign in on ${config.projectName}`, 'Setup', { always: true }), async s => {
-      await k.signIn(s, config);
-      await s.step(`Sidebar › "Inventory Management" → list shows items`, () => k.menu(MODULE).catch(() => null).then(home), { critical: true });
-      await s.step(`Inventory Management › search "${M}" → grid Inventory (4th column) is above 3, stock delivered by the Procurement regression`, async () => { ctx.grid = await gridQty(); s.observe(`Run ${RUN}; ${M} inventory ${ctx.grid}`); expect(ctx.grid).toBeGreaterThan(3); }, { critical: true });
-    });
-    if (login.status !== 'Passed') { run.abort('Setup failed (needs stock from the Procurement regression)'); return; }
+    // Values one scenario reads and a later scenario checks (each use is named in the scenario that needs it).
+    const shared = { offered: {} };
 
-    await run.scenario(meta('INV-REG-01', 'GRN creates Incoming Load', 'Integration'), async s => {
-      await s.step(`Search "${M}", row "⋮" › "Actions" → ledger has at least one "Incoming Load" row (GRNs of the Procurement runs)`, async () => {
-        await ledger();
-        const rows = await ledgerRows().filter({ hasText: 'Incoming Load' }).allInnerTexts();
-        s.observe(`${rows.length} Incoming Load rows`);
-        expect(rows.length).toBeGreaterThan(0);
+    /** Opens the Inventory Management list on the test site. */
+    const openInventoryList = () => inventory.openListOnSite(siteSelector, SITE);
+
+    /** Opens the stock ledger ("Actions" view) of the test material. */
+    const openLedger = async () => {
+      await openInventoryList();
+      await inventory.openMaterialView(MATERIAL, 'Actions');
+    };
+
+    /** Opens the "Location" view of the test material (stock per location). */
+    const openLocationView = async () => {
+      await openInventoryList();
+      await inventory.openMaterialView(MATERIAL, 'Location');
+    };
+
+    /** Reads the material's stock at one location from the Location view. */
+    const stockAtLocation = async location => {
+      await openLocationView();
+      return inventory.readStockAtLocation(location);
+    };
+
+    /** The first location that can hold stock, from the locations the last form offered. */
+    const sourceLocation = () => (shared.offered.locations || []).find(isRealLocation);
+
+    /**
+     * Submittals to try, in order: the preferred long-lived ones first, then the newest run submittals.
+     * `accept` narrows the candidates; a text accepts exactly that submittal.
+     */
+    const submittalCandidatesFor = accept => offered => {
+      if (typeof accept === 'string') return [accept];
+      const usable = offered.filter(accept);
+      const preferred = usable.filter(option => PREFERRED_SUBMITTAL.test(option));
+      const others = usable.filter(option => !PREFERRED_SUBMITTAL.test(option)).reverse();
+      return [...preferred, ...others].slice(0, testData.submittals.maximumCandidates);
+    };
+
+    /**
+     * Records an inventory activity on the open ledger: opens Add Activity, fills it for the test material and,
+     * unless `save` is false, clicks "ADD". What the form offered is kept in `shared.offered`.
+     */
+    const recordActivity = async ({ action, quantity, fromLocation, toLocation, submittal = option => RUN_SUBMITTAL.test(option),
+      schedule, waitForSchedule = true, save = true }) => {
+      await inventory.openActivityForm();
+      shared.offered = await inventory.fillActivityForm({
+        item: MATERIAL,
+        action,
+        fromLocation: fromLocation || isRealLocation,
+        toLocation,
+        quantity,
+        comments: `${RUN_TAG} ${action}`,
+        supplier: isNotPlaceholder,
+        subcontractor: isNotPlaceholder,
+        submittalCandidates: submittalCandidatesFor(submittal),
+        schedule,
+        waitForScheduleMs: waitForSchedule ? 2000 : 0
       });
-      await s.step(`Ledger → "Closing Balance" equals the grid Inventory quantity read at setup`, async () => { ctx.closing = await closing(); expect(ctx.closing).toBe(ctx.grid); });
-    });
-    run.skip(meta('INV-REG-21', 'Damaged units counted as received (PL-R16)', 'Integration'), 'Checked in the Procurement regression (PL-REG-DLV-13: Incoming Load = delivered QTY incl. damaged)');
+      if (save) await inventory.clickAddAndWaitForOutcome();
+    };
 
-    await run.scenario(meta('INV-REG-13', 'Pickers filtered by material', 'Positive'), async s => {
+    /** Opens a submittal in the Procurement Log and then the test material's component. */
+    const openComponentInProcurementLog = async submittalNumber => {
+      await procurement.openLog();
+      await procurement.search(submittalNumber);
+      await procurement.rows().first().getByRole('cell').nth(1).click();
+      await page.getByText('Other Actions').first().waitFor({ timeout: 30000 });
+      await procurement.componentRow(MATERIAL).getByRole('cell', { name: MATERIAL }).click();
+      await procurement.settle(1500);
+    };
+
+    // =================================================================================================================
+    // INV-REG-SETUP – Sign in and check that there is stock to work with
+    // =================================================================================================================
+    const setup = await run.scenario(scenarioInfo('INV-REG-SETUP', `Sign in on ${config.projectName}`, 'Setup', { always: true }), async s => {
+      // STEPS 1–5: Sign in as Project Admin, open Supply Chain Planner, choose the project and the test site.
+      await procurement.signIn(s, config);
+
+      // STEP 6: Open Inventory Management from the left menu.
+      // Purpose: every scenario starts from this list. Expected: the list shows at least one material.
+      await s.step(`Sidebar › "Inventory Management" → list shows items`, async () => {
+        await procurement.menu(MODULE).catch(() => null);
+        await openInventoryList();
+      }, { critical: true });
+
+      // STEP 7: Search the test material and read its stock.
+      // Purpose: the scenarios below remove up to about 7 units, so the run stops here when there is not enough stock.
+      // Expected: the "Inventory" column of the material is above 3 (stock delivered by the Procurement regression).
+      await s.step(`Inventory Management › search "${MATERIAL}" → grid Inventory (4th column) is above 3, stock delivered by the Procurement regression`, async () => {
+        shared.startingStock = await inventory.readListInventory(MATERIAL);
+        s.observe(`Run ${RUN_TAG}; ${MATERIAL} inventory ${shared.startingStock}`);
+        expect(shared.startingStock).toBeGreaterThanOrEqual(testData.minimumStartingStock);
+      }, { critical: true });
+
+      // STEP 8: Read the stock at the location the activities take stock from (no save).
+      // Purpose: every activity uses the first real location (e.g. Gate 5), and one run uses about 8-9 units there.
+      // The site total can be high while that location is empty, so the run stops here with a clear reason
+      // instead of failing later with misleading "Not enough stock" errors.
+      // Expected: the "Available at <location>: N" hint shows at least minimumSourceLocationStock units.
+      await s.step(`Ledger › "Add Activity": action "Loss", QTY 1, no save → "Available at <first real location>: N" is at least ${testData.minimumSourceLocationStock}`, async () => {
+        await openLedger();
+        await recordActivity({ action: CHANGES.loss.action, quantity: 1, save: false });
+        const hint = await inventory.readAvailableStockHint();
+        await inventory.closeActivityFormIfOpen();
+        s.observe(hint.text);
+        expect(hint.quantity, `Not enough stock at the source location (${hint.text}); refill it with the Procurement regression (npm run procurement:regression)`)
+          .toBeGreaterThanOrEqual(testData.minimumSourceLocationStock);
+      }, { critical: true });
+    });
+    if (setup.status !== 'Passed') {
+      run.abort('Setup failed (needs stock from the Procurement regression)');
+      return;
+    }
+
+    // =================================================================================================================
+    // INV-REG-01 – A GRN in the Procurement Log creates an "Incoming Load" in the stock ledger
+    // =================================================================================================================
+    await run.scenario(scenarioInfo('INV-REG-01', 'GRN creates Incoming Load', 'Integration'), async s => {
+      // STEP 1: Open the ledger of the test material.
+      // Purpose: goods received through the Procurement Log must reach Inventory without manual entry.
+      // Expected: at least one "Incoming Load" row (written by the GRNs of the Procurement runs).
+      await s.step(`Search "${MATERIAL}", row "⋮" › "Actions" → ledger has at least one "Incoming Load" row (GRNs of the Procurement runs)`, async () => {
+        await openLedger();
+        const incomingLoadRows = inventory.ledgerRows().filter({ hasText: 'Incoming Load' });
+        // The ledger rows load after the table is shown, so wait for them instead of counting at once.
+        await expect.poll(() => incomingLoadRows.count(), { timeout: 20000, message: 'No "Incoming Load" row in the ledger' }).toBeGreaterThan(0);
+        s.observe(`${await incomingLoadRows.count()} Incoming Load rows`);
+      });
+
+      // STEP 2: Read the ledger's Closing Balance.
+      // Purpose: the list and the ledger must show the same stock. Expected: Closing Balance = stock read at setup.
+      await s.step(`Ledger → "Closing Balance" equals the grid Inventory quantity read at setup`, async () => {
+        expect(await inventory.readClosingBalance()).toBe(shared.startingStock);
+      });
+    });
+    run.skip(scenarioInfo('INV-REG-21', 'Damaged units counted as received (PL-R16)', 'Integration'),
+      'Checked in the Procurement regression (PL-REG-DLV-13: Incoming Load = delivered QTY incl. damaged)');
+
+    // =================================================================================================================
+    // INV-REG-13 – The form only offers suppliers, submittals and schedules of the chosen material
+    // =================================================================================================================
+    await run.scenario(scenarioInfo('INV-REG-13', 'Pickers filtered by material', 'Positive'), async s => {
+      // STEP 1: Fill an "Issue To Construction" activity without saving it.
+      // Purpose: users must only be able to link an activity to records of this material.
+      // Expected: the run supplier, run submittals (PL…-SUB-…) and at least one schedule are offered.
       await s.step(`Ledger › "Add Activity": action "Issue To Construction", QTY 1, no save → Supplier list has the run supplier, Submittal list has run submittals (PL…-SUB-…), Schedule list is not empty`, async () => {
-        await ledger();
-        await activity({ action: 'Issue To Construction', qty: 1, submit: false });
-        s.observe(`Suppliers: ${ctx.suppliers.join(', ')} · Subcontractors: ${ctx.subcontractors.length} · Submittals: ${ctx.submittals.length} · Schedules: ${ctx.schedules.join(', ')}`);
-        expect(ctx.submittals.some(o => RUN_SUBMITTAL.test(o))).toBe(true);
-        expect(ctx.suppliers).toContain(k.SUPPLIER);
-        expect(ctx.schedules.length).toBeGreaterThan(0);
+        await openLedger();
+        await recordActivity({ action: CHANGES.issueToConstruction.action, quantity: 1, save: false });
+        const { suppliers, subcontractors, submittals, schedules } = shared.offered;
+        s.observe(`Suppliers: ${suppliers.join(', ')} · Subcontractors: ${subcontractors.length} · Submittals: ${submittals.length} · Schedules: ${schedules.join(', ')}`);
+        expect(submittals.some(option => RUN_SUBMITTAL.test(option))).toBe(true);
+        expect(suppliers).toContain(procurement.SUPPLIER);
+        expect(schedules.length).toBeGreaterThan(0);
       });
+
+      // STEP 2: Read the "Available at <location>: <qty>" hint.
+      // Purpose: the hint tells the user how much can be issued; INV-REG-12 compares it with the location stock.
+      // Expected: the hint is shown with a quantity.
       await s.step(`Add Activity form → hint "Available at <location>: <qty>" is shown and its value is recorded`, async () => {
-        const hint = await page.getByText(/Available at .+: [\d.]+/).first().innerText();
-        s.observe(hint); ctx.hint = Number(hint.match(/: ([\d.]+)/)[1]);
+        const hint = await inventory.readAvailableStockHint();
+        s.observe(hint.text);
+        shared.availableHint = hint.quantity;
       });
-      await s.step(`Press Escape → Add Activity form closes without saving`, closeActivity);
+
+      // STEP 3: Close the form without saving. Expected: the form closes and nothing is recorded.
+      await s.step(`Press Escape → Add Activity form closes without saving`, () => inventory.closeActivityFormIfOpen());
     });
-    await run.scenario(meta('INV-REG-12', 'Available stock hint = location balance', 'Positive'), async s => {
+
+    // =================================================================================================================
+    // INV-REG-12 – The "Available at" hint equals the stock at that location
+    // =================================================================================================================
+    await run.scenario(scenarioInfo('INV-REG-12', 'Available stock hint = location balance', 'Positive'), async s => {
+      // STEP 1: Open the material's Location view and read the stock of the form's From Location.
+      // Purpose: the hint and the location stock must agree, or users issue stock that is not there.
+      // Expected: the location quantity equals the hint recorded in INV-REG-13.
       await s.step(`Row "⋮" › "Location" → QTY of the From Location row equals the "Available at" hint`, async () => {
-        await home(); await view('Location');
-        const row = page.getByRole('row').filter({ hasText: fromLoc() || '' }).first();
-        const q = Number((await row.getByRole('cell').last().innerText()).replace(/,/g, ''));
-        expect(ctx.hint).toBe(q);
+        const location = sourceLocation() || '';
+        const locationStock = await stockAtLocation(location);
+        s.observe(`Form hint ${shared.availableHint}, Location view ${locationStock} at ${location}`);
+        // Pending team confirmation (SCP-DEF-053): which of the two figures is the correct stock.
+        expect(shared.availableHint, `Form "Available at" hint differs from the Location view at ${location} (OBS-INV-14)`).toBe(locationStock);
       });
     });
 
-    const stockCase = (id, title, action, qty, delta) => run.scenario(meta(id, title, 'Positive'), async s => {
-      let before;
-      await s.step(`Ledger › "Add Activity": action "${action}", From Location (first real one), QTY ${qty}, first Supplier/Subcontractor, run Submittal + Schedule, "ADD" → form closes (saved)`, async () => { await ledger(); before = await closing(); await activity({ action, qty }); expect(await dialogOpen(), `Form still open: ${await msg()}`).toBe(false); }, { critical: true });
-      await s.step(`Ledger → "Closing Balance" changes by ${delta > 0 ? '+' : ''}${delta} and a "${action}" row is listed`, async () => {
-        await ledger(); expect(await closing()).toBe(before + delta);
-        await expect(ledgerRows().filter({ hasText: action }).first()).toBeVisible();
+    // =================================================================================================================
+    // INV-REG-02 – "Issue To Construction" reduces the stock by the issued quantity
+    // =================================================================================================================
+    await run.scenario(scenarioInfo('INV-REG-02', 'Issue To Construction', 'Positive'), async s => {
+      const { action, quantity, expectedChange } = CHANGES.issueToConstruction;
+      let balanceBefore;
+
+      // STEP 1: Record the activity and save it.
+      // Purpose: issuing material to the construction site is the most common stock movement.
+      // Expected: the form closes, which means the activity was saved.
+      await s.step(`Ledger › "Add Activity": action "${action}", From Location (first real one), QTY ${quantity}, first Supplier/Subcontractor, run Submittal + Schedule, "ADD" → form closes (saved)`, async () => {
+        await openLedger();
+        balanceBefore = await inventory.readClosingBalance();
+        await recordActivity({ action, quantity });
+        expect(await inventory.isActivityFormOpen(), `Form still open: ${await inventory.readActivityMessages()}`).toBe(false);
+      }, { critical: true, attempts: 1 });
+
+      // STEP 2: Reopen the ledger.
+      // Expected: the Closing Balance changed by exactly the issued quantity and an "Issue To Construction" row is listed.
+      await s.step(`Ledger → "Closing Balance" changes by ${expectedChange} and a "${action}" row is listed`, async () => {
+        await openLedger();
+        expect(await inventory.readClosingBalance()).toBe(balanceBefore + expectedChange);
+        await expect(inventory.ledgerRows().filter({ hasText: action }).first()).toBeVisible();
       });
-      if (id === 'INV-REG-02') await s.step(`Landing grid refresh after the activity → verified separately in INV-REG-15`, async () => s.observe('checked in INV-REG-15'));
+
+      // STEP 3: The list page refresh after an activity is a separate rule, checked in INV-REG-15.
+      await s.step(`Landing grid refresh after the activity → verified separately in INV-REG-15`, async () => s.observe('checked in INV-REG-15'));
     });
-    await stockCase('INV-REG-02', 'Issue To Construction', 'Issue To Construction', 2, -2);
-    await run.scenario(meta('INV-REG-15', 'Grid refreshes after an activity', 'Positive'), async s => {
-      await s.step(`Ledger › "Add Activity": action "Loss", QTY 1, "ADD"; Escape, sidebar › "Inventory Management" (no reload) → grid Inventory of ${M} is 1 lower (OBS-INV-4 if stale)`, async () => {
-        await ledger(); const before = await closing();
-        await activity({ action: 'Loss', qty: 1 });
-        await page.keyboard.press('Escape'); await k.settle(500);
-        await k.menu(MODULE).catch(() => null); await k.settle(1000);
-        const q = await gridQty(); s.observe(`Grid ${q}, expected ${before - 1}`);
-        expect(q, 'Grid inventory is stale after a manual activity (OBS-INV-4)').toBe(before - 1);
+
+    // =================================================================================================================
+    // INV-REG-15 – The list page shows the new stock right after an activity (no page reload)
+    // =================================================================================================================
+    await run.scenario(scenarioInfo('INV-REG-15', 'Grid refreshes after an activity', 'Positive'), async s => {
+      // STEP 1: Record a "Loss" of 1, close the ledger and go back to the list through the menu (not a reload).
+      // Purpose: users read stock on the list page; a stale figure leads to wrong decisions.
+      // Expected: the list shows 1 unit less than the ledger before the loss (today it is stale, OBS-INV-4).
+      await s.step(`Ledger › "Add Activity": action "Loss", QTY 1, "ADD"; Escape, sidebar › "Inventory Management" (no reload) → grid Inventory of ${MATERIAL} is 1 lower (OBS-INV-4 if stale)`, async () => {
+        await openLedger();
+        const balanceBefore = await inventory.readClosingBalance();
+        await recordActivity({ action: CHANGES.loss.action, quantity: CHANGES.loss.quantity });
+        await page.keyboard.press('Escape');
+        await procurement.menu(MODULE).catch(() => null);
+        await procurement.settle(1000);
+        const listStock = await inventory.readListInventory(MATERIAL);
+        s.observe(`Grid ${listStock}, expected ${balanceBefore - 1}`);
+        expect(listStock, 'Grid inventory is stale after a manual activity (OBS-INV-4)').toBe(balanceBefore - 1);
+      }, { attempts: 1 });
+    });
+    run.skip(scenarioInfo('INV-REG-03', 'Loss', 'Positive'), 'Loss 1 is executed and its balance checked in INV-REG-15');
+
+    // =================================================================================================================
+    // INV-REG-04 – A "Return" reduces stock and is written back to the Procurement Log
+    // =================================================================================================================
+    await run.scenario(scenarioInfo('INV-REG-04', 'Return reduces stock and writes back to Procurement', 'Integration'), async s => {
+      let balanceBefore;
+
+      // STEP 1: Record a "Return" of 1 against a run submittal and its schedule.
+      // Purpose: returned goods leave the site stock and must show on the purchase they came from.
+      // Expected: the activity is saved.
+      await s.step(`Ledger › "Add Activity": action "Return", QTY 1, run Submittal + Schedule, "ADD" → activity submitted`, async () => {
+        await openLedger();
+        balanceBefore = await inventory.readClosingBalance();
+        await recordActivity({ action: CHANGES.return.action, quantity: CHANGES.return.quantity });
+        shared.returnSubmittal = shared.offered.chosenSubmittal;
+      }, { critical: true, attempts: 1 });
+
+      // STEP 2: Reopen the ledger. Expected: the Closing Balance is 1 lower than before the return.
+      await s.step(`Ledger → "Closing Balance" is 1 lower than before the Return`, async () => {
+        await openLedger();
+        expect(await inventory.readClosingBalance()).toBe(balanceBefore + CHANGES.return.expectedChange);
       });
-    });
-    run.skip(meta('INV-REG-03', 'Loss', 'Positive'), 'Loss 1 is executed and its balance checked in INV-REG-15');
-    await run.scenario(meta('INV-REG-04', 'Return reduces stock and writes back to Procurement', 'Integration'), async s => {
-      let before;
-      await s.step(`Ledger › "Add Activity": action "Return", QTY 1, run Submittal + Schedule, "ADD" → activity submitted`, async () => { await ledger(); before = await closing(); await activity({ action: 'Return', qty: 1 }); ctx.returnSub = ctx.sub; }, { critical: true });
-      await s.step(`Ledger → "Closing Balance" is 1 lower than before the Return`, async () => { await ledger(); expect(await closing()).toBe(before - 1); });
-      await s.step(`Procurement Log › search ${ctx.returnSub}, open the submittal, click component "${M}" → a "Return" row is listed`, async () => {
-        await k.openLog(); await k.search(ctx.returnSub);
-        await k.rows().first().getByRole('cell').nth(1).click(); await page.getByText('Other Actions').first().waitFor({ timeout: 30000 });
-        await k.componentRow(M).getByRole('cell', { name: M }).click(); await k.settle(1500);
+
+      // STEP 3: Open the same submittal's component in the Procurement Log.
+      // Expected: a "Return" row is listed on the component.
+      await s.step(`Procurement Log › search ${shared.returnSubmittal}, open the submittal, click component "${MATERIAL}" → a "Return" row is listed`, async () => {
+        await openComponentInProcurementLog(shared.returnSubmittal);
         await expect(page.getByRole('row').filter({ hasText: 'Return' }).first()).toBeVisible({ timeout: 15000 });
       });
     });
 
-    // Incoming Load on each run submittal until a partial (accepted) and a fully delivered (rejected) one are seen.
-    let accepted = null, rejected = null;
-    await run.scenario(meta('INV-REG-05', 'Manual Incoming on a partial schedule', 'Integration'), async s => {
+    // =================================================================================================================
+    // INV-REG-05 – A manual "Incoming Load" is accepted on a partly delivered schedule and shows in the Procurement Log
+    // =================================================================================================================
+    // INV-REG-05 looks for one submittal that accepts the incoming load and one that rejects it; INV-REG-06 uses both.
+    let acceptedIncoming = null;
+    let rejectedIncoming = null;
+    await run.scenario(scenarioInfo('INV-REG-05', 'Manual Incoming on a partial schedule', 'Integration'), async s => {
+      // STEP 1: Try an "Incoming Load" of 1 on up to 8 run submittals, one at a time.
+      // Purpose: goods can also be received directly in Inventory, but only up to what was scheduled.
+      // Expected: at least one partly delivered schedule accepts it (the form closes); a fully delivered one, if
+      // tried, rejects it with "scheduled_quantity" / "Cannot add this activity".
       await s.step(`Ledger › "Add Activity": "Incoming Load", QTY 1 on up to 8 run submittals until one is accepted (form closes) and one rejected ("scheduled_quantity" / "Cannot add this activity")`, async () => {
-        await ledger(); await activity({ action: 'Incoming Load', qty: 1, submit: false });
-        const subs = [...ctx.submittals.filter(o => PREFERRED.test(o)), ...ctx.submittals.filter(o => RUN_SUBMITTAL.test(o) && !PREFERRED.test(o)).reverse()].slice(0, 8);
-        await closeActivity();
-        for (const sub of subs) {
-          if (accepted && rejected) break;
-          await ledger(); await activity({ action: 'Incoming Load', qty: 1, submittal: sub });
-          const m = await msg();
-          if (!ctx.sub) { await closeActivity(); continue; }
-          if (await dialogOpen()) { if (/scheduled_quantity|Cannot add this activity/.test(m)) rejected = rejected || { sub, m }; await closeActivity(); }
-          else accepted = accepted || { sub };
+        // Read the submittals offered for the material once, without saving.
+        await openLedger();
+        await recordActivity({ action: CHANGES.incomingLoad.action, quantity: CHANGES.incomingLoad.quantity, save: false });
+        const offeredSubmittals = shared.offered.submittals;
+        const candidates = [
+          ...offeredSubmittals.filter(option => PREFERRED_SUBMITTAL.test(option)),
+          ...offeredSubmittals.filter(option => RUN_SUBMITTAL.test(option) && !PREFERRED_SUBMITTAL.test(option)).reverse()
+        ].slice(0, testData.submittals.maximumIncomingLoadCandidates);
+        await inventory.closeActivityFormIfOpen();
+
+        for (const submittal of candidates) {
+          if (acceptedIncoming && rejectedIncoming) break;
+          await openLedger();
+          await recordActivity({ action: CHANGES.incomingLoad.action, quantity: CHANGES.incomingLoad.quantity, submittal });
+          const message = await inventory.readActivityMessages();
+          if (!shared.offered.chosenSubmittal) {
+            // This submittal has no schedule line: nothing was submitted.
+            await inventory.closeActivityFormIfOpen();
+            continue;
+          }
+          if (await inventory.isActivityFormOpen()) {
+            if (MESSAGES.incomingRejectedOnFullSchedule.test(message)) rejectedIncoming = rejectedIncoming || { submittal, message };
+            await inventory.closeActivityFormIfOpen();
+          } else {
+            acceptedIncoming = acceptedIncoming || { submittal };
+          }
         }
-        s.observe(`Accepted: ${accepted?.sub || '-'} · Rejected: ${rejected?.sub || '-'}`);
-        expect(accepted, 'No partial run schedule accepted a manual Incoming Load').toBeTruthy();
-      });
-      if (accepted) await s.step(`Procurement Log › search the accepted submittal, open it, click component "${M}" → delivery shows "Via Inventory"`, async () => {
-        await k.openLog(); await k.search(accepted.sub);
-        await k.rows().first().getByRole('cell').nth(1).click(); await page.getByText('Other Actions').first().waitFor({ timeout: 30000 });
-        await k.componentRow(M).getByRole('cell', { name: M }).click(); await k.settle(1500);
-        await expect(page.getByText(/Via Inventory/).first()).toBeVisible({ timeout: 15000 });
-      });
-    });
-    await run.scenario(meta('INV-REG-06', 'Incoming beyond the scheduled quantity rejected', 'Negative'), async s => {
-      await s.step(`Ledger › "Add Activity": "Incoming Load" QTY 99999 on the accepted submittal (only if none was rejected before), "ADD" → form stays open with "Cannot add this activity" / "exceeds"; balance unchanged`, async () => {
-        if (!rejected) {
-          // Returns reopen fully delivered schedules, so over-receive the accepted schedule instead (same rule).
-          expect(accepted, 'No run schedule to test').toBeTruthy();
-          await ledger(); const before = await closing();
-          await activity({ action: 'Incoming Load', qty: 99999, submittal: accepted.sub });
-          rejected = { sub: accepted.sub, m: await msg() }; const open = await dialogOpen(); await closeActivity();
-          expect(open, 'Over-receipt of 99999 was saved').toBe(true);
-          await ledger(); expect(await closing()).toBe(before);
-        }
-        s.observe(`${rejected.sub}: ${rejected.m.slice(0, 160)}`);
-        expect(rejected.m).toMatch(/Cannot add this activity|exceeds/);
-      });
-    });
+        s.observe(`Accepted: ${acceptedIncoming?.submittal || '-'} · Rejected: ${rejectedIncoming?.submittal || '-'}`);
+        expect(acceptedIncoming, 'No partial run schedule accepted a manual Incoming Load').toBeTruthy();
+      }, { attempts: 1 });
 
-    const negative = (id, title, args, re, extra = '', flow = title) => run.scenario(meta(id, title, 'Negative'), async s => {
-      await s.step(flow, async () => {
-        await ledger(); const before = await closing();
-        await activity(args); const m = await msg(); s.observe(m.slice(0, 160));
-        const open = await dialogOpen(); await closeActivity();
-        expect(open, `Activity was saved${extra}`).toBe(true);
-        expect(m).toMatch(re);
-        await ledger(); expect(await closing()).toBe(before);
-      });
-    });
-    await negative('INV-REG-07', 'Overdraw rejected', { action: 'Loss', qty: 99999 }, /Not enough stock at .+: only [\d.]+ .+ available, 99999 requested/, '', `Ledger › "Add Activity": action "Loss", QTY 99999, "ADD" → form stays open: "Not enough stock at <location>: only N available, 99999 requested"; balance unchanged`);
-    await negative('INV-REG-08', 'QTY 0 rejected', { action: 'Loss', qty: 0 }, /Quantity cannot be empty or zero or less/, '', `Ledger › "Add Activity": action "Loss", QTY 0, "ADD" → form stays open: "Quantity cannot be empty or zero or less"; balance unchanged`);
-    await negative('INV-REG-09', 'QTY with 3 decimals', { action: 'Loss', qty: '1.555' }, /2 decimal|two decimal|decimal places/i, ' (OBS-INV-10: only the generic "Invalid data provided.")', `Ledger › "Add Activity": action "Loss", QTY 1.555, "ADD" → form stays open with a "2 decimal places" message; balance unchanged`);
-    await run.scenario(meta('INV-REG-10', 'Internal Movement to the same location', 'Negative'), async s => {
-      await s.step(`Ledger › "Add Activity": "Internal Movement", QTY 1, To Location = the From Location, "ADD" → "From Location and To Location must be different."`, async () => {
-        await ledger(); await activity({ action: 'Internal Movement', qty: 1, submit: false });
-        await pick('To Location', fromLoc());
-        await page.getByRole('button', { name: 'ADD', exact: true }).last().click(); await k.settle(1500);
-        await expect(page.getByText('From Location and To Location must be different.').first()).toBeVisible();
-        await closeActivity();
-      });
-    });
-
-    const LOC2 = `Loc ${RUN}`;
-    const loc2 = await run.scenario(meta('INV-REG-11', 'Internal Movement between two locations', 'Positive'), async s => {
-      await s.step(`Inventory Management Location dropdown has 2+ locations, else Site Details › site row "ADD" › "Choose Location" "Construction Area", name "${LOC2}", "Add" → second location exists`, async () => {
-        await home(); const opts = (await main.locator('select').first().locator('option').allInnerTexts()).map(t => t.trim()).filter(t => t && t !== 'All locations');
-        if (opts.length >= 2) { ctx.to = opts.find(o => o !== fromLoc()) || opts[1]; s.observe(`Using existing ${ctx.to}`); return; }
-        const site = await new SiteSelectorPage(page).activeSiteName();
-        await page.goto('/site-details', { waitUntil: 'domcontentloaded' }); await k.settle(1500);
-        await main.locator('tbody tr').filter({ has: page.getByRole('cell', { name: site, exact: true }) }).first().getByRole('button', { name: 'ADD', exact: true }).click();
-        await k.pick('Choose Location', 'Construction Area');
-        await page.getByRole('heading', { name: /Add Location/ }).locator('xpath=../..').locator('input[type="text"], input:not([type])').first().fill(LOC2);
-        await page.getByRole('button', { name: 'Add', exact: true }).last().click(); await k.settle(1500);
-        ctx.to = LOC2; s.observe(`Created ${LOC2} on ${site}`);
-      }, { critical: true });
-      let src, dst;
-      const atLoc = async name => { await home(); await view('Location'); const r = page.getByRole('row').filter({ hasText: new RegExp(esc(name), 'i') }).first(); return (await r.count()) ? Number((await r.getByRole('cell').last().innerText()).replace(/,/g, '')) : 0; };
-      await s.step(`Row "⋮" › "Location": note QTY at source and destination; Ledger › "Add Activity": "Internal Movement", From = source, To = second location, QTY 1, "ADD" → form closes`, async () => {
-        ctx.from = (ctx.locations || []).find(o => !/^(All Locations|Choose|Select)/.test(o) && o.toLowerCase() !== ctx.to.toLowerCase());
-        src = await atLoc(ctx.from || ''); dst = await atLoc(ctx.to);
-        await ledger(); await activity({ action: 'Internal Movement', qty: 1, from: ctx.from, to: o => o.toLowerCase() === ctx.to.toLowerCase() }); // the new location can sort first // names are title-cased (OBS-PL-32)
-        expect(await dialogOpen(), `Not saved: ${await msg()}`).toBe(false);
-      }, { critical: true });
-      await s.step(`Row "⋮" › "Location" → source location QTY is 1 lower and destination QTY is 1 higher`, async () => {
-        expect(await atLoc(ctx.from)).toBe(src - 1);
-        expect(await atLoc(ctx.to)).toBe(dst + 1);
-      });
-    });
-
-    await run.scenario(meta('INV-REG-14', 'Schedule must match the submittal', 'Negative'), async s => {
-      await s.step(`Ledger › "Add Activity": "Loss" QTY 1, pick Submittal A + its Schedule, change Submittal to B without re-picking Schedule, "ADD" → rejected, or no row saved with A's schedule under B`, async () => {
-        await ledger(); await activity({ action: 'Loss', qty: 1, submit: false });
-        const subs = ctx.submittals.filter(o => RUN_SUBMITTAL.test(o));
-        const a = ctx.sub; const b = subs.find(o => o !== a);
-        await pick('Submittal', a); await page.waitForTimeout(2000); await pick('Schedule', () => true);
-        const schedA = (await page.getByText(/^Schedule\s*\*?$/).last().locator('xpath=following::*[@role="button"][1]').innerText()).trim();
-        const poA = schedA.slice(schedA.indexOf(`${M}-`) + M.length + 1);
-        await pick('Submittal', b);
-        const table = () => page.locator('table').filter({ has: page.getByRole('columnheader', { name: /Total QTY/i }) }).last();
-        await closeActivity(); await ledger(); const before = new Set(await table().locator('tbody tr').allInnerTexts());
-        await activity({ action: 'Loss', qty: 1, submit: false, submittal: a });
-        await pick('Submittal', b);
-        await page.getByRole('button', { name: 'ADD', exact: true }).last().click(); await k.settle(2000);
-        if (await dialogOpen()) { s.observe(`Rejected: ${await msg()}`); await closeActivity(); return; }
-        await ledger();
-        const added = (await table().locator('tbody tr').allInnerTexts()).filter(t => !before.has(t)).map(t => t.replace(/\s+/g, ' '));
-        s.observe(`A ${a} (${poA}) → B ${b}; new row: ${added.join(' / ').slice(0, 200)}`);
-        if (added.some(t => t.includes(poA) && t.includes(b.replace('-SUB-', '-SPEC-')))) throw new Error(`Inventory activity saved with a schedule from another submittal (${a} schedule ${poA} on ${b})`);
-      });
-    });
-
-    // ---------- Upload ----------
-    const openUpload = async () => { await home(); await btn('Upload').click(); await expect(page.getByText('Upload inventory activities').first()).toBeVisible(); };
-    const uploadFile = async file => {
-      await page.locator('input[type="file"]').last().setInputFiles(file);
-      await page.getByRole('button', { name: 'Upload', exact: true }).last().click();
-      // The dialog text itself mentions "the error file"; wait for the Uploading… state to end instead.
-      await expect(page.getByRole('button', { name: /Uploading/ })).toHaveCount(0, { timeout: 120000 }).catch(() => null);
-      await page.getByText(/uploaded successfully|upload failed|nothing was saved/i).first().waitFor({ timeout: 15000 }).catch(() => null);
-      const m = (await page.locator('body').innerText()).match(/[^\n]*(uploaded successfully|upload failed|Nothing was saved)[^\n]*/i)?.[0] || '';
-      if (/failed/i.test(m)) { // keep the app's per-row reason with the result
-        const link = page.getByRole('button', { name: /error/i }).or(page.getByRole('link', { name: /error/i })).first();
-        if (await link.isVisible().catch(() => false)) {
-          const dl = page.waitForEvent('download', { timeout: 20000 }); dl.catch(() => null); await link.click();
-          const d = await dl.catch(() => null);
-          if (d) { const p = path.join(tmp, `err-${Date.now()}.xlsx`); await d.saveAs(p); return `${m} | ${readXlsxRows(p).slice(1).map(r => r.filter(Boolean).slice(-2).join(': ')).join(' / ').slice(0, 300)}`; }
-        }
+      // STEP 2: Open the accepting submittal's component in the Procurement Log.
+      // Expected: its deliveries include one marked "Via Inventory".
+      if (acceptedIncoming) {
+        await s.step(`Procurement Log › search the accepted submittal, open it, click component "${MATERIAL}" → delivery shows "Via Inventory"`, async () => {
+          await openComponentInProcurementLog(acceptedIncoming.submittal);
+          await expect(page.getByText(/Via Inventory/).first()).toBeVisible({ timeout: 15000 });
+        });
       }
-      return m;
-    };
-    let tpl;
-    const tplOk = await run.scenario(meta('INV-REG-19', 'Upload with optional columns blank', 'Positive'), async s => {
-      await s.step(`Inventory Management › "Upload" › "Download template" → sheet "Inventory Template" header is Submittal No, Material, Item, Date Required On Site, PO Number, Action, From Location, To Location, Quantity, UoM, Supplier, Comments`, async () => {
-        await openUpload();
-        const dl = page.waitForEvent('download'); await page.getByRole('button', { name: 'Download template' }).click();
-        tpl = path.join(tmp, 'tpl.xlsx'); await (await dl).saveAs(tpl);
-        ctx.head = readXlsxRows(tpl, 'Inventory Template')[0]; s.observe(ctx.head.join(' | '));
-        expect(ctx.head).toEqual(['Submittal No', 'Material', 'Item', 'Date Required On Site', 'PO Number', 'Action', 'From Location', 'To Location', 'Quantity', 'UoM', 'Supplier', 'Comments']);
-      }, { critical: true });
-      await s.step(`Upload dialog › "Cancel"; Ledger › "Add Activity" (Loss, QTY 1, no save) → read Submittal, Schedule date and PO number for the upload rows; close the form`, async () => {
-        await page.getByRole('button', { name: 'Cancel', exact: true }).last().click();
-        await ledger(); // PLD1102-SUB-01 exists twice on the project; the upload rejects it as ambiguous (OBS-INV-13), the form does not.
-        await activity({ action: 'Loss', qty: 1, submit: false, submittal: o => RUN_SUBMITTAL.test(o) && o !== 'PLD1102-SUB-01' });
-        ctx.upSub = (await page.getByText(/^Submittal\s*\*?$/).last().locator('xpath=following::*[@role="button"][1]').innerText()).trim();
-        const sched = ctx.schedules.find(firstNot(/^(Choose|Select)/)) || '';
-        const d = sched.match(/(\d{4})-(\d{2})-(\d{2})|(\d{2})\/(\d{2})\/(\d{4})/) || [];
-        ctx.upDate = d[1] ? `${d[3]}/${d[2]}/${d[1]}` : d[0]; ctx.upPo = sched.slice(sched.indexOf(`${M}-`) + M.length + 1); // <ROJ>-<item>-<PO>
-        s.observe(`${ctx.upSub} · ${sched} → ${ctx.upDate} / ${ctx.upPo}`);
-        await closeActivity();
-      }, { critical: true });
-      let before;
-      await s.step(`Build file row (Loss, From Location, QTY 1, UoM/Supplier/Comments blank); "Upload" › choose file › "Upload" → message "uploaded successfully"`, async () => {
-        await ledger(); before = await closing();
-        const f = path.join(tmp, `${RUN}-ok.xlsx`);
-        writeXlsx(f, [ctx.head, [ctx.upSub, M, M, ctx.upDate, ctx.upPo, 'Loss', fromLoc(), '', '1', '', '', '']], 'Inventory Template');
-        await openUpload(); const t = await uploadFile(f); s.observe(t || '(no message)');
-        expect(t).toMatch(/uploaded successfully/i);
-      });
-      await s.step(`Close the dialog; Ledger → "Closing Balance" is 1 lower than before the upload`, async () => { await page.keyboard.press('Escape'); await ledger(); expect(await closing()).toBe(before - 1); });
     });
-    if (tplOk?.status === 'Passed') {
-      await run.scenario(meta('INV-REG-17', 'Upload valid file applies rows top to bottom', 'Positive'), async s => {
-        let before;
-        await s.step(`Build file with 2 rows (Issue To Construction 1, Loss 1, comments "${RUN} upload …"); "Upload" › choose file › "Upload" → "uploaded successfully"`, async () => {
-          await ledger(); before = await closing();
-          const f = path.join(tmp, `${RUN}-two.xlsx`);
-          const r = a => [ctx.upSub, M, M, ctx.upDate, ctx.upPo, a, fromLoc(), '', '1', '', '', `${RUN} upload ${a}`];
-          writeXlsx(f, [ctx.head, r('Issue To Construction'), r('Loss')], 'Inventory Template');
-          await openUpload(); expect(await uploadFile(f)).toMatch(/uploaded successfully/i);
-        });
-        await s.step(`Close the dialog, reopen Inventory Management → grid Inventory and ledger "Closing Balance" are both 2 lower than before`, async () => {
-          await page.keyboard.press('Escape'); await home(); const g = await gridQty();
-          await view('Actions'); expect(await closing()).toBe(before - 2); expect(g).toBe(before - 2);
-          expect(await ledgerRows().filter({ hasText: `${RUN} upload` }).count()).toBeGreaterThanOrEqual(0);
-        });
-      });
-      await run.scenario(meta('INV-REG-16', 'Upload is all-or-nothing', 'Negative'), async s => {
-        let before;
-        await s.step(`Build file with Loss 1 and Loss 99999; "Upload" › choose file › "Upload" → "The upload failed. Nothing was saved."`, async () => {
-          await ledger(); before = await closing();
-          const f = path.join(tmp, `${RUN}-bad.xlsx`);
-          const r = q => [ctx.upSub, M, M, ctx.upDate, ctx.upPo, 'Loss', fromLoc(), '', String(q), '', '', `${RUN} atomic`];
-          writeXlsx(f, [ctx.head, r(1), r(99999)], 'Inventory Template');
-          await openUpload(); await uploadFile(f);
-          await expect(page.getByText('The upload failed. Nothing was saved.').first()).toBeVisible({ timeout: 20000 });
-        });
-        await s.step(`Click "Download error file" → sheet has a "Valid (not saved)" row and a "Not enough stock" row; its "available" figure is kept for INV-REG-18`, async () => {
-          const dl = page.waitForEvent('download'); await page.getByRole('button', { name: /Download error file/ }).click();
-          const f = path.join(tmp, 'err.xlsx'); await (await dl).saveAs(f);
-          const rows = readXlsxRows(f).map(r => r.join(' | '));
-          s.observe(rows.slice(0, 3).join(' // ').slice(0, 300));
-          expect(rows.some(r => /Valid \(not saved\)/.test(r))).toBe(true);
-          const err = rows.find(r => /Not enough stock/.test(r)); expect(err).toBeTruthy();
-          ctx.uploadAvail = Number((err.match(/([\d.]+) available/) || [])[1]);
-        });
-        await s.step(`Click "Close"; Ledger → "Closing Balance" is unchanged`, async () => { await page.getByRole('button', { name: 'Close', exact: true }).last().click().catch(() => page.keyboard.press('Escape')); await ledger(); expect(await closing()).toBe(before); ctx.ledgerNow = before; });
-      });
-      await run.scenario(meta('INV-REG-18', 'Upload available stock matches the ledger', 'Positive'), async s => {
-        await s.step(`Compare the "available" figure from the upload error file with the ledger "Closing Balance" → equal`, async () => {
-          s.observe(`Upload says ${ctx.uploadAvail}, ledger ${ctx.ledgerNow} (INV-R3: watch item)`);
-          expect(ctx.uploadAvail).toBe(ctx.ledgerNow);
-        });
-      });
-    } else for (const id of ['17', '16', '18']) run.skip(meta(`INV-REG-${id}`, 'Needs the upload template and a run schedule', 'Dependent'), 'INV-REG-19 failed');
 
-    // ---------- Read-only checks ----------
-    await run.scenario(meta('INV-REG-20', 'Ledger columns', 'Positive'), async s => {
+    // =================================================================================================================
+    // INV-REG-06 – Receiving more than the scheduled quantity is rejected
+    // =================================================================================================================
+    await run.scenario(scenarioInfo('INV-REG-06', 'Incoming beyond the scheduled quantity rejected', 'Negative'), async s => {
+      // STEP 1: If INV-REG-05 met no rejecting submittal, try to receive 99999 on the accepting one.
+      // Purpose: stock must not be received beyond what was ordered and scheduled.
+      // Expected: the form stays open with "Cannot add this activity" / "exceeds" and the Closing Balance is unchanged.
+      await s.step(`Ledger › "Add Activity": "Incoming Load" QTY 99999 on the accepted submittal (only if none was rejected before), "ADD" → form stays open with "Cannot add this activity" / "exceeds"; balance unchanged`, async () => {
+        if (!rejectedIncoming) {
+          // Returns reopen fully delivered schedules, so the accepted schedule is over-received instead (same rule).
+          expect(acceptedIncoming, 'No run schedule to test').toBeTruthy();
+          await openLedger();
+          const balanceBefore = await inventory.readClosingBalance();
+          await recordActivity({ action: CHANGES.incomingLoad.action, quantity: INVALID.overReceipt, submittal: acceptedIncoming.submittal });
+          rejectedIncoming = { submittal: acceptedIncoming.submittal, message: await inventory.readActivityMessages() };
+          const formStayedOpen = await inventory.isActivityFormOpen();
+          await inventory.closeActivityFormIfOpen();
+          expect(formStayedOpen, 'Over-receipt of 99999 was saved').toBe(true);
+          await openLedger();
+          expect(await inventory.readClosingBalance()).toBe(balanceBefore);
+        }
+        s.observe(`${rejectedIncoming.submittal}: ${rejectedIncoming.message.slice(0, 160)}`);
+        expect(rejectedIncoming.message).toMatch(MESSAGES.incomingRejected);
+      });
+    });
+
+    // =================================================================================================================
+    // INV-REG-07 / 08 / 09 – Invalid quantities are rejected and the stock does not change
+    // =================================================================================================================
+    /**
+     * Shared check for an invalid "Loss": the form must stay open with the expected message, and the Closing
+     * Balance must not change. `savedHint` explains a known wrong behaviour when the activity is saved anyway.
+     */
+    const invalidQuantityScenario = (id, title, quantity, expectedMessage, stepText, savedHint = '', messageNote = '') =>
+      run.scenario(scenarioInfo(id, title, 'Negative'), async s => {
+        // STEP 1: Record a "Loss" with the invalid quantity and click "ADD".
+        // Purpose: wrong quantities must never change the stock.
+        // Expected: the form stays open with the message below; the Closing Balance is unchanged.
+        await s.step(stepText, async () => {
+          await openLedger();
+          const balanceBefore = await inventory.readClosingBalance();
+          await recordActivity({ action: CHANGES.loss.action, quantity });
+          const message = await inventory.readActivityMessages();
+          s.observe(message.slice(0, 160));
+          const formStayedOpen = await inventory.isActivityFormOpen();
+          await inventory.closeActivityFormIfOpen();
+          expect(formStayedOpen, `Activity was saved${savedHint}`).toBe(true);
+          // The stock is checked before the wording, so a wording issue cannot hide a stock change.
+          await openLedger();
+          expect(await inventory.readClosingBalance(), 'Closing Balance changed after a rejected activity').toBe(balanceBefore);
+          expect(message, `Unexpected rejection message${messageNote}`).toMatch(expectedMessage);
+        });
+      });
+    await invalidQuantityScenario('INV-REG-07', 'Overdraw rejected', INVALID.overdraw, MESSAGES.overdraw,
+      `Ledger › "Add Activity": action "Loss", QTY 99999, "ADD" → form stays open: "Not enough stock at <location>: only N available, 99999 requested"; balance unchanged`);
+    await invalidQuantityScenario('INV-REG-08', 'QTY 0 rejected', INVALID.zero, MESSAGES.zeroQuantity,
+      `Ledger › "Add Activity": action "Loss", QTY 0, "ADD" → form stays open: "Quantity cannot be empty or zero or less"; balance unchanged`);
+    await invalidQuantityScenario('INV-REG-09', 'QTY with 3 decimals', INVALID.threeDecimals, MESSAGES.threeDecimals,
+      `Ledger › "Add Activity": action "Loss", QTY 1.555, "ADD" → form stays open with a "2 decimal places" message; balance unchanged`,
+      ' (OBS-INV-10: only the generic "Invalid data provided.")', ' (OBS-INV-10)');
+
+    // =================================================================================================================
+    // INV-REG-10 – Moving stock to the same location is rejected
+    // =================================================================================================================
+    await run.scenario(scenarioInfo('INV-REG-10', 'Internal Movement to the same location', 'Negative'), async s => {
+      // STEP 1: Fill an "Internal Movement" whose To Location is the From Location, click "ADD".
+      // Purpose: a movement must go somewhere else. Expected: "From Location and To Location must be different."
+      await s.step(`Ledger › "Add Activity": "Internal Movement", QTY 1, To Location = the From Location, "ADD" → "From Location and To Location must be different."`, async () => {
+        await openLedger();
+        await recordActivity({ action: CHANGES.internalMovement.action, quantity: CHANGES.internalMovement.quantity, save: false });
+        await inventory.setActivityField('To Location', sourceLocation());
+        await inventory.clickAddAndWaitForOutcome();
+        await expect(page.getByText(testData.expectedMessages.sameLocation).first()).toBeVisible();
+        await inventory.closeActivityFormIfOpen();
+      });
+    });
+
+    // =================================================================================================================
+    // INV-REG-11 – Moving stock between two locations keeps the total and moves the quantity
+    // =================================================================================================================
+    await run.scenario(scenarioInfo('INV-REG-11', 'Internal Movement between two locations', 'Positive'), async s => {
+      // STEP 1: Make sure the site has a second location; create "Loc <run tag>" in Site Details when it has only one.
+      // Purpose: a movement needs a source and a destination. Expected: a second location exists.
+      await s.step(`Inventory Management Location dropdown has 2+ locations, else Site Details › site row "ADD" › "Choose Location" "${testData.locations.newLocationType}", name "${SECOND_LOCATION_NAME}", "Add" → second location exists`, async () => {
+        await openInventoryList();
+        const locations = await inventory.readLocationFilterOptions();
+        if (locations.length >= 2) {
+          shared.destination = locations.find(location => location !== sourceLocation()) || locations[1];
+          s.observe(`Using existing ${shared.destination}`);
+          return;
+        }
+        const site = await siteSelector.activeSiteName();
+        await siteDetails.addLocationToSite(site, { locationType: testData.locations.newLocationType, locationName: SECOND_LOCATION_NAME });
+        shared.destination = SECOND_LOCATION_NAME;
+        s.observe(`Created ${SECOND_LOCATION_NAME} on ${site}`);
+      }, { critical: true, attempts: 1 });
+
+      let sourceBefore;
+      let destinationBefore;
+      // STEP 2: Note the stock at both locations, then move 1 unit from the source to the destination.
+      // The source is a location that can hold stock (not a location created by an earlier run, which is empty).
+      // Expected: the form closes (saved).
+      await s.step(`Row "⋮" › "Location": note QTY at source and destination; Ledger › "Add Activity": "Internal Movement", From = source, To = second location, QTY 1, "ADD" → form closes`, async () => {
+        const sameAsDestination = option => option.toLowerCase() === shared.destination.toLowerCase();
+        shared.source = (shared.offered.locations || []).find(option => isRealLocation(option) && !sameAsDestination(option));
+        sourceBefore = await stockAtLocation(shared.source || '');
+        destinationBefore = await stockAtLocation(shared.destination);
+        await openLedger();
+        // Location names are shown title-cased in the form (OBS-PL-32), so the destination is matched ignoring case.
+        await recordActivity({
+          action: CHANGES.internalMovement.action,
+          quantity: CHANGES.internalMovement.quantity,
+          fromLocation: shared.source,
+          toLocation: sameAsDestination
+        });
+        expect(await inventory.isActivityFormOpen(), `Not saved: ${await inventory.readActivityMessages()}`).toBe(false);
+      }, { critical: true, attempts: 1 });
+
+      // STEP 3: Read both locations again. Expected: source 1 lower, destination 1 higher.
+      await s.step(`Row "⋮" › "Location" → source location QTY is 1 lower and destination QTY is 1 higher`, async () => {
+        expect(await stockAtLocation(shared.source)).toBe(sourceBefore - 1);
+        expect(await stockAtLocation(shared.destination)).toBe(destinationBefore + 1);
+      });
+    });
+
+    // =================================================================================================================
+    // INV-REG-14 – An activity must not be saved with a schedule of another submittal (known defect SCP-DEF-045)
+    // =================================================================================================================
+    await run.scenario(scenarioInfo('INV-REG-14', 'Schedule must match the submittal', 'Negative'), async s => {
+      // STEP 1: Choose submittal A and its schedule, then switch to submittal B without choosing a new schedule,
+      // and click "ADD".
+      // Purpose: a stock movement must stay linked to the right purchase.
+      // Expected: the save is rejected, or no row is saved that carries A's schedule under B.
+      await s.step(`Ledger › "Add Activity": "Loss" QTY 1, pick Submittal A + its Schedule, change Submittal to B without re-picking Schedule, "ADD" → rejected, or no row saved with A's schedule under B`, async () => {
+        // Find two run submittals (A has a schedule).
+        await openLedger();
+        await recordActivity({ action: CHANGES.loss.action, quantity: 1, save: false });
+        const submittalA = shared.offered.chosenSubmittal;
+        const submittalB = shared.offered.submittals.filter(option => RUN_SUBMITTAL.test(option)).find(option => option !== submittalA);
+        await inventory.setActivityField('Submittal', submittalA);
+        await page.waitForTimeout(2000); // the Schedule list reloads after the submittal changes (OBS-INV-3)
+        await inventory.setActivityField('Schedule', () => true);
+        const scheduleA = await inventory.readActivityField('Schedule');
+        const poNumberA = scheduleA.slice(scheduleA.indexOf(`${MATERIAL}-`) + MATERIAL.length + 1);
+        await inventory.setActivityField('Submittal', submittalB);
+
+        // Note the ledger rows before saving, so the new row can be identified.
+        await inventory.closeActivityFormIfOpen();
+        await openLedger();
+        const rowsBefore = new Set(await inventory.ledgerTable().locator('tbody tr').allInnerTexts());
+
+        // Fill again with A and its schedule, switch to B, save.
+        await recordActivity({ action: CHANGES.loss.action, quantity: 1, submittal: submittalA, save: false });
+        await inventory.setActivityField('Submittal', submittalB);
+        await inventory.clickAddAndWaitForOutcome();
+        if (await inventory.isActivityFormOpen()) {
+          s.observe(`Rejected: ${await inventory.readActivityMessages()}`);
+          await inventory.closeActivityFormIfOpen();
+          return;
+        }
+        await openLedger();
+        const newRows = (await inventory.ledgerTable().locator('tbody tr').allInnerTexts())
+          .filter(text => !rowsBefore.has(text))
+          .map(text => text.replace(/\s+/g, ' '));
+        s.observe(`A ${submittalA} (${poNumberA}) → B ${submittalB}; new row: ${newRows.join(' / ').slice(0, 200)}`);
+        const savedWithWrongSchedule = newRows.some(text => text.includes(poNumberA) && text.includes(submittalB.replace('-SUB-', '-SPEC-')));
+        if (savedWithWrongSchedule) {
+          throw new Error(`Inventory activity saved with a schedule from another submittal (${submittalA} schedule ${poNumberA} on ${submittalB})`);
+        }
+      });
+    });
+
+    // =================================================================================================================
+    // Bulk upload: INV-REG-19, 17, 16, 18
+    // =================================================================================================================
+    /** Builds one upload row for the test material (columns in template order). */
+    const uploadRow = ({ action, quantity, comments = '' }) => [
+      shared.uploadSubmittal, MATERIAL, MATERIAL, shared.uploadDate, shared.uploadPoNumber,
+      action, sourceLocation(), '', String(quantity), '', '', comments
+    ];
+    /** Writes rows under the template header into a new .xlsx file and returns its path. */
+    const writeUploadFile = (fileName, rows) => {
+      const file = path.join(TEMP_FOLDER, fileName);
+      writeXlsx(file, [shared.templateHeader, ...rows], testData.uploadTemplate.sheetName);
+      return file;
+    };
+    /** Opens the upload dialog, uploads the file and returns the result line; on failure adds the error-file reasons. */
+    const uploadFile = async file => {
+      await openInventoryList();
+      await upload.openUploadDialog();
+      const result = await upload.uploadAndReadResult(file);
+      if (!/failed/i.test(result)) return result;
+      const errorFile = await upload.saveErrorFileTo(path.join(TEMP_FOLDER, `err-${Date.now()}.xlsx`)).catch(() => null);
+      if (!errorFile) return result;
+      const reasons = readXlsxRows(errorFile).slice(1).map(row => row.filter(Boolean).slice(-2).join(': ')).join(' / ');
+      return `${result} | ${reasons.slice(0, 300)}`;
+    };
+
+    // ---------- INV-REG-19 – Upload with the optional columns left blank ----------
+    const templateScenario = await run.scenario(scenarioInfo('INV-REG-19', 'Upload with optional columns blank', 'Positive'), async s => {
+      // STEP 1: Download the upload template.
+      // Purpose: users fill this file to record many activities at once. Expected: sheet "Inventory Template" with
+      // the 12 agreed columns.
+      await s.step(`Inventory Management › "Upload" › "Download template" → sheet "Inventory Template" header is ${testData.uploadTemplate.header.join(', ')}`, async () => {
+        await openInventoryList();
+        await upload.openUploadDialog();
+        const templateFile = await upload.saveTemplateTo(path.join(TEMP_FOLDER, 'template.xlsx'));
+        shared.templateHeader = readXlsxRows(templateFile, testData.uploadTemplate.sheetName)[0];
+        s.observe(shared.templateHeader.join(' | '));
+        expect(shared.templateHeader).toEqual(testData.uploadTemplate.header);
+      }, { critical: true });
+
+      // STEP 2: Close the dialog and read, from the Add Activity form, a submittal, its schedule date and PO number.
+      // Purpose: the upload rows must refer to a real schedule. Expected: the three values are read; the form is closed.
+      await s.step(`Upload dialog › "Cancel"; Ledger › "Add Activity" (Loss, QTY 1, no save) → read Submittal, Schedule date and PO number for the upload rows; close the form`, async () => {
+        await upload.cancelUploadDialog();
+        await openLedger();
+        // The ambiguous submittal (it exists twice) is avoided: the upload rejects it (OBS-INV-13), the form does not.
+        await recordActivity({
+          action: CHANGES.loss.action,
+          quantity: 1,
+          save: false,
+          submittal: option => RUN_SUBMITTAL.test(option) && option !== testData.submittals.ambiguousForUpload
+        });
+        shared.uploadSubmittal = await inventory.readActivityField('Submittal');
+        const schedule = shared.offered.schedules.find(isNotPlaceholder) || '';
+        const dateParts = schedule.match(/(\d{4})-(\d{2})-(\d{2})|(\d{2})\/(\d{2})\/(\d{4})/) || [];
+        shared.uploadDate = dateParts[1] ? `${dateParts[3]}/${dateParts[2]}/${dateParts[1]}` : dateParts[0];
+        // Schedule text format: <date>-<item>-<PO number>
+        shared.uploadPoNumber = schedule.slice(schedule.indexOf(`${MATERIAL}-`) + MATERIAL.length + 1);
+        s.observe(`${shared.uploadSubmittal} · ${schedule} → ${shared.uploadDate} / ${shared.uploadPoNumber}`);
+        await inventory.closeActivityFormIfOpen();
+      }, { critical: true });
+
+      let balanceBefore;
+      // STEP 3: Upload one "Loss" row of 1 with UoM, Supplier and Comments left blank.
+      // Expected: the dialog says "uploaded successfully".
+      await s.step(`Build file row (Loss, From Location, QTY 1, UoM/Supplier/Comments blank); "Upload" › choose file › "Upload" → message "uploaded successfully"`, async () => {
+        await openLedger();
+        balanceBefore = await inventory.readClosingBalance();
+        const file = writeUploadFile(`${RUN_TAG}-ok.xlsx`, [uploadRow({ action: CHANGES.loss.action, quantity: 1 })]);
+        const result = await uploadFile(file);
+        s.observe(result || '(no message)');
+        expect(result).toMatch(MESSAGES.uploadSucceeded);
+      }, { attempts: 1 });
+
+      // STEP 4: Close the dialog and reopen the ledger. Expected: the Closing Balance is 1 lower.
+      await s.step(`Close the dialog; Ledger → "Closing Balance" is 1 lower than before the upload`, async () => {
+        await page.keyboard.press('Escape');
+        await openLedger();
+        expect(await inventory.readClosingBalance()).toBe(balanceBefore - 1);
+      });
+    });
+
+    if (templateScenario?.status === 'Passed') {
+      // ---------- INV-REG-17 – A valid file with two rows applies both rows ----------
+      await run.scenario(scenarioInfo('INV-REG-17', 'Upload valid file applies rows top to bottom', 'Positive'), async s => {
+        let balanceBefore;
+        // STEP 1: Upload "Issue To Construction 1" and "Loss 1", both commented with the run tag.
+        // Purpose: a bulk upload must apply every row. Expected: "uploaded successfully".
+        await s.step(`Build file with 2 rows (Issue To Construction 1, Loss 1, comments "${RUN_TAG} upload …"); "Upload" › choose file › "Upload" → "uploaded successfully"`, async () => {
+          await openLedger();
+          balanceBefore = await inventory.readClosingBalance();
+          const file = writeUploadFile(`${RUN_TAG}-two.xlsx`, [
+            uploadRow({ action: CHANGES.issueToConstruction.action, quantity: 1, comments: `${RUN_TAG} upload ${CHANGES.issueToConstruction.action}` }),
+            uploadRow({ action: CHANGES.loss.action, quantity: 1, comments: `${RUN_TAG} upload ${CHANGES.loss.action}` })
+          ]);
+          expect(await uploadFile(file)).toMatch(MESSAGES.uploadSucceeded);
+        }, { attempts: 1 });
+
+        // STEP 2: Reopen the list and the ledger.
+        // Expected: list stock and Closing Balance are both 2 lower. When the ledger shows a Comments column, both
+        // uploaded rows ("<run tag> upload <action>") are listed.
+        await s.step(`Close the dialog, reopen Inventory Management → grid Inventory and ledger "Closing Balance" are both 2 lower than before; both uploaded rows listed when the ledger shows comments`, async () => {
+          await page.keyboard.press('Escape');
+          await openInventoryList();
+          const listStock = await inventory.readListInventory(MATERIAL);
+          await inventory.openMaterialView(MATERIAL, 'Actions');
+          expect(await inventory.readClosingBalance()).toBe(balanceBefore - 2);
+          expect(listStock).toBe(balanceBefore - 2);
+          const headers = (await inventory.ledgerTable().getByRole('columnheader').allInnerTexts()).map(text => text.trim().toLowerCase());
+          if (headers.some(header => header.startsWith('comment'))) {
+            await expect(inventory.ledgerRows().filter({ hasText: `${RUN_TAG} upload` })).toHaveCount(2);
+          } else {
+            // Not checked row by row: the ledger has no Comments column (columns: headers below).
+            s.observe(`Ledger has no Comments column (${headers.join(', ')}); uploaded rows checked through the balance only`);
+          }
+        });
+      });
+
+      // ---------- INV-REG-16 – An upload with one invalid row saves nothing ----------
+      await run.scenario(scenarioInfo('INV-REG-16', 'Upload is all-or-nothing', 'Negative'), async s => {
+        let balanceBefore;
+        // STEP 1: Upload "Loss 1" plus "Loss 99999" (more than the stock).
+        // Purpose: a partly wrong file must not leave half the rows applied.
+        // Expected: "The upload failed. Nothing was saved."
+        await s.step(`Build file with Loss 1 and Loss 99999; "Upload" › choose file › "Upload" → "The upload failed. Nothing was saved."`, async () => {
+          await openLedger();
+          balanceBefore = await inventory.readClosingBalance();
+          const validRowQuantity = 1;
+          // The valid row comes first; INV-REG-18 needs its quantity (same From Location as the invalid row).
+          shared.uploadQuantityAheadOfInvalidRow = validRowQuantity;
+          const file = writeUploadFile(`${RUN_TAG}-bad.xlsx`, [
+            uploadRow({ action: CHANGES.loss.action, quantity: validRowQuantity, comments: `${RUN_TAG} atomic` }),
+            uploadRow({ action: CHANGES.loss.action, quantity: INVALID.overdraw, comments: `${RUN_TAG} atomic` })
+          ]);
+          await openInventoryList();
+          await upload.openUploadDialog();
+          await upload.uploadAndReadResult(file);
+          await expect(page.getByText(testData.expectedMessages.uploadFailedNothingSaved).first()).toBeVisible({ timeout: 20000 });
+        });
+
+        // STEP 2: Download the error file.
+        // Expected: one row marked "Valid (not saved)" and one "Not enough stock" row. Its "available" figure is
+        // kept for INV-REG-18.
+        await s.step(`Click "Download error file" → sheet has a "Valid (not saved)" row and a "Not enough stock" row; its "available" figure is kept for INV-REG-18`, async () => {
+          const errorFile = await upload.saveErrorFileTo(path.join(TEMP_FOLDER, 'errors.xlsx'));
+          const rows = readXlsxRows(errorFile).map(row => row.join(' | '));
+          s.observe(rows.slice(0, 3).join(' // ').slice(0, 300));
+          expect(rows.some(row => /Valid \(not saved\)/.test(row))).toBe(true);
+          const stockError = rows.find(row => /Not enough stock/.test(row));
+          expect(stockError).toBeTruthy();
+          shared.uploadAvailable = Number((stockError.match(/([\d.]+) available/) || [])[1]);
+          // The figure is the stock at the row's From Location, not the site total.
+          shared.uploadAvailableLocation = sourceLocation();
+        });
+
+        // STEP 3: Close the dialog and reopen the ledger. Expected: the Closing Balance is unchanged.
+        await s.step(`Click "Close"; Ledger → "Closing Balance" is unchanged`, async () => {
+          await upload.closeUploadDialog();
+          await openLedger();
+          expect(await inventory.readClosingBalance()).toBe(balanceBefore);
+        });
+      });
+
+      // ---------- INV-REG-18 – The upload's "available" stock equals the form's stock at the same location ----------
+      await run.scenario(scenarioInfo('INV-REG-18', 'Upload available stock matches the form', 'Positive'), async s => {
+        // STEP 1: Open Add Activity (Loss, no save) on the same From Location and read the "Available at" hint.
+        // Purpose: the upload and the Add Activity form must use the same stock figure for a location (INV-R3).
+        // Expected: the hint names the same location as the upload row, and the error file's "available" figure is
+        // the hint minus the rows above the invalid row (observed 21 Nov: the upload checks rows top to bottom and
+        // deducts the earlier valid rows, e.g. hint 52 − Loss 1 = 51; pending team confirmation, see
+        // docs/automation-gap-analysis/PENDING_CONFIRMATIONS.md).
+        // Note: until 21 Nov this compared with the ledger Closing Balance, which is the whole site and can never match.
+        await s.step(`Ledger › "Add Activity": action "Loss", QTY 1, no save → upload error file "available" = "Available at <upload From Location>: N" minus the valid row above it`, async () => {
+          await openLedger();
+          await recordActivity({ action: CHANGES.loss.action, quantity: 1, save: false });
+          const hint = await inventory.readAvailableStockHint();
+          await inventory.closeActivityFormIfOpen();
+          const expectedAvailable = hint.quantity - shared.uploadQuantityAheadOfInvalidRow;
+          s.observe(`Upload error file: ${shared.uploadAvailable} at ${shared.uploadAvailableLocation} · form: ${hint.text} · expected ${hint.quantity} − ${shared.uploadQuantityAheadOfInvalidRow} = ${expectedAvailable}`);
+          expect(hint.text, 'Form hint is for another location than the upload row').toContain(shared.uploadAvailableLocation);
+          expect(shared.uploadAvailable, 'Upload "available" figure differs from the form hint minus earlier rows (INV-R3)').toBe(expectedAvailable);
+        });
+      });
+    } else {
+      for (const id of ['17', '16', '18']) {
+        run.skip(scenarioInfo(`INV-REG-${id}`, 'Needs the upload template and a run schedule', 'Dependent'), 'INV-REG-19 failed');
+      }
+    }
+
+    // =================================================================================================================
+    // Read-only checks: INV-REG-20, 22, 23
+    // =================================================================================================================
+    // ---------- INV-REG-20 – The ledger's "Submittal" column shows the Submittal No ----------
+    await run.scenario(scenarioInfo('INV-REG-20', 'Ledger columns', 'Positive'), async s => {
+      // STEP 1: Read the "Submittal" cell of a run row in the ledger.
+      // Purpose: users trace each movement to its submittal. Expected: the value contains "-SUB-" (today the
+      // Spec Section No is shown instead, OBS-INV-1).
       await s.step(`Ledger → "Submittal" column of a run row (PL…-) → value contains "-SUB-", the Submittal No (OBS-INV-1)`, async () => {
-        await ledger();
-        const table = page.locator('table').filter({ has: page.getByRole('columnheader', { name: /Total QTY/i }) }).last();
-        const h = (await table.getByRole('columnheader').allInnerTexts()).map(t => t.trim().toLowerCase());
-        const i = h.indexOf('submittal');
-        const v = (await table.getByRole('row').filter({ hasText: /PL[DTRS]\d+-/ }).first().getByRole('cell').nth(i).innerText()).trim();
-        s.observe(`Submittal cell: ${v}`);
-        expect(v, 'Ledger Submittal column shows the Spec Section No (OBS-INV-1)').toMatch(/-SUB-/);
+        await openLedger();
+        const table = inventory.ledgerTable();
+        const headers = (await table.getByRole('columnheader').allInnerTexts()).map(text => text.trim().toLowerCase());
+        const submittalColumn = headers.indexOf('submittal');
+        const runRow = table.getByRole('row').filter({ hasText: /PL[DTRS]\d+-/ }).first();
+        const submittalCell = (await runRow.getByRole('cell').nth(submittalColumn).innerText()).trim();
+        s.observe(`Submittal cell: ${submittalCell}`);
+        expect(submittalCell, 'Ledger Submittal column shows the Spec Section No (OBS-INV-1)').toMatch(/-SUB-/);
       });
     });
-    await run.scenario(meta('INV-REG-22', 'Export is the balance list (INV-R2)', 'Positive'), async s => {
-      await s.step(`Inventory Management › "Export" → xlsx header contains Material ID, Material Name, Inventory, the balance list (OBS-INV-8)`, async () => {
-        await home(); const dl = page.waitForEvent('download'); await btn('Export').click();
-        const f = path.join(tmp, 'export.xlsx'); await (await dl).saveAs(f);
-        const head = readXlsxRows(f)[0] || []; s.observe(head.join(' | '));
-        expect(head, 'Export is the activity log, not the balance list (OBS-INV-8)').toEqual(expect.arrayContaining(['Material ID', 'Material Name', 'Inventory']));
+
+    // ---------- INV-REG-22 – "Export" downloads the stock balance list ----------
+    await run.scenario(scenarioInfo('INV-REG-22', 'Export is the balance list (INV-R2)', 'Positive'), async s => {
+      // STEP 1: Click "Export" on the list page and open the file.
+      // Purpose: the export is the stock report users share (rule INV-R2). Expected: the header contains
+      // Material ID, Material Name and Inventory (today it is the activity log, OBS-INV-8).
+      await s.step(`Inventory Management › "Export" → xlsx header contains ${testData.exportBalanceListColumns.join(', ')}, the balance list (OBS-INV-8)`, async () => {
+        await openInventoryList();
+        const exportFile = await inventory.exportListTo(path.join(TEMP_FOLDER, 'export.xlsx'));
+        const header = readXlsxRows(exportFile)[0] || [];
+        s.observe(header.join(' | '));
+        expect(header, 'Export is the activity log, not the balance list (OBS-INV-8)').toEqual(expect.arrayContaining(testData.exportBalanceListColumns));
       });
     });
-    await run.scenario(meta('INV-REG-23', 'Site isolation', 'Positive'), async s => {
-      const sites = new SiteSelectorPage(page);
-      const locs = async () => { await k.settle(2500); return (await main.locator('select').first().locator('option').allInnerTexts()).filter(t => t !== 'All locations'); };
-      let a, here, other;
-      await s.step(`Inventory Management → note the header site and the options of the Location dropdown`, async () => { await home(); here = await sites.activeSiteName(); a = await locs(); });
+
+    // ---------- INV-REG-23 – Each site shows only its own locations, and the chosen site survives a reload ----------
+    await run.scenario(scenarioInfo('INV-REG-23', 'Site isolation', 'Positive'), async s => {
+      let startingSite;
+      let otherSite;
+      let startingLocations;
+      /** Location filter options after the list has loaded for the current site. */
+      const locationsOnCurrentSite = async () => {
+        await procurement.settle(2500);
+        return inventory.readLocationFilterOptions();
+      };
+
+      // STEP 1: Note the header site and the locations offered by the list's location filter.
+      await s.step(`Inventory Management → note the header site and the options of the Location dropdown`, async () => {
+        await openInventoryList();
+        startingSite = await siteSelector.activeSiteName();
+        startingLocations = await locationsOnCurrentSite();
+      });
+
+      // STEP 2: Switch the header to the second site.
+      // Purpose: stock of one site must never be offered on another. Expected: none of the first site's locations.
       await s.step(`Header site selector: switch to the second site (SCP_INV_SITE2 or default) → Location dropdown lists none of the first site's locations`, async () => {
-        other = SITE2 || (here === 'Warehoust _NR' ? 'Site T2 Pmr2-2611011614' : 'Warehoust _NR');
-        await sites.ensureSite(other);
-        const b = await locs();
-        s.observe(`${here}: ${a.join(', ')} · ${other}: ${b.join(', ')}`);
-        expect(b.filter(x => a.includes(x))).toEqual([]);
+        const warehouse = testData.secondSite.warehouseSiteName;
+        otherSite = SECOND_SITE || (startingSite === warehouse ? testData.secondSite.whenStartingOnWarehouse : warehouse);
+        await siteSelector.ensureSite(otherSite);
+        const otherLocations = await locationsOnCurrentSite();
+        s.observe(`${startingSite}: ${startingLocations.join(', ')} · ${otherSite}: ${otherLocations.join(', ')}`);
+        expect(otherLocations.filter(location => startingLocations.includes(location))).toEqual([]);
       });
+
+      // STEP 3: Reload the page. Expected: the header still shows the second site (today it reverts, OBS-INV-12).
       await s.step(`Reload the page → header still shows the second site (OBS-INV-12 if it reverts)`, async () => {
-        await page.reload({ waitUntil: 'domcontentloaded' }); await k.settle(3000);
-        const now = await sites.activeSiteName(); s.observe(`After reload: ${now}`);
-        expect(now, 'Header site reverts after a reload (OBS-INV-12)').toBe(other);
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await procurement.settle(3000);
+        const siteAfterReload = await siteSelector.activeSiteName();
+        s.observe(`After reload: ${siteAfterReload}`);
+        expect(siteAfterReload, 'Header site reverts after a reload (OBS-INV-12)').toBe(otherSite);
       });
-      await s.step(`Header site selector: switch back to the starting site if different`, async () => { if ((await sites.activeSiteName()) !== here) await sites.ensureSite(here); });
+
+      // STEP 4: Put the starting site back so later suites start where they expect.
+      await s.step(`Header site selector: switch back to the starting site if different`, async () => {
+        if ((await siteSelector.activeSiteName()) !== startingSite) await siteSelector.ensureSite(startingSite);
+      });
     });
-    run.skip(meta('INV-REG-24', 'History date filter inclusive', 'Positive'), 'Covered by the 24 Oct Inventory automation; the ledger date pickers are not driven here (SCP-DEF-002 risk)');
-    run.skip(meta('INV-REG-25', 'Activity date picker', 'Known Defect'), 'SCP-DEF-002: clicking the input freezes the tab, so it is never clicked');
+
+    run.skip(scenarioInfo('INV-REG-24', 'History date filter inclusive', 'Positive'),
+      'Covered by the 24 Oct Inventory automation; the ledger date pickers are not driven here (SCP-DEF-002 risk)');
+    run.skip(scenarioInfo('INV-REG-25', 'Activity date picker', 'Known Defect'),
+      'SCP-DEF-002: clicking the input freezes the tab, so it is never clicked');
   } });
 });

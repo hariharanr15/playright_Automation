@@ -9,7 +9,13 @@ const { redactUrlsInText } = require('../../../utils/evidence');
 const { KNOWN_DEFECTS } = require('../../../config/scp-known-defects');
 
 // A failure whose message matches a registered known defect is reported as "Known Defect", not Failed.
-const knownDefect = message => KNOWN_DEFECTS.find(defect => defect.signature && defect.signature.test(message));
+// The defect must also belong to the scenario: its `modules` include the scenario's module, or its `scenarioIds`
+// list the scenario. Without this, a generic signature (e.g. a download timeout) would relabel any module's failure.
+const appliesTo = (defect, scenario = {}) => {
+  if (Array.isArray(defect.scenarioIds) && defect.scenarioIds.includes(scenario.id)) return true;
+  return !defect.modules || defect.modules.includes(scenario.module);
+};
+const knownDefect = (message, scenario) => KNOWN_DEFECTS.find(defect => defect.signature && appliesTo(defect, scenario) && defect.signature.test(message));
 
 const MAX_ATTEMPTS = 2;
 const stepInterval = () => {
@@ -82,6 +88,8 @@ class PmRun {
     const statuses = record.steps.map(step => step.status);
     record.status = statuses.includes('Failed') ? 'Failed' : statuses.includes('Blocked') ? 'Blocked' : statuses.includes('Known Defect') ? 'Known Defect' : 'Passed';
     if (record.status === 'Known Defect') record.defects = [...new Set(record.steps.map(step => step.defect).filter(Boolean))];
+    const retried = record.steps.filter(step => step.retried).length;
+    if (retried) record.retriedSteps = retried;
     console.log(`  ${record.status === 'Passed' ? '✔' : '✖'} ${meta.id} ${record.status} (${(record.durationMs / 1000).toFixed(1)} s)`);
     return record;
   }
@@ -115,19 +123,21 @@ class PmRun {
         entry.screenshot = await this.capture(`${record.id}-${slug(name)}-attempt${attempt}`);
         console.log(`    ✖ ${name} – attempt ${attempt} failed: ${entry.error.split('\n')[0]}`);
         // A registered known defect is the real result: record it, do not retry.
-        if (knownDefect(entry.error)) break;
+        if (knownDefect(entry.error, record)) break;
         // Between attempts only close an open dropdown; an open form stays open for the retry and the next steps.
         if (attempt < maxAttempts) await this.recoverLight().catch(() => null);
       }
     }
     if (step.status !== 'Passed') {
-      const defect = step.attempts.map(item => knownDefect(item.error || '')).find(Boolean);
+      const defect = step.attempts.map(item => knownDefect(item.error || '', record)).find(Boolean);
       if (defect) { step.status = 'Known Defect'; step.defect = defect.id; console.log(`    ⚠ ${name} – known defect ${defect.id}`); }
       else step.status = 'Failed';
       if (options.critical && !defect) context.blocked = name;
       await this.recoverLight().catch(() => null);
     } else {
-      console.log(`    ✔ ${name}`);
+      // A pass on the second attempt is kept visible: the first attempt's error stays in step.attempts.
+      if (step.attempts.length > 1) step.retried = true;
+      console.log(`    ✔ ${name}${step.retried ? ' (passed on retry)' : ''}`);
     }
     step.durationMs = Date.now() - started;
     if (stepInterval()) await this.page.waitForTimeout(stepInterval());
@@ -155,4 +165,4 @@ class PmRun {
   }
 }
 
-module.exports = { PmRun };
+module.exports = { PmRun, knownDefect };

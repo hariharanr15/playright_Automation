@@ -84,5 +84,59 @@ class InventoryBulkUploadPage extends BasePage {
     await this.dialog.getByRole('button', { name: 'Close', exact: true }).first().click();
     await expect(this.dialog).toBeHidden();
   }
+
+  // ===========================================================================================================
+  // Methods used by the Inventory Management regression (tests/pm-flow/inv-regression.spec.js), following the
+  // upload dialog as it behaves on NRVC_Hall today (21 Nov 2026): a successful upload says "uploaded successfully".
+  // The older methods above are kept unchanged for the specs under tests/regression/inventory-management.
+  // ===========================================================================================================
+
+  /** Opens the "Upload inventory activities" dialog from the Inventory Management list. */
+  async openUploadDialog() {
+    await this.page.getByRole('main').getByRole('button', { name: 'Upload', exact: true }).first().click();
+    await expect(this.page.getByText('Upload inventory activities').first()).toBeVisible();
+  }
+
+  /** Downloads the upload template from the open dialog into `file`. */
+  async saveTemplateTo(file) {
+    const download = this.page.waitForEvent('download');
+    await this.page.getByRole('button', { name: 'Download template' }).click();
+    await (await download).saveAs(file);
+    return file;
+  }
+
+  /** Closes the dialog with "Cancel" (no upload). */
+  async cancelUploadDialog() {
+    await this.page.getByRole('button', { name: 'Cancel', exact: true }).last().click();
+  }
+
+  /**
+   * Chooses `file`, clicks "Upload" and waits until the upload has finished.
+   * Returns the result line the dialog shows ("… uploaded successfully" or "The upload failed. Nothing was saved."),
+   * or an empty text when the dialog showed neither.
+   */
+  async uploadAndReadResult(file) {
+    await this.page.locator('input[type="file"]').last().setInputFiles(file);
+    await this.page.getByRole('button', { name: 'Upload', exact: true }).last().click();
+    // The dialog's help text already mentions "the error file", so the end of the "Uploading…" state is awaited instead.
+    await expect(this.page.getByRole('button', { name: /Uploading/ })).toHaveCount(0, { timeout: 120000 }).catch(() => null);
+    await this.page.getByText(/uploaded successfully|upload failed|nothing was saved/i).first().waitFor({ timeout: 15000 }).catch(() => null);
+    const pageText = await this.page.locator('body').innerText();
+    return pageText.match(/[^\n]*(uploaded successfully|upload failed|Nothing was saved)[^\n]*/i)?.[0] || '';
+  }
+
+  /** Clicks "Download error file" after a failed upload and saves the file. */
+  async saveErrorFileTo(file) {
+    const download = this.page.waitForEvent('download');
+    await this.page.getByRole('button', { name: /Download error file/ }).click();
+    await (await download).saveAs(file);
+    return file;
+  }
+
+  /** Closes the dialog after an upload ("Close", or Escape when the button is not offered). */
+  async closeUploadDialog() {
+    await this.page.getByRole('button', { name: 'Close', exact: true }).last().click({ timeout: 5000 })
+      .catch(() => this.page.keyboard.press('Escape'));
+  }
 }
 module.exports = { InventoryBulkUploadPage };

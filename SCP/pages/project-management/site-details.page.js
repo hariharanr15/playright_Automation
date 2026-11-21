@@ -55,6 +55,23 @@ class SiteDetailsPage extends BasePage {
     if (country) await expect(this.row(name)).toContainText(country);
   }
 
+  /**
+   * Adds a location (for example a second storage place) to an existing site:
+   * Site Details › the site's row "ADD" › choose the location type › enter the name › "Add".
+   * Used by the Inventory regression, which needs two locations on the test site for Internal Movement.
+   */
+  async addLocationToSite(siteName, { locationType, locationName }) {
+    await this.page.goto('/site-details', { waitUntil: 'domcontentloaded' });
+    const siteRow = this.page.locator('main tbody tr').filter({ has: this.page.getByRole('cell', { name: siteName, exact: true }) }).first();
+    await siteRow.getByRole('button', { name: 'ADD', exact: true }).click();
+    await this.page.getByRole('button', { name: 'Choose Location' }).first().click();
+    await this.page.getByRole('listbox').last().getByRole('option', { name: locationType, exact: true }).first().click();
+    const dialog = this.page.getByRole('heading', { name: /Add Location/ }).locator('xpath=../..');
+    await dialog.locator('input[type="text"], input:not([type])').first().fill(locationName);
+    await this.page.getByRole('button', { name: 'Add', exact: true }).last().click();
+    await expect(this.page.getByRole('heading', { name: /Add Location/ })).toBeHidden({ timeout: 15000 });
+  }
+
   async clearSearch() {
     await this.clearSearchAndPause(this.searchInput, 'Site Details search');
   }

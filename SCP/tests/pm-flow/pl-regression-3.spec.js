@@ -348,7 +348,7 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
         await d.getByRole('button', { name: 'Add', exact: true }).click();
         await expect(page.getByRole('heading', { name: 'Add Delivery', exact: true })).toBeHidden({ timeout: 20000 });
         await expect(drow()).toContainText('4');
-      });
+      }, { attempts: 1 }); // creates a delivery: a retry could log a second one
     });
     await run.scenario(meta('PL-REG-DLV-19', 'Required Remaining Qty subtracts logged deliveries (PL-R15)', 'Boundary'), async s => {
       await s.step(`Click "+ Log Delivery", read "Required Remaining Qty", close → value starts with 8 (12 ordered − 4 logged)`, async () => {
@@ -466,7 +466,7 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
       });
     });
     const grn = await run.scenario(meta('PL-REG-DLV-11b', 'Generate GRN → Partial Delivery (4 of 12)', 'Positive'), async s => {
-      await s.step(`Click "Generate GRN" icon → toast "GRN Generated Successfully!" (partial delivery, 4 of 12)`, async () => { await icon('Generate GRN').click(); await k.toast('GRN Generated Successfully!', 30000); });
+      await s.step(`Click "Generate GRN" icon → toast "GRN Generated Successfully!" (partial delivery, 4 of 12)`, async () => { await icon('Generate GRN').click(); await k.toast('GRN Generated Successfully!', 30000); }, { attempts: 1 });
     });
     // Open the remembered component view unless it is already shown (scenarios must not rely on the previous one's page).
     const componentView = async () => {

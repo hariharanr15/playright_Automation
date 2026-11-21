@@ -156,7 +156,7 @@ test('Procurement Log – regression part 1', async ({ page, browserName }) => {
     if (ordered.status !== 'Passed') { run.abort('Component was not ordered'); return; }
     const partial = await run.scenario(meta('PL-REG-DLV-13', 'Partial delivery 4 of 10 → Partial Delivery', 'Positive'), async s => {
       let shortage;
-      await s.step(`Component view › "+ Log Delivery": QTY 4 (today, first location, item name); complete pre-shipping checklist, approve, edit actual date, shipping info, delivery conditions Good 3 / Damage 1, click "Generate GRN" → toast "GRN Generated Successfully!"`, async () => { ({ shortage } = await k.deliverToGrn({ qty: 4, good: 3, damage: 1, tag: `${RUN}-D1` })); }, { critical: true });
+      await s.step(`Component view › "+ Log Delivery": QTY 4 (today, first location, item name); complete pre-shipping checklist, approve, edit actual date, shipping info, delivery conditions Good 3 / Damage 1, click "Generate GRN" → toast "GRN Generated Successfully!"`, async () => { ({ shortage } = await k.deliverToGrn({ qty: 4, good: 3, damage: 1, tag: `${RUN}-D1` })); }, { critical: true, attempts: 1 });
       await s.step(`Reload the submittal drawer without ?schedule= → component Status is "Partial Delivery"`, async () => {
         await page.goto(page.url().replace(/&schedule=[^&]+/, ''), { waitUntil: 'domcontentloaded' });
         await expect.poll(() => k.componentStatus(), { timeout: 30000 }).toBe('Partial Delivery');
@@ -171,7 +171,7 @@ test('Procurement Log – regression part 1', async ({ page, browserName }) => {
     if (partial.status !== 'Passed' && partial.status !== 'Known Defect') { run.skip(dlv11, 'Partial delivery did not complete'); run.skip(dlv12, 'No delivered submittal'); }
     else {
     const full = await run.scenario(dlv11, async s => {
-      await s.step(`Component view › "+ Log Delivery": QTY 6, run the same checklist → approve → shipping → conditions → "Generate GRN" chain → GRN generated`, () => k.deliverToGrn({ qty: 6, tag: `${RUN}-D2` }), { critical: true });
+      await s.step(`Component view › "+ Log Delivery": QTY 6, run the same checklist → approve → shipping → conditions → "Generate GRN" chain → GRN generated`, () => k.deliverToGrn({ qty: 6, tag: `${RUN}-D2` }), { critical: true, attempts: 1 });
       await s.step(`Reload the submittal drawer without ?schedule= → component Status is "Delivered"`, async () => {
         await page.goto(page.url().replace(/&schedule=[^&]+/, ''), { waitUntil: 'domcontentloaded' });
         await expect.poll(() => k.componentStatus(), { timeout: 30000 }).toBe('Delivered');

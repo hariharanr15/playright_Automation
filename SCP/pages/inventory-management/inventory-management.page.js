@@ -188,5 +188,267 @@ class InventoryManagementPage extends BasePage {
     await expect.poll(async () => numeric(await cells.nth(6).innerText())).toBe(Number(activity.quantity));
     await expect.poll(async () => numeric(await cells.nth(7).innerText())).toBe(expectedTotal);
   }
+
+  // ===========================================================================================================
+  // Methods used by the Inventory Management regression (tests/pm-flow/inv-regression.spec.js).
+  // They follow the screen as it behaves on NRVC_Hall today (21 Nov 2026). The older methods above are kept
+  // unchanged for the specs under tests/regression/inventory-management.
+  // ===========================================================================================================
+
+  /**
+   * Opens the Inventory Management list with a fresh page load and puts the header site back.
+   * A page load resets the header site to the newest site (OBS-INV-12), and the location lists follow that site,
+   * so the test site is restored before anything else is read.
+   */
+  async openListOnSite(siteSelector, siteName) {
+    await this.page.keyboard.press('Escape').catch(() => null);
+    await this.page.goto('/inventory-management', { waitUntil: 'domcontentloaded' });
+    await siteSelector.keepSite(siteName);
+    await expect.poll(() => this.listedItemCount(), { message: 'Inventory list shows its items', timeout: 30000 }).toBeGreaterThan(0);
+  }
+
+  /** Number of materials in the list, read from the "N items" label above the table. */
+  async listedItemCount() {
+    const text = await this.main.innerText();
+    const match = text.match(/(\d+) items?/);
+    return match ? Number(match[1]) : NaN;
+  }
+
+  /** Row of one material in the list, matched on the exact material name. */
+  listRowOf(material) {
+    return this.main.locator('table tbody tr').filter({ has: this.page.getByRole('cell', { name: material, exact: true }) }).first();
+  }
+
+  /** Searches the list for a material and returns its stock (the "Inventory" column, 4th cell). */
+  async readListInventory(material) {
+    await this.searchInput.fill(material);
+    const row = this.listRowOf(material);
+    await expect(row, `Material ${material} is listed`).toBeVisible({ timeout: 15000 });
+    return numeric(await row.getByRole('cell').nth(3).innerText());
+  }
+
+  /**
+   * Opens one of the material's detail views from its row menu: "Actions" (the stock ledger), "Location",
+   * "Submittals" or "UOM". Waits until the view's heading and its table are shown.
+   */
+  async openMaterialView(material, viewName) {
+    await this.searchInput.fill(material);
+    const row = this.listRowOf(material);
+    await expect(row, `Material ${material} is listed`).toBeVisible({ timeout: 15000 });
+    await row.locator('img[alt="Menu"]').click();
+    await this.page.getByRole('menuitem', { name: viewName, exact: true }).click();
+    await expect(this.page.getByRole('heading', { name: viewName, exact: true })).toBeVisible({ timeout: 15000 });
+    // The view's rows arrive after the heading. Wait until the page has finished loading, then for the ledger
+    // ("Actions") until its table shows rows. The extra 1.5 s pause is the settle time the suite has always used:
+    // the pilot run of 21 Nov showed the ledger still updating without it (Closing Balance and rows not yet loaded).
+    await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => null);
+    if (viewName === 'Actions') {
+      await this.ledgerTable().locator('tbody tr').filter({ has: this.page.locator('td') }).first()
+        .waitFor({ timeout: 15000 }).catch(() => null);
+    }
+    await this.page.waitForTimeout(1500);
+  }
+
+  /**
+   * Reads the "Closing Balance" shown at the top of the ledger.
+   * While the ledger loads it briefly shows "Closing Balance 0" (seen in the 21 Nov pilot run), so by default the
+   * value is read again until it is a number other than 0. Pass `{ allowZero: true }` for a material that may
+   * really have no stock.
+   */
+  async readClosingBalance({ allowZero = false } = {}) {
+    let balance = NaN;
+    await expect.poll(async () => {
+      const text = await this.page.locator('body').innerText();
+      const match = text.match(/Closing Balance\s*:?\s*(-?[\d,.]+)/);
+      balance = match ? Number(match[1].replace(/,/g, '')) : NaN;
+      return Number.isFinite(balance) && (allowZero || balance !== 0);
+    }, { message: 'Ledger shows its Closing Balance (a number, not the 0 shown while loading)', timeout: 15000 }).toBe(true);
+    return balance;
+  }
+
+  /** Data rows of the tables on screen (the ledger rows when the ledger is open). */
+  ledgerRows() {
+    return this.page.getByRole('row').filter({ has: this.page.locator('td') });
+  }
+
+  /** The ledger table: the table whose header has a "Total QTY" column. */
+  ledgerTable() {
+    return this.page.locator('table').filter({ has: this.page.getByRole('columnheader', { name: /Total QTY/i }) }).last();
+  }
+
+  /** Stock of the material at one location, read from the "Location" view (0 when the location is not listed). */
+  async readStockAtLocation(location) {
+    const row = this.page.getByRole('row').filter({ hasText: new RegExp(escapeRegex(location), 'i') }).first();
+    if (!(await row.count())) return 0;
+    return numeric(await row.getByRole('cell').last().innerText());
+  }
+
+  // ---------- "Add Activity" form on the ledger ----------
+
+  addActivityButton() {
+    return this.page.getByRole('button', { name: 'Add Activity' }).last();
+  }
+
+  /** The form's own "ADD" (save) button. */
+  activitySaveButton() {
+    return this.page.getByRole('button', { name: 'ADD', exact: true }).last();
+  }
+
+  /** Opens the Add Activity form from the ledger and waits until its save button is shown. */
+  async openActivityForm() {
+    await this.addActivityButton().click();
+    await this.activitySaveButton().waitFor();
+  }
+
+  /**
+   * The input control that belongs to a form label (the first input, list, select or dropdown button after it).
+   * Labels of mandatory fields end with "*".
+   */
+  activityControl(label) {
+    return this.page.getByText(new RegExp(`^${escapeRegex(label)}\\s*\\*?$`)).last()
+      .locator('xpath=following::*[self::input[not(@type="checkbox") and not(@readonly)] or self::textarea or self::select or self::button or @role="button"][1]');
+  }
+
+  /**
+   * Sets one field of the Add Activity form and returns the options the field offered.
+   * - Text and number fields are typed into.
+   * - Dropdowns: `choice` is the exact option text, or a function that picks the first matching option.
+   *   When nothing matches, the dropdown is closed and only the offered options are returned.
+   */
+  async setActivityField(label, choice) {
+    const control = this.activityControl(label);
+    const tagName = await control.evaluate(element => element.tagName);
+    if (tagName === 'INPUT' || tagName === 'TEXTAREA') {
+      await control.fill(String(choice));
+      return [];
+    }
+    if (tagName === 'SELECT') {
+      const offered = (await control.locator('option').allInnerTexts()).map(text => text.trim()).filter(Boolean);
+      const wanted = typeof choice === 'function' ? offered.find(choice) : choice;
+      if (wanted !== undefined) await control.selectOption({ label: wanted });
+      return offered;
+    }
+    await control.click();
+    await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => null);
+    await this.page.waitForTimeout(400);
+    const list = this.page.getByRole('listbox').last();
+    const offered = (await list.getByRole('option').allInnerTexts()).map(text => text.trim()).filter(Boolean);
+    const wanted = typeof choice === 'function' ? offered.find(choice) : choice;
+    if (wanted === undefined) {
+      await this.page.keyboard.press('Escape');
+      return offered;
+    }
+    await list.getByRole('option', { name: wanted, exact: true }).first().click();
+    // A choice reloads the dependent fields and the "Available at" hint; let the page finish before the next field
+    // (the same settle the suite used before the 21 Nov rewrite – without it the hint was read as 0).
+    await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => null);
+    await this.page.waitForTimeout(400);
+    return offered;
+  }
+
+  /** Text currently shown in a dropdown field (for example the chosen Submittal or Schedule). */
+  async readActivityField(label) {
+    const dropdown = this.page.getByText(new RegExp(`^${escapeRegex(label)}\\s*\\*?$`)).last().locator('xpath=following::*[@role="button"][1]');
+    return (await dropdown.innerText()).trim();
+  }
+
+  /**
+   * Fills the whole Add Activity form (the form must be open) and returns what the dropdowns offered.
+   * The Submittal is tried from `submittalCandidates(offeredSubmittals)` in order until one has schedule lines,
+   * because some submittals (for example imported ones) have none. `chosenSubmittal` is undefined when no
+   * candidate had a schedule. After each Submittal change the Schedule list reloads (about one second, OBS-INV-3),
+   * so `waitForScheduleMs` gives it time before it is read.
+   */
+  async fillActivityForm({ item, action, fromLocation, toLocation, quantity, comments, supplier, subcontractor,
+    submittalCandidates, schedule = () => true, waitForScheduleMs = 2000 }) {
+    await this.setActivityField('Item', item);
+    await this.setActivityField('Action', action);
+    const locations = await this.setActivityField('From Location', fromLocation);
+    if (toLocation) await this.setActivityField('To Location', toLocation);
+    await this.setActivityField('QTY', quantity);
+    await this.setActivityField('Comments', comments);
+    const suppliers = await this.setActivityField('Supplier', supplier);
+    const subcontractors = await this.setActivityField('Subcontractor', subcontractor);
+    // Read the submittals offered for this material without choosing one yet.
+    const submittals = await this.setActivityField('Submittal', () => undefined);
+    let schedules = [];
+    let chosenSubmittal;
+    for (const candidate of submittalCandidates(submittals)) {
+      await this.setActivityField('Submittal', candidate);
+      if (waitForScheduleMs) await this.page.waitForTimeout(waitForScheduleMs);
+      schedules = await this.setActivityField('Schedule', schedule);
+      if (schedules.length) {
+        chosenSubmittal = candidate;
+        break;
+      }
+    }
+    return { locations, suppliers, subcontractors, submittals, schedules, chosenSubmittal };
+  }
+
+  /** The "Available at <location>: <qty>" hint shown in the form; returns the quantity and the full text. */
+  async readAvailableStockHint() {
+    const hint = (await this.page.getByText(/Available at .+: [\d.]+/).first().innerText()).trim();
+    return { text: hint, quantity: Number(hint.match(/: ([\d.]+)/)[1]) };
+  }
+
+  /**
+   * Clicks "ADD" and waits for the outcome: the form closes after a save, or a validation or rejection message
+   * appears and the form stays open. The caller checks which of the two happened.
+   */
+  async clickAddAndWaitForOutcome() {
+    const saveRequest = this.page.waitForResponse(
+      response => response.request().method() === 'POST' && response.url().includes('/inventory/add_inv_activity/'),
+      { timeout: 15000 }).catch(() => null);
+    await this.activitySaveButton().click();
+    await Promise.race([saveRequest, this.validationMessages().first().waitFor({ timeout: 15000 }).catch(() => null)]);
+    // A rejection message is shown just after the server answers; let the page finish before it is read.
+    await this.page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => null);
+    // After a successful save the form needs a moment to close.
+    await this.activitySaveButton().waitFor({ state: 'hidden', timeout: 5000 }).catch(() => null);
+  }
+
+  /** True while the Add Activity form is still open (for example after a rejected save). */
+  async isActivityFormOpen() {
+    return this.activitySaveButton().isVisible().catch(() => false);
+  }
+
+  /** Validation and rejection texts the form and the app show. */
+  validationMessages() {
+    return this.page.getByText(/required|cannot|not enough|must be|invalid/i);
+  }
+
+  /** All toasts and form messages currently shown, as one text (used to report what the app said). */
+  async readActivityMessages() {
+    const toasts = (await this.page.getByRole('status').allInnerTexts()).join(' | ');
+    const formMessages = await this.validationMessages().allInnerTexts().catch(() => []);
+    return `${toasts} ${formMessages}`.trim();
+  }
+
+  /** Closes the Add Activity form without saving, if it is open. */
+  async closeActivityFormIfOpen() {
+    if (await this.isActivityFormOpen()) {
+      await this.page.keyboard.press('Escape');
+      await this.activitySaveButton().waitFor({ state: 'hidden', timeout: 5000 }).catch(() => null);
+    }
+  }
+
+  // ---------- Export ----------
+
+  /** Clicks "Export" on the list page and saves the downloaded file. */
+  async exportListTo(file) {
+    const download = this.page.waitForEvent('download');
+    await this.main.getByRole('button', { name: 'Export', exact: true }).first().click();
+    await (await download).saveAs(file);
+    return file;
+  }
+
+  /** Options of the list page's location filter, without "All locations". */
+  async readLocationFilterOptions() {
+    const options = await this.main.locator('select').first().locator('option').allInnerTexts();
+    return options.map(text => text.trim()).filter(text => text && text !== 'All locations');
+  }
 }
+
+const escapeRegex = value => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 module.exports = { InventoryManagementPage, ACTIONS };

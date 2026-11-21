@@ -1,0 +1,68 @@
+# SCP – Items pending client / team confirmation
+
+**Created:** 21 Nov 2026 · **Module:** Inventory Management · **Suite:** `npm run inventory:regression`
+**Environment:** staging, project NRVC_Hall, site "Warehoust _NR", material "43 Inches"
+
+## Why this list exists
+
+The client cannot answer our questions at the moment. So the automation flow runs on what the application does today, and every item that looks logically wrong is recorded here and registered as a Known Defect in `config/scp-known-defects.js`. Nothing has been raised in Jira.
+
+- An item tagged **Pending confirmation** is today's behaviour, not an agreed defect. When the team answers, each entry is either kept (confirmed defect), changed (new expected behaviour), or removed (the application is right; the test is then changed to expect today's behaviour).
+- A registered item that suddenly passes is flagged in the report as "not reproduced", so a silent fix is noticed.
+
+## Shared steps
+
+Sign in → Supply Chain Planner → header project **NRVC_Hall** → header site **Warehoust _NR** → sidebar **Inventory Management** → search **43 Inches**.
+
+## Items
+
+| # | Defect ID | Test | Status | What we see today | Question for the team |
+|---|---|---|---|---|---|
+| 1 | SCP-DEF-053 | INV-REG-12 | Pending confirmation | Add Activity hint "Available at Gate 5: **68**"; ⋮ › Location view shows Gate 5 = **94**. Both were read 7 s apart with no activity in between. The save check uses 68. The Location view rows add up to more than the site total (589). | Which figure is the correct stock at a location? Should the two screens always agree? |
+| 2 | SCP-DEF-054 | INV-REG-09 | Pending confirmation | QTY 1.555 is rejected and the stock is unchanged, but the message is only "Invalid data provided. Invalid data provided." | How many decimal places are allowed, and what should the message say? |
+| 3 | SCP-DEF-055 | INV-REG-15 | Pending confirmation | After a Loss of 1 the list still shows 587, not 586, until a full page reload. | Must the list refresh right after an activity is saved? |
+| 4 | SCP-DEF-056 | INV-REG-20 | Pending confirmation | The ledger column "Submittal" shows `PLD1102-SPEC-07` (Spec Section No), not `PLD1102-SUB-07`. | Is the column name wrong, or is it showing the wrong value? |
+| 5 | SCP-DEF-058 | INV-REG-23 | Pending confirmation | After switching the header site and reloading, a different site is shown (chose `Site T2 Pmr2-2611011614`, after reload `Site T2 Pmr2-2611201108`). | Must the chosen site survive a page reload? |
+| 6 | SCP-DEF-057 | INV-REG-22 | **Confirmed rule (INV-R2)** | "Export" downloads the activity log, not the stock balance list (Material ID, Material Name, Inventory). | None. The rule is confirmed; only the fix is pending. |
+| 7 | SCP-DEF-045 | INV-REG-14 | Registered 2 Nov | Activity can be saved with a schedule from a different submittal. **21 Nov 08:37 run: not reproduced** (no mismatched row was saved). Watch the next runs before removing it. | Has this been fixed? |
+| 8 | — | INV-REG-18 | Observed behaviour, pending confirmation | The upload checks rows top to bottom and deducts earlier valid rows before checking the next one. For "Loss 1" then "Loss 99999" at Gate 5 with 52 in stock, the error file says 51 available. The test now expects this. | Is it intended that the "available" figure in the error file already deducts earlier rows of the same file? |
+
+## Steps per item
+
+**1. INV-REG-12 – stock hint vs Location view**
+1. On the 43 Inches row, click ⋮ › **Actions** › **Add Activity**. Choose action **Issue To Construction**.
+2. Note the hint "Available at Gate 5: N". Close the form without saving.
+3. Click ⋮ › **Location** and read the QTY of Gate 5.
+- Expected (not confirmed): the same value as N.
+
+**2. INV-REG-09 – three-decimal quantity**
+1. Open ⋮ › **Actions** › **Add Activity**. Choose action **Loss**, QTY **1.555**, then click **ADD**.
+- Confirmed behaviour: the form stays open and the Closing Balance is unchanged (the test checks this).
+- Unconfirmed: the message wording.
+
+**3. INV-REG-15 – list refresh**
+1. Note the list Inventory value.
+2. Add a **Loss** of 1 from the ledger.
+3. Press Escape and click sidebar **Inventory Management** without reloading.
+- Expected (not confirmed): the value is 1 lower.
+
+**4. INV-REG-20 – Submittal column**
+1. Open ⋮ › **Actions**.
+2. Read the **Submittal** cell of a row created by a test run.
+
+**5. INV-REG-23 – site after reload**
+1. Switch the header site to another site.
+2. Press F5 and read the header site.
+
+**6. INV-REG-22 – Export**
+1. On the Inventory Management list, click **Export** and open the xlsx.
+2. Check the header row.
+
+## Corrected test (not an application issue)
+
+**INV-REG-18** compared the upload error file's "available" figure (stock at the row's From Location, e.g. Gate 5 = 59) with the ledger Closing Balance (whole site, 582). These can never be equal. Since 21 Nov it compares with the Add Activity hint for the same location, which is the figure the save check uses (INV-R3), minus the valid rows above the invalid row in the file (item 8).
+
+## Not covered yet (gaps, not failures)
+
+- **INV-REG-21** (damaged units counted as received): left to PL-REG-DLV-13; no executed check seen yet.
+- **INV-REG-24 / 25** (date filter, activity date picker): not run because of SCP-DEF-002 (the date picker freezes the tab).
