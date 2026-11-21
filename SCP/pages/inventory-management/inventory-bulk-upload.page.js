@@ -106,8 +106,10 @@ class InventoryBulkUploadPage extends BasePage {
   }
 
   /** Closes the dialog with "Cancel" (no upload). */
+  /** Closes the upload dialog with "Cancel". Does nothing when it is already closed (e.g. on a step retry). */
   async cancelUploadDialog() {
-    await this.page.getByRole('button', { name: 'Cancel', exact: true }).last().click();
+    const cancel = this.page.getByRole('button', { name: 'Cancel', exact: true }).last();
+    if (await cancel.isVisible().catch(() => false)) await cancel.click();
   }
 
   /**

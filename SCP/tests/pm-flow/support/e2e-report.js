@@ -3,6 +3,7 @@
 // registered known defect is a FAIL with the defect ID. The smoke is PASS only when every mandatory step passed.
 const fs = require('fs');
 const path = require('path');
+const { defectLabel } = require('../../../config/scp-known-defects');
 
 const esc = value => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const secs = ms => (ms == null ? '' : `${(ms / 1000).toFixed(1)} s`);
@@ -15,7 +16,7 @@ const actual = step => {
   const last = step.attempts?.[step.attempts.length - 1];
   const observed = (step.reason || '').replace(/^Observed: /, '').replace(/ · Observed: /g, ' · ');
   if (step.status === 'Passed') return observed || 'As expected';
-  if (step.status === 'Known Defect') return `Known defect ${step.defect}: ${last?.error || ''}`;
+  if (step.status === 'Known Defect') return `Known defect ${defectLabel(step.defect)}: ${last?.error || ''}`;
   if (step.status === 'Blocked') return step.reason || 'Not executed';
   return last?.error || step.reason || '';
 };
@@ -112,7 +113,7 @@ function html({ result, records, sessions, dashboard, title, video, home, analyt
       const retryCount = Math.max(0, (st.attempts || []).length - 1);
       return `<tr><td class="id">${esc(st.id || '')}<div class="opt">${esc(sc.id)} · ${esc(sc.module)}</div></td><td>${esc(act)}</td><td>${esc(exp)}</td><td>${esc(actual(st))}${retries}${st.recordId ? `<div class="rec">Record: ${esc(st.recordId)}</div>` : ''}</td><td>${badge(STEP[st.status] || st.status)}${st.mandatory === false ? '<div class="opt">optional</div>' : ''}<div class="opt">retries ${retryCount}</div></td><td>${esc(st.role || '')}<div class="opt">${esc(st.org || '')}</div></td><td>${time(st.startedAt)}–${time(st.finishedAt)}<div class="opt">${secs(st.durationMs)}</div></td><td>${shots.map(img).join('')}</td></tr>`;
     }).join('') || `<tr><td colspan="8">${esc(sc.reason || 'No steps executed')}</td></tr>`;
-    return `<section><h3>${esc(sc.id)} · ${esc(sc.title)} ${badge(scStatus)}${sc.defects ? ` <span class="kd">${esc(sc.defects.join(', '))}</span>` : ''}</h3>
+    return `<section><h3>${esc(sc.id)} · ${esc(sc.title)} ${badge(scStatus)}${sc.defects ? ` <span class="kd">${esc(sc.defects.map(defectLabel).join(', '))}</span>` : ''}</h3>
       <p class="meta">${esc(sc.module)} · ${secs(sc.durationMs)}${sc.reason && sc.steps.length ? ` · ${esc(sc.reason)}` : ''}</p>
       <table><tr><th>Step</th><th>Action</th><th>Expected</th><th>Actual</th><th>Status</th><th>Role / organisation</th><th>Time</th><th>Screenshot</th></tr>${rows}</table></section>`;
   }).join('');

@@ -100,7 +100,10 @@ test('Inventory Management – regression', async ({ page, browserName }) => {
     };
 
     /** The first location that can hold stock, from the locations the last form offered. */
-    const sourceLocation = () => (shared.offered.locations || []).find(isRealLocation);
+    // Pinned at setup (step 8) to the real location with the most stock, so the run never depends on one location
+    // being refilled. Falls back to the first real location the form offered.
+    const sourceLocation = () => shared.sourceLocationName || (shared.offered.locations || []).find(isRealLocation);
+    const sameName = name => option => option.trim().toLowerCase() === String(name).trim().toLowerCase();
 
     /**
      * Submittals to try, in order: the preferred long-lived ones first, then the newest run submittals.
@@ -124,7 +127,7 @@ test('Inventory Management – regression', async ({ page, browserName }) => {
       shared.offered = await inventory.fillActivityForm({
         item: MATERIAL,
         action,
-        fromLocation: fromLocation || isRealLocation,
+        fromLocation: fromLocation || (shared.sourceLocationName ? sameName(shared.sourceLocationName) : isRealLocation),
         toLocation,
         quantity,
         comments: `${RUN_TAG} ${action}`,
@@ -170,19 +173,35 @@ test('Inventory Management – regression', async ({ page, browserName }) => {
         expect(shared.startingStock).toBeGreaterThanOrEqual(testData.minimumStartingStock);
       }, { critical: true });
 
-      // STEP 8: Read the stock at the location the activities take stock from (no save).
-      // Purpose: every activity uses the first real location (e.g. Gate 5), and one run uses about 8-9 units there.
-      // The site total can be high while that location is empty, so the run stops here with a clear reason
-      // instead of failing later with misleading "Not enough stock" errors.
-      // Expected: the "Available at <location>: N" hint shows at least minimumSourceLocationStock units.
-      await s.step(`Ledger › "Add Activity": action "Loss", QTY 1, no save → "Available at <first real location>: N" is at least ${testData.minimumSourceLocationStock}`, async () => {
-        await openLedger();
-        await recordActivity({ action: CHANGES.loss.action, quantity: 1, save: false });
-        const hint = await inventory.readAvailableStockHint();
-        await inventory.closeActivityFormIfOpen();
-        s.observe(hint.text);
-        expect(hint.quantity, `Not enough stock at the source location (${hint.text}); refill it with the Procurement regression (npm run procurement:regression)`)
-          .toBeGreaterThanOrEqual(testData.minimumSourceLocationStock);
+      // STEP 8: Choose the location every activity of this run takes stock from.
+      // Purpose: one run uses about 8-9 units at its source location. Until 21 Nov the source was always the first
+      // real location (Gate 5), which ran down while other locations held hundreds of units. Now the real location
+      // with the most stock is chosen, and its stock is confirmed with the form's own "Available at" hint (the
+      // figure the save check uses; the Location view can differ, SCP-DEF-053).
+      // Expected: a real location whose hint shows at least minimumSourceLocationStock units; it is used for the run.
+      await s.step(`Row "⋮" › "Location": rank real locations by QTY; for the best ones, Ledger › "Add Activity" (Loss, QTY 1, from that location, no save) → "Available at <location>: N" is at least ${testData.minimumSourceLocationStock}; that location is used for the run`, async () => {
+        await openInventoryList();
+        await inventory.openMaterialView(MATERIAL, 'Location');
+        const candidates = (await inventory.readLocationStocks())
+          .filter(location => isRealLocation(location.name))
+          .sort((first, second) => second.quantity - first.quantity)
+          .slice(0, testData.maximumSourceLocationCandidates);
+        const checked = [];
+        for (const candidate of candidates) {
+          await openLedger();
+          await recordActivity({ action: CHANGES.loss.action, quantity: 1, save: false, fromLocation: sameName(candidate.name) });
+          const formOption = (shared.offered.locations || []).find(sameName(candidate.name));
+          const hint = formOption ? await inventory.readAvailableStockHint() : { text: 'not offered by the form', quantity: 0 };
+          await inventory.closeActivityFormIfOpen();
+          checked.push(`${candidate.name}: Location view ${candidate.quantity}, form "${hint.text}"`);
+          if (formOption && hint.text.toLowerCase().includes(candidate.name.toLowerCase()) && hint.quantity >= testData.minimumSourceLocationStock) {
+            shared.sourceLocationName = formOption;
+            break;
+          }
+        }
+        s.observe(`${checked.join(' · ')} → source: ${shared.sourceLocationName || 'none'}`);
+        expect(shared.sourceLocationName, `No real location has ${testData.minimumSourceLocationStock}+ units of ${MATERIAL} (${checked.join('; ')}); deliver stock with the Procurement regression (npm run procurement:regression)`)
+          .toBeTruthy();
       }, { critical: true });
     });
     if (setup.status !== 'Passed') {
@@ -480,7 +499,8 @@ test('Inventory Management – regression', async ({ page, browserName }) => {
         await openInventoryList();
         const locations = await inventory.readLocationFilterOptions();
         if (locations.length >= 2) {
-          shared.destination = locations.find(location => location !== sourceLocation()) || locations[1];
+          shared.destination = locations.find(location => isRealLocation(location) && !sameName(sourceLocation())(location))
+            || locations.find(location => !sameName(sourceLocation())(location)) || locations[1];
           s.observe(`Using existing ${shared.destination}`);
           return;
         }
@@ -497,7 +517,9 @@ test('Inventory Management – regression', async ({ page, browserName }) => {
       // Expected: the form closes (saved).
       await s.step(`Row "⋮" › "Location": note QTY at source and destination; Ledger › "Add Activity": "Internal Movement", From = source, To = second location, QTY 1, "ADD" → form closes`, async () => {
         const sameAsDestination = option => option.toLowerCase() === shared.destination.toLowerCase();
-        shared.source = (shared.offered.locations || []).find(option => isRealLocation(option) && !sameAsDestination(option));
+        shared.source = sameAsDestination(sourceLocation())
+          ? (shared.offered.locations || []).find(option => isRealLocation(option) && !sameAsDestination(option))
+          : sourceLocation();
         sourceBefore = await stockAtLocation(shared.source || '');
         destinationBefore = await stockAtLocation(shared.destination);
         await openLedger();

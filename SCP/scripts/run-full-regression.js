@@ -50,6 +50,8 @@ for (const s of chosen) {
 }
 plan.finishedAt = new Date().toISOString(); save();
 const pdf = spawnSync('node', [path.join('scripts', 'full-regression-pdf.js'), out], { cwd: root, stdio: 'inherit' });
+// Human-readable list of every Failed, Blocked and Skipped test case, module by module (NON_PASSED_TEST_CASES.md).
+spawnSync('node', [path.join('scripts', 'non-pass-report.js'), out], { cwd: root, stdio: 'inherit' });
 console.log(`\nFull regression finished. Folder: ${out}${pdf.status === 0 ? '' : ' (PDF generation failed – rerun: node scripts/full-regression-pdf.js <folder>)'}`);
 for (const e of plan.suites) {
   const v = e.reportDir && ['run.mp4', 'e2e-run.mp4'].map(x => path.join(e.reportDir, x)).find(x => fs.existsSync(x));

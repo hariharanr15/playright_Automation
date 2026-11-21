@@ -49,6 +49,13 @@ class PmRun {
     this.result.scenarios.push({ ...meta, status: 'Skipped', reason, steps: [], startedAt: new Date().toISOString(), durationMs: 0 });
   }
 
+  // Records a scenario that cannot run because an environment precondition is not met (e.g. a project setting that
+  // someone switched off). Reported as Blocked with the reason, not as an application failure.
+  block(meta, reason) {
+    if (!this.selected(meta.id)) return;
+    this.result.scenarios.push({ ...meta, status: 'Blocked', reason, steps: [], startedAt: new Date().toISOString(), durationMs: 0 });
+  }
+
   // Stops the remaining scenarios (recorded as Blocked) when the shared session itself is unusable.
   abort(reason) { this.aborted = reason; }
 

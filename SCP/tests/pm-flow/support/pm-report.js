@@ -1,6 +1,7 @@
 // HTML report for a PM flow run (Smoke or Regression), grouped by module and submodule.
 const fs = require('fs');
 const path = require('path');
+const { defectLabel } = require('../../../config/scp-known-defects');
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 const seconds = ms => `${((ms || 0) / 1000).toFixed(1)} s`;
@@ -26,7 +27,7 @@ function stepRows(scenario) {
     const attempts = (step.attempts || []).length;
     const note = step.reason ? `<div class="muted">${esc(step.reason)}</div>` : '';
     const retried = step.status === 'Passed' && attempts > 1 ? ' <span class="muted">(passed on retry)</span>' : '';
-    const defect = step.defect ? ` <span class="muted">(${esc(step.defect)})</span>` : '';
+    const defect = step.defect ? ` <span class="muted">(${esc(defectLabel(step.defect))})</span>` : '';
     return `<tr><td>${index + 1}</td><td>${esc(step.name)}${retried}${note}${failures}</td><td>${badge(step.status)}${defect}</td><td>${seconds(step.durationMs)}</td></tr>`;
   }).join('');
 }

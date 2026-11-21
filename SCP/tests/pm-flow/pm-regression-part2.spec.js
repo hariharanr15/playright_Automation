@@ -1507,7 +1507,11 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
 
     // ================= PreShipping Checklist =================
-    await sc('PM-REG-PSC-02', 'PreShipping Checklist', 'Enabled tick saves automatically', async s => {
+    // Precondition (as in part 1): the page is only listed while the project's Pre-Shipping option is on.
+    if (!(await navigator.hasMenuEntry('PreShipping Checklist'))) {
+      run.block(meta('PM-REG-PSC-02', 'PreShipping Checklist', 'Enabled tick saves automatically'),
+        "Environment precondition not met: the project's Pre-Shipping option is switched off (Project Management › Configuration Options), so the \"PreShipping Checklist\" menu entry is hidden. Switch it on and re-run this case.");
+    } else await sc('PM-REG-PSC-02', 'PreShipping Checklist', 'Enabled tick saves automatically', async s => {
       const box = () => main.locator('tbody tr').last().locator('input[type="checkbox"]');
       let original;
       await s.step(`Sidebar › Project Management › "PreShipping Checklist" → page opens`, () => navigator.open('PreShipping Checklist'), { critical: true });
@@ -1525,7 +1529,10 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
           await page.waitForTimeout(1500);
           s.observe(`message: ${await feedback() || '(none)'}`);
           await reload();
-          expect(await box().isChecked(), 'Change kept after reload').toBe(!original);
+          // The direction depends on the last question's current state. 21 Nov 2026: switching an enabled question OFF
+          // shows no message and is not kept (SCP-DEF-063, pending confirmation: a question in use may be locked).
+          const direction = original ? 'Switching "Enabled" OFF' : 'Switching "Enabled" ON';
+          expect(await box().isChecked(), `${direction} on a PreShipping question was not kept after reload`).toBe(!original);
         });
       } finally {
         await s.step(`Click the last question's checkbox back if needed, reload → original value restored`, async () => {

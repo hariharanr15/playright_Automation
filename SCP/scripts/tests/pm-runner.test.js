@@ -54,3 +54,12 @@ test('attempts: 1 runs a data-creating step once', async () => {
   assert.equal(record.status, 'Failed');
   assert.equal(record.retriedSteps, undefined);
 });
+
+test('block() records an environment precondition as Blocked with its reason, not as Failed', () => {
+  const run = newRun();
+  run.block({ id: 'PM-REG-PSC-01', module: 'Project Management', submodule: 'PreShipping Checklist', title: 'List renders' }, 'Pre-Shipping option is switched off');
+  const [record] = run.result.scenarios;
+  assert.equal(record.status, 'Blocked');
+  assert.equal(record.reason, 'Pre-Shipping option is switched off');
+  assert.deepEqual(record.steps, []);
+});

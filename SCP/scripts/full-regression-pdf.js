@@ -3,6 +3,7 @@
 // SCP_Full_Regression_Report.html / .pdf (A4 portrait) into the folder. Screenshots stay in each suite's own report.
 const fs = require('fs');
 const path = require('path');
+const { defectLabel } = require('../config/scp-known-defects');
 
 const dir = path.resolve(process.argv[2] || '');
 const plan = JSON.parse(fs.readFileSync(path.join(dir, 'suites.json'), 'utf8'));
@@ -60,7 +61,7 @@ html += `</table><h2>Failures, known defects and blocked test cases</h2>`;
 const bad = suites.flatMap(s => s.sc.filter(x => x.status !== 'Passed').map(x => ({ s, x })));
 html += bad.length ? `<table><tr><th style="width:13%">Suite</th><th style="width:9%">ID</th><th style="width:25%">Test case</th><th style="width:10%">Result</th><th>First failing step / reason</th></tr>${bad.map(({ s, x }) => {
   const f = (x.steps || []).find(y => y.status !== 'Passed'); const last = f && (f.attempts || []).slice(-1)[0];
-  return `<tr><td>${esc(s.title)}</td><td>${esc(x.id)}</td><td>${esc(x.title)}</td><td>${badge(x.status)}</td><td class="obs">${esc(f ? `${f.name}${f.defect ? ` [${f.defect}]` : ''} – ${(last && last.error ? last.error.split('\n')[0] : f.reason || '')}` : x.reason || '').slice(0, 500)}</td></tr>`;
+  return `<tr><td>${esc(s.title)}</td><td>${esc(x.id)}</td><td>${esc(x.title)}</td><td>${badge(x.status)}</td><td class="obs">${esc(f ? `${f.name}${f.defect ? ` [${defectLabel(f.defect)}]` : ''} – ${(last && last.error ? last.error.split('\n')[0] : f.reason || '')}` : x.reason || '').slice(0, 500)}</td></tr>`;
 }).join('')}</table>` : '<p>None.</p>';
 for (const s of suites) {
   html += `<h2 class="pb">${esc(s.title)} – test steps and results</h2><p class="meta">${s.cases.total} test cases, ${s.steps.total} steps · ${s.cases.pass} passed, ${s.cases.fail} failed, ${s.cases.kd} known defect, ${s.cases.blocked} blocked · ${mins(s.ms)}${s.reportDir ? ` · ${esc(rel(s.reportDir))}` : ''}</p>`;
@@ -72,7 +73,7 @@ for (const s of suites) {
     x.steps.forEach((st, i) => {
       const [act, exp] = split(st.name); const last = (st.attempts || []).slice(-1)[0];
       const obs = [st.reason || '', last && last.error && st.status !== 'Passed' ? last.error.split('\n')[0] : ''].filter(Boolean).join(' · ');
-      html += `<tr><td>${esc(st.id || `${x.id}.${i + 1}`)}</td><td>${esc(act)}</td><td>${esc(exp)}</td><td class="obs">${esc(obs).slice(0, 450)}</td><td>${badge(st.status)}${st.defect ? `<br><span class="obs">${esc(st.defect)}</span>` : ''}${st.mandatory === false ? '<br><span class="obs">optional</span>' : ''}${(st.attempts || []).length > 1 ? `<br><span class="obs">${st.attempts.length} attempts</span>` : ''}</td></tr>`;
+      html += `<tr><td>${esc(st.id || `${x.id}.${i + 1}`)}</td><td>${esc(act)}</td><td>${esc(exp)}</td><td class="obs">${esc(obs).slice(0, 450)}</td><td>${badge(st.status)}${st.defect ? `<br><span class="obs">${esc(defectLabel(st.defect))}</span>` : ''}${st.mandatory === false ? '<br><span class="obs">optional</span>' : ''}${(st.attempts || []).length > 1 ? `<br><span class="obs">${st.attempts.length} attempts</span>` : ''}</td></tr>`;
     });
     html += `</table>`;
   }

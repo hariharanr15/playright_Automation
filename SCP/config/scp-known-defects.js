@@ -256,10 +256,11 @@ const KNOWN_DEFECTS = [
     title: 'Export is the balance list (INV-R2)',
     signature: /^Export is the activity log, not the balance list/,
     summary: 'Inventory Management "Export" downloads the activity log (Inventory Activity ID, Action, From/To Location, Action Quantity, …) instead of the stock balance list (Material ID, Material Name, Inventory). Rule INV-R2 is confirmed. OBS-INV-8.' },
-  { id: 'SCP-DEF-058', recordedOn: '2026-11-21', modules: ['Inventory Management'], scenarioIds: ['INV-REG-23'], reportNotReproduced: true,
+  { id: 'SCP-DEF-058', recordedOn: '2026-11-21', modules: ['Inventory Management'], scenarioIds: ['INV-REG-23', 'TC-25'], reportNotReproduced: true,
     confirmation: 'pending',
-    title: 'Site isolation',
-    signature: /^Header site reverts after a reload/,
+    title: /Site isolation|Detailed execution report generated/,
+    // TC-25 (E2E smoke) counts the same behaviour across the whole flow (20 Nov 2026: 2 resets).
+    signature: /^(Header site reverts after a reload|The application reset the header location)/,
     summary: 'PENDING TEAM CONFIRMATION. After choosing another site in the header and reloading, the header shows a different site (chose Site T2 Pmr2-2611011614, after reload Site T2 Pmr2-2611201108). Site isolation of locations itself works. OBS-INV-12.' },
   // 21 Nov 2026, Phase 1 of the gap analysis: confirmed rules that fail with no defect logged (gap report X10/X11).
   { id: 'SCP-DEF-059', recordedOn: '2026-11-21', modules: ['Project Management'], scenarioIds: ['PM-REG-SYS-05'], reportNotReproduced: true,
@@ -277,7 +278,19 @@ const KNOWN_DEFECTS = [
   { id: 'SCP-DEF-062', recordedOn: '2026-11-21', scenarioIds: ['T543-12'], reportNotReproduced: true,
     title: 'Category API without project_id returns only this project',
     signature: /^categories leak across projects/,
-    summary: 'GET /api/project_material_category/ without project_id returns 757 categories from 15 projects instead of only the current project (BUGS-543 ticket suite, 20 Nov 2026). Possible cross-project data exposure; to be assessed by the team.' }
+    summary: 'GET /api/project_material_category/ without project_id returns 757 categories from 15 projects instead of only the current project (BUGS-543 ticket suite, 20 Nov 2026). Possible cross-project data exposure; to be assessed by the team.' },
+  { id: 'SCP-DEF-063', recordedOn: '2026-11-21', modules: ['Project Management'], scenarioIds: ['PM-REG-PSC-02'], reportNotReproduced: true,
+    confirmation: 'pending',
+    title: 'PreShipping Checklist: Enabled tick saves automatically',
+    signature: /^Switching "Enabled" OFF on a PreShipping question was not kept after reload/,
+    summary: 'PENDING TEAM CONFIRMATION. PreShipping Checklist: unticking "Enabled" on the last question (Count 1) shows no message and the box is ticked again after a reload (both attempts, 21 Nov 2026, NRVC_Hall). Switching a question ON was saved on 13 and 17 Nov. Question: may a question that is already in use be disabled?' }
 ];
 
-module.exports = { KNOWN_DEFECTS };
+// Label for reports: "SCP-DEF-053 (pending confirmation)" for entries whose expected behaviour the client/team has not
+// confirmed yet, so a demo audience can tell them apart from agreed defects. Unknown IDs are returned unchanged.
+const defectLabel = id => {
+  const defect = KNOWN_DEFECTS.find(entry => entry.id === id);
+  return defect && defect.confirmation === 'pending' ? `${id} (pending confirmation)` : id;
+};
+
+module.exports = { KNOWN_DEFECTS, defectLabel };

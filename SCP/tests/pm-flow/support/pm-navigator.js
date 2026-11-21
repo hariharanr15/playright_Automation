@@ -82,6 +82,27 @@ class PmNavigator {
     return true;
   }
 
+  /**
+   * Is a Project Management menu entry offered? Expands its groups when needed and does not open the page.
+   * Used for environment preconditions: e.g. "PreShipping Checklist" is only listed while the project's
+   * Pre-Shipping option is switched on (Configuration Options).
+   */
+  async hasMenuEntry(label) {
+    const entry = MENU[label];
+    if (!entry) throw new Error(`Unknown Project Management page: ${label}`);
+    await this.clearLayers();
+    const chain = [...entry.groups, label];
+    for (let index = 1; index < chain.length; index += 1) {
+      const next = this.menuItem(chain[index]);
+      if (await next.isVisible().catch(() => false)) continue;
+      const group = this.menuItem(chain[index - 1]);
+      await expect(group, `${chain[index - 1]} menu`).toBeVisible({ timeout: 20000 });
+      await group.click();
+      if (!(await next.waitFor({ state: 'visible', timeout: 10000 }).then(() => true, () => false))) return false;
+    }
+    return true;
+  }
+
   // Opens a route directly (used only by scenarios that test direct URL access).
   async gotoRoute(route) {
     await this.page.goto(new URL(`/${route}`, this.config.baseUrl).href, { waitUntil: 'domcontentloaded' });

@@ -111,7 +111,7 @@ Until each is answered, the matching tests should either record the outcome with
 |---|---|---|
 | **0. Make the results trustworthy** (framework only, no new coverage). **Done 21 Nov, not yet run against the app** – see §9 | X1 scope known-defect matching by module (plus explicit `scenarioIds`). X2 single-attempt data-creating steps and flag passes that needed a retry. X6/X7/X8 turned out not to need code changes (see §3). | Every later number depends on this. Small changes inside the existing POM/runner. |
 | **1. Remove false signals** – **Done 21 Nov except SL-REG-02/04 (user triage of 13 Nov) and X9 standalone specs (need own data), see §12** | X10 contradicting/weak assertions (`rejectNonImage`, INT-03, INV-REG-17, SYS-05, SL-REG-02, SL-REG-04 un-skip). X11 log DLV-19, CMP-19, T543-12 as defects. X12 correct register mappings. Re-run all smoke suites (X13) and the never-run POM specs (X9). | Cheap; stops the dashboard over- and under-reporting |
-| **2. Stabilise the backbone** | Delivery → GRN chain made independent (PL-DLV-06/07, INT-01 → FDI-REG-06…10, INV-REG-21, T155). Pinned site + seeded stock (INV). Plan reset for XER. Supplier List form helper. PSC precondition step. | Removes most cascades and flakiness across PL, INV, FDI and SL |
+| **2. Stabilise the backbone** – **Done 21 Nov, see §13** | Delivery → GRN chain made independent (PL-DLV-06/07, INT-01 → FDI-REG-06…10, INV-REG-21, T155). Pinned site + seeded stock (INV). Plan reset for XER. Supplier List form helper. PSC precondition step. | Removes most cascades and flakiness across PL, INV, FDI and SL |
 | **3. Prove confirmed (A) rules that need no new accounts** | PL: GAP-PL-001/002/003, T517-13…18. INV: GAP-INV-001/014, INV-R2 export. FDI: GAP-FDI-023/024/025/029-034/039/040/046/052/054. DOC: GAP-DOC-009/014. PM: GAP-PM-002 with the existing Supplier login, PM-REG-FDI-05a…n. | Highest business value for each unit of effort |
 | **4. Permission matrix** (as soon as the accounts in §5 arrive) | FDI GAP-FDI-001…015/020/042, PM-REG-ROLE-01…24, GAP-SL-001/002, GAP-PL-004, GAP-INV-012, GAP-DOC-015 | Highest risk area (cross-supplier data exposure) with no executed coverage. Blocked only on data. |
 | **5. Answer-dependent packs** | Negative/boundary/validation packs per module once the §6 questions are answered | Can't be asserted before the answers |
@@ -198,3 +198,29 @@ The client is not available, so the Inventory suite now runs on today's behaviou
 - **X9 standalone POM specs:** `scp-first-delivery-inspection.spec.js` was run on 21 Nov and failed before reaching the changed step. Its fixed record "Inventory Qa B5033D231Ebf43D6" (INV-SUB-b5033d231ebf43d6, 1 Nov) is already "Inspection Completed", and the test expects "Auditor not yet assigned". These specs need their own fresh FDI record per run (Phase 2: delivery → GRN chain) before their results mean anything.
 
 **Procurement Log part 3, 05:11 → 10:06:** 46 passed / 8 failed / 1 known defect → 47 / 5 / 3. CMP-19 and DLV-19 are now known defects, and DLV-16 passed (on retry). The 5 remaining failures (LST-09, CMP-09, DLV-18, EDT-07, ALR-02) failed in both runs. They are not Phase 1 items and go to Phase 2/3 triage.
+
+## 13. Phase 2 – stabilise the backbone (21 Nov 2026)
+
+Each Phase 2 item was first checked against the recent run history, and code was changed only where a current problem was shown.
+
+| Item | Evidence | Change |
+|---|---|---|
+| Delivery → GRN chain made independent | PL-REG-DLV-06/07/11b and INT-01/03 passed in the last 3 PL part 3 runs. PL part 1 DLV-11 passes since the `keepSite` fix (§9) | None needed |
+| FDI-REG-06…10 need an unassigned inspection | Passed in the last run; the earlier skips came from the slow FDI list (fixed 20 Nov). About 49 unassigned run inspections exist | None needed |
+| Standalone POM specs (X9) | `scp-first-delivery-inspection.spec.js` reads `.state/run-dataset.json`, written by the Procurement Log module of the standalone runner (`npm run test:regression`). Run alone, it uses a stale 1 Nov record | None: run it through its own runner. Not part of the demo flow |
+| Pinned site + seeded stock (Inventory) | Every run took stock from Gate 5 (down to about 36) while Gate 4 held about 360 | Setup step 8 ranks real locations by stock and confirms the best one with the form hint. The source is pinned for the run (21 Nov: Gate 4) |
+| PreShipping precondition | PSC-01/02 and NAV-01 failed on 20 Nov because the Pre-Shipping option had been switched off by hand | New `PmRun.block()` and `navigator.hasMenuEntry()`. With the option off, PSC cases are **Blocked** with the reason and NAV-01 leaves the hidden entry out. The test does not change the shared setting |
+| Supplier List form helper | SL-REG-02/03/05 passed in the last 2 runs | None (working code not refactored before the demo) |
+
+Also on 21 Nov:
+- **PM-REG-PSC-02:** switching an in-use question OFF is not kept. Registered as SCP-DEF-063 (pending confirmation).
+- **E2E TC-25 (header location resets):** linked to SCP-DEF-058.
+- **Inventory page object:**
+  - the Location view is read by its headers;
+  - dropdowns wait for their options;
+  - Cancel on the upload dialog is safe to repeat.
+- **Reports:**
+  - pending-confirmation defects are labelled in the HTML, E2E and PDF reports (`defectLabel`);
+  - `KNOWN_DEFECTS.md` is generated (`npm run defects:report`);
+  - the full regression now also writes `NON_PASSED_TEST_CASES.md`, which lists every Failed, Blocked and Skipped case module by module, with steps.
+- **Docs:** `DEMO_RUN_GUIDE.md` added, and 20 register rows updated with the new defect IDs.

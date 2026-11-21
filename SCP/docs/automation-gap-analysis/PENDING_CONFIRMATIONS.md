@@ -26,6 +26,7 @@ Sign in → Supply Chain Planner → header project **NRVC_Hall** → header sit
 | 6 | SCP-DEF-057 | INV-REG-22 | **Confirmed rule (INV-R2)** | "Export" downloads the activity log, not the stock balance list (Material ID, Material Name, Inventory). | None. The rule is confirmed; only the fix is pending. |
 | 7 | SCP-DEF-045 | INV-REG-14 | Registered 2 Nov | Activity can be saved with a schedule from a different submittal. **21 Nov 08:37 run: not reproduced** (no mismatched row was saved). Watch the next runs before removing it. | Has this been fixed? |
 | 8 | — | INV-REG-18 | Observed behaviour, pending confirmation | The upload checks rows top to bottom and deducts earlier valid rows before checking the next one. For "Loss 1" then "Loss 99999" at Gate 5 with 52 in stock, the error file says 51 available. The test now expects this. | Is it intended that the "available" figure in the error file already deducts earlier rows of the same file? |
+| 9 | SCP-DEF-063 | PM-REG-PSC-02 | Pending confirmation | PreShipping Checklist: unticking "Enabled" on a question already in use (Count 1) shows no message and is ticked again after a reload. Ticking a question ON is saved. | May a question that is already in use be disabled? If not, should the user see a message? |
 
 ## Steps per item
 

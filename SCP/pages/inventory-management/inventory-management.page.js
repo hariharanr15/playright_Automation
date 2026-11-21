@@ -278,9 +278,31 @@ class InventoryManagementPage extends BasePage {
 
   /** Stock of the material at one location, read from the "Location" view (0 when the location is not listed). */
   async readStockAtLocation(location) {
-    const row = this.page.getByRole('row').filter({ hasText: new RegExp(escapeRegex(location), 'i') }).first();
-    if (!(await row.count())) return 0;
-    return numeric(await row.getByRole('cell').last().innerText());
+    // Read from the Location view table itself (21 Nov: matching any row on the page picked a row of another table).
+    const stocks = await this.readLocationStocks();
+    const match = stocks.find(entry => entry.name.trim().toLowerCase() === String(location).trim().toLowerCase());
+    return match ? match.quantity : 0;
+  }
+
+  /**
+   * All rows of the material's "Location" view: [{ name, quantity }].
+   * The view is the table with a "Location Type" column (the inventory list stays on the page behind it), and the
+   * columns are found by their headers: Name, Location Type, QTY.
+   */
+  async readLocationStocks() {
+    const table = this.page.locator('table').filter({ has: this.page.getByRole('columnheader', { name: /Location Type/i }) }).last();
+    const rows = table.locator('tbody tr');
+    await rows.first().waitFor({ timeout: 15000 });
+    const headers = (await table.getByRole('columnheader').allInnerTexts()).map(text => text.trim().toLowerCase());
+    const nameColumn = headers.findIndex(header => header.startsWith('name'));
+    const quantityColumn = headers.findIndex(header => header.startsWith('qty'));
+    const stocks = [];
+    for (const row of await rows.all()) {
+      const cells = (await row.getByRole('cell').allInnerTexts()).map(text => text.trim());
+      const quantity = Number(String(cells[quantityColumn] || '').replace(/,/g, '').match(/-?[\d.]+/)?.[0]);
+      if (cells[nameColumn] && Number.isFinite(quantity)) stocks.push({ name: cells[nameColumn], quantity });
+    }
+    return stocks;
   }
 
   // ---------- "Add Activity" form on the ledger ----------
@@ -332,6 +354,10 @@ class InventoryManagementPage extends BasePage {
     await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => null);
     await this.page.waitForTimeout(400);
     const list = this.page.getByRole('listbox').last();
+    // The options can arrive after the network is idle (21 Nov: "43 Inches" was not yet listed). Wait for the wanted
+    // option when its text is known, otherwise for the first option, before reading the list.
+    const expectedOption = typeof choice === 'string' ? list.getByRole('option', { name: choice, exact: true }) : list.getByRole('option');
+    await expectedOption.first().waitFor({ timeout: 10000 }).catch(() => null);
     const offered = (await list.getByRole('option').allInnerTexts()).map(text => text.trim()).filter(Boolean);
     const wanted = typeof choice === 'function' ? offered.find(choice) : choice;
     if (wanted === undefined) {

@@ -34,6 +34,7 @@ test('Project Management – Regression (part 1: read-only and form-only)', asyn
     const data = run.data;
     const sc = (id, submodule, title, body) => run.scenario(meta(id, submodule, title), body);
     const skip = (id, submodule, title, reason) => run.skip(meta(id, submodule, title), reason);
+    const PRE_SHIPPING_OFF = 'Environment precondition not met: the project\'s Pre-Shipping option is switched off (Project Management › Configuration Options), so the "PreShipping Checklist" menu entry is hidden. Switch it on and re-run this case.';
 
     if (!(await signIn({ run, page, config, ui, id: 'PM-REG-000', suite: 'Regression' }))) return;
 
@@ -717,7 +718,12 @@ test('Project Management – Regression (part 1: read-only and form-only)', asyn
     skip('UPL-MM-15', 'Material Master › Upload', 'Reports can be downloaded', `${PART2} – the UPL-MM-05 upload`);
 
     // ================= PreShipping Checklist =================
-    await sc('PM-REG-PSC-01', 'PreShipping Checklist', 'List renders', async s => {
+    // Precondition: the page is only listed while the project's Pre-Shipping option is on. On 20 Nov it was found off
+    // (switched by hand; no test changes it), so PSC-01 and NAV-01 failed for an environment reason. Report that as
+    // Blocked instead of a failure; the setting is not changed by the test because the project is shared.
+    const preShippingOn = await navigator.hasMenuEntry('PreShipping Checklist');
+    if (!preShippingOn) run.block(meta('PM-REG-PSC-01', 'PreShipping Checklist', 'List renders'), PRE_SHIPPING_OFF);
+    else await sc('PM-REG-PSC-01', 'PreShipping Checklist', 'List renders', async s => {
       await s.step(`Project Management › "PreShipping Checklist": open the page → page opens`, () => navigator.open('PreShipping Checklist'), { critical: true });
       await s.step(`PreShipping Checklist: read the table → headers #, Question, Enabled, Count, Actions and at least one question row (nothing toggled)`, async () => {
         expect(await headers(main.locator('table').first())).toEqual(['#', 'Question', 'Enabled', 'Count', 'Actions']);
@@ -1072,13 +1078,16 @@ test('Project Management – Regression (part 1: read-only and form-only)', asyn
 
     // ================= Navigation (whole menu) =================
     await sc('PM-REG-NAV-01', 'Navigation', 'Every PM leaf opens its route', async s => {
-      for (const label of Object.keys(MENU).filter(item => !navigator.visited.some(v => v.label === item))) {
+      // An entry hidden by a switched-off project option is not a navigation fault (see the PSC precondition above).
+      const expectedEntries = Object.keys(MENU).filter(label => preShippingOn || label !== 'PreShipping Checklist');
+      if (!preShippingOn) s.observe('PreShipping Checklist not checked: the Pre-Shipping option is switched off');
+      for (const label of expectedEntries.filter(item => !navigator.visited.some(v => v.label === item))) {
         await s.step(`Left menu: open "${label}" → page opens`, () => navigator.open(label));
       }
-      await s.step(`Left menu: review all pages opened so far → all 17 entries reached their route and were highlighted as active in the menu`, async () => {
+      await s.step(`Left menu: review all pages opened so far → all ${expectedEntries.length} expected entries reached their route and were highlighted as active in the menu`, async () => {
         const seen = new Map(navigator.visited.map(v => [v.label, v]));
-        const notReached = Object.entries(MENU).filter(([label]) => !seen.get(label)?.reached).map(([label, entry]) => `${label} → /${entry.route}`);
-        const notActive = Object.keys(MENU).filter(label => seen.get(label)?.reached && !seen.get(label)?.appActive);
+        const notReached = expectedEntries.filter(label => !seen.get(label)?.reached).map(label => `${label} → /${MENU[label].route}`);
+        const notActive = expectedEntries.filter(label => seen.get(label)?.reached && !seen.get(label)?.appActive);
         const problems = [];
         if (notReached.length) problems.push(`Route not reached: ${notReached.join(', ')}`);
         if (notActive.length) problems.push(`Opened but not highlighted as active in the menu: ${notActive.join(', ')}`);

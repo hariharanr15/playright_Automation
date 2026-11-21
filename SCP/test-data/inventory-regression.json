@@ -2,8 +2,10 @@
   "_comment": "Test data for tests/pm-flow/inv-regression.spec.js (Inventory Management regression). Material, supplier and site come from tests/pm-flow/support/pl-flow.js (SCP_PL_MATERIAL / SCP_PL_SUPPLIER / SCP_PL_SITE), because the Procurement regression delivers the stock this suite uses.",
 
   "minimumStartingStock": 4,
-  "_minimumSourceLocationStock": "Stock needed at the first real location (the From Location every activity uses, e.g. Gate 5). One run uses about 8-9 units there (21 Nov 2026: 52 -> 44); 12 leaves a margin. Refill with the Procurement regression (npm run procurement:regression) when setup stops on this check.",
+  "_minimumSourceLocationStock": "Stock needed at the run's source location (setup picks the real location with the most stock and checks it with the form hint). One run uses about 8-9 units there; 12 leaves a margin. When no location has enough, deliver stock with the Procurement regression (npm run procurement:regression).",
   "minimumSourceLocationStock": 12,
+  "_maximumSourceLocationCandidates": "Setup ranks real locations by Location-view QTY and checks at most this many with the form hint before giving up.",
+  "maximumSourceLocationCandidates": 3,
 
   "submittals": {
     "_comment": "Run submittals created by the Procurement regression runs. Imported ones (-SUB-I1/I2) have no schedule lines, so the form tries several candidates. PLD1102-SUB-01 exists twice on the project and the upload rejects it as ambiguous (OBS-INV-13).",

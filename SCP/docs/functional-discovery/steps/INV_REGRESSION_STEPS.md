@@ -55,9 +55,9 @@ Only 4 of these test cases check a confirmed (A) rule: INV-REG-04, 05, 21 and 22
 |---|---|
 | Feature | Access and starting stock |
 | Scenario | The tester signs in and confirms the test material has enough stock for the run |
-| Business purpose | The later scenarios remove about 8-9 units, all from the first real location (e.g. Gate 5). Without enough stock there they would fail for the wrong reason. |
+| Business purpose | The later scenarios remove about 8-9 units, all from one source location chosen at setup. Without enough stock there they would fail for the wrong reason. |
 | Requirement status | Not a business rule (test setup) |
-| Test data | Account and project from `.env`; site "Warehoust _NR"; material "43 Inches"; minimum site stock 4; minimum stock at the source location 12 (`minimumSourceLocationStock`) |
+| Test data | Account and project from `.env`; site "Warehoust _NR"; material "43 Inches"; minimum site stock 4; minimum stock at the source location 12 (`minimumSourceLocationStock`), checked on up to 3 locations (`maximumSourceLocationCandidates`) |
 
 | # | Action | Why | Expected result |
 |---|---|---|---|
@@ -68,7 +68,7 @@ Only 4 of these test cases check a confirmed (A) rule: INV-REG-04, 05, 21 and 22
 | 5 | Choose site "Warehoust _NR" in the header | Inventory is kept per site | Site name shown in the header |
 | 6 | Open "Inventory Management" from the left menu | Every scenario starts here | The list shows at least one material |
 | 7 | Search "43 Inches" and read its "Inventory" column | Check the starting stock | Stock is 4 or more |
-| 8 | Open the ledger, then Add Activity (Loss, QTY 1, not saved); read "Available at <location>: N"; close the form | The site total can be high while the location the run uses is nearly empty | N is 12 or more. If not, the run stops with "Not enough stock at the source location"; refill with `npm run procurement:regression` |
+| 8 | Open ⋮ › "Location", rank the real locations (not placeholders or run-created "Loc INR…") by QTY; for the top 3, open Add Activity (Loss, QTY 1, from that location, not saved) and read "Available at <location>: N" | Pick a source location that really has stock; the form figure is the one the save check uses | The first location with N ≥ 12 becomes the source for every activity in the run. If none qualifies, the run stops; deliver stock with `npm run procurement:regression` |
 
 **Final expected outcome:** the tester is on Inventory Management with enough stock. If not, the run stops and every other scenario is reported as Blocked.
 
@@ -142,7 +142,7 @@ Only 4 of these test cases check a confirmed (A) rule: INV-REG-04, 05, 21 and 22
 | Scenario | Issuing 2 units lowers the stock by 2 |
 | Business purpose | The most common movement on site; the stock must follow exactly |
 | Requirement status | B – Observed (REQ-INV-014); D for the sign of the quantity (REQ-INV-039) |
-| Test data | Action "Issue To Construction", QTY 2, first real location, first supplier and subcontractor, a run submittal and schedule, comment "<run tag> Issue To Construction" |
+| Test data | Action "Issue To Construction", QTY 2, the run's source location (setup step 8), first supplier and subcontractor, a run submittal and schedule, comment "<run tag> Issue To Construction" |
 
 | # | Action | Why | Expected result |
 |---|---|---|---|
@@ -277,7 +277,7 @@ Not a separate run: the Loss of 1 in INV-REG-15 is this case, and its balance is
 |---|---|---|---|
 | 1 | Open Add Activity (Loss, QTY 1, not saved) on the same From Location; read "Available at <location>: N"; close the form | The upload's figure is per location, so compare it with the form's figure for that location | The hint names the upload row's location, and the error file's "available" figure = N minus the valid row above the invalid row (INV-R3). **Observed 21 Nov:** 52 − 1 = 51; the rule that earlier rows are deducted is pending team confirmation |
 
-**Final expected outcome:** both figures are equal.
+**Final expected outcome:** the error file's figure equals the form's figure for that location, less the valid row above the invalid one.
 
 > Until 21 Nov this case compared the error file with the ledger Closing Balance. That balance covers the whole site, so the two could never match (59 at Gate 5 vs 582 for the site). That was a test error, not an application defect.
 
@@ -434,4 +434,4 @@ All negative scenarios use the ledger of "43 Inches". Each one notes the Closing
 | Date | Change |
 |---|---|
 | 21 Nov 2026 | Readability pilot. Each case now has business purpose, requirement status, test data and a reason for every step. The script now uses the page objects and `test-data/inventory-regression.json`. Behaviour changes: (1) INV-REG-17 no longer contains a check that always passed (`count ≥ 0`); it checks both uploaded rows when the ledger shows comments. (2) INV-REG-11 no longer picks a run-created (empty) location as the movement source. (3) The ledger is read only after its rows have appeared; the original 1.5 s settle is kept too, because the first pilot run read the ledger before it had loaded. (4) Steps that save run once. |
-| 21 Nov 2026 | Client unavailable: open issues are captured as Known Defects so the flow runs on today's behaviour. SCP-DEF-053 (INV-REG-12), 054 (09), 055 (15), 056 (20) and 058 (23) are **pending team confirmation**; SCP-DEF-057 (22) breaks confirmed rule INV-R2. See `docs/automation-gap-analysis/PENDING_CONFIRMATIONS.md`. INV-REG-18 corrected to compare like with like (same location, minus the earlier valid row of the same file). INV-REG-01 now waits for the ledger rows instead of counting at once. INV-REG-07/08/09 now check the balance before the message wording. Setup step 8 added: the run stops early when the source location (e.g. Gate 5) has fewer than 12 units. |
+| 21 Nov 2026 | Client unavailable: open issues are captured as Known Defects so the flow runs on today's behaviour. SCP-DEF-053 (INV-REG-12), 054 (09), 055 (15), 056 (20) and 058 (23) are **pending team confirmation**; SCP-DEF-057 (22) breaks confirmed rule INV-R2. See `docs/automation-gap-analysis/PENDING_CONFIRMATIONS.md`. INV-REG-18 corrected to compare like with like (same location, minus the earlier valid row of the same file). INV-REG-01 now waits for the ledger rows instead of counting at once. INV-REG-07/08/09 now check the balance before the message wording. Setup step 8 added: the run stops early when the source location (e.g. Gate 5) has fewer than 12 units. Later the same day (Phase 2) step 8 was changed to choose the real location with the most stock instead of always the first one, so Gate 5 running down no longer stops the suite. |

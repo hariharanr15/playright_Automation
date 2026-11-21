@@ -75,6 +75,7 @@
     "modules:regression": "node scripts/run-pm-flow.js app-regression",
     "inventory:regression": "node scripts/run-pm-flow.js inv-regression",
     "tickets:regression": "node scripts/run-pm-flow.js tickets",
+    "defects:report": "node scripts/known-defects-report.js",
     "e2e:smoke": "node scripts/run-pm-flow.js e2e-smoke",
     "full:regression": "node scripts/run-full-regression.js"
   },

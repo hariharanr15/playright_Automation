@@ -1828,7 +1828,7 @@
    "TC-01",
    "TC-25"
   ],
-  "automation": "Automated – Failing",
+  "automation": "Automated – Known defect SCP-DEF-058, pending confirmation (21 Nov: TC-25 counts header location resets)",
   "script": "tests/pm-flow/e2e-smoke.spec.js",
   "source": "E2E_SMOKE_SCENARIOS_STEPS.md TC-01, TC-25.02; ANALYTICS_VALIDATION_2026-11-18.md header filters"
  },
@@ -1888,7 +1888,7 @@
    "PL-REG-CMP-05",
    "PM-REG-CFG-05"
   ],
-  "automation": "Automated – Known defect",
+  "automation": "Automated – Known defect SCP-DEF-061 (21 Nov)",
   "script": "tests/pm-flow/e2e-smoke.spec.js",
   "source": "PM_FUNCTIONAL_DISCOVERY.md R58; scp-known-defects.js SCP-DEF-049; E2E_SMOKE_SCENARIOS_STEPS.md TC-24.07"
  },
@@ -2907,7 +2907,7 @@
   "testIds": [
    "PM-REG-PSC-02"
   ],
-  "automation": "Automated – Failing (20 Nov: Pre-Shipping toggle Off)",
+  "automation": "Automated – Known defect SCP-DEF-063, pending confirmation (21 Nov: switching a question in use OFF is not kept; when the Pre-Shipping option is off the case is reported Blocked)",
   "script": "tests/pm-flow/pm-regression-part2.spec.js",
   "source": "PM_FUNCTIONAL_DISCOVERY.md R35"
  },
@@ -3997,7 +3997,7 @@
   "testIds": [
    "PM-REG-SYS-05"
   ],
-  "automation": "Automated – Passing (checks only that nothing is created; the required message was not seen)",
+  "automation": "Automated – Known defect SCP-DEF-059 (21 Nov: SYS-05 now checks the R27 message; none is shown)",
   "script": "tests/pm-flow/pm-regression-part2.spec.js",
   "source": "PM_FUNCTIONAL_DISCOVERY.md R27; full-regression log 20 Nov"
  },
@@ -5140,7 +5140,7 @@
   "testIds": [
    "PL-REG-CMP-19"
   ],
-  "automation": "Automated – Failing",
+  "automation": "Automated – Known defect SCP-DEF-061 (21 Nov)",
   "script": "tests/pm-flow/pl-regression-3.spec.js",
   "source": "PROCUREMENT_LOG_FUNCTIONAL_DISCOVERY.md §6.7 step 10, §6.8, OBS-PL-23; PM_FUNCTIONAL_DISCOVERY.md R58"
  },
@@ -5184,7 +5184,7 @@
   "testIds": [
    "PL-REG-DLV-19"
   ],
-  "automation": "Automated – Failing",
+  "automation": "Automated – Known defect SCP-DEF-060 (21 Nov)",
   "script": "tests/pm-flow/pl-regression-3.spec.js",
   "source": "PROCUREMENT_LOG_FUNCTIONAL_DISCOVERY.md §6.8, §6.10 PL-R15 / Q-PL-14"
  },
@@ -5979,7 +5979,7 @@
   "testIds": [
    "PL-REG-INT-03"
   ],
-  "automation": "Automated – Passing – Passing against unconfirmed expectation",
+  "automation": "Automated – Passing against unconfirmed expectation (21 Nov: now checks the exact Inventory quantity, 4)",
   "script": "tests/pm-flow/pl-regression-3.spec.js",
   "source": "PL_REGRESSION_SCENARIOS.md PL-REG-INT-03 (Ev. I)"
  },
@@ -6236,7 +6236,7 @@
   "testIds": [
    "T543-12"
   ],
-  "automation": "Automated – Failing",
+  "automation": "Automated – Known defect SCP-DEF-062 (21 Nov)",
   "script": "tests/pm-flow/tickets-regression.spec.js",
   "source": "TICKET_REGRESSION_SCENARIOS.md BUGS-543 T543-12; PM_FUNCTIONAL_DISCOVERY.md R64"
  },
@@ -6580,7 +6580,7 @@
    "INV-REG-22",
    "INV-SMK-07"
   ],
-  "automation": "Automated – Failing",
+  "automation": "Automated – Known defect SCP-DEF-057 (21 Nov)",
   "script": "tests/pm-flow/inv-regression.spec.js",
   "source": "INVENTORY_FUNCTIONAL_DISCOVERY.md §5, §10 INV-R2 / OBS-INV-8 / Q-INV-3"
  },
@@ -6760,7 +6760,7 @@
    "INV-REG-01",
    "PL-REG-INT-03"
   ],
-  "automation": "Automated – Passing (against unconfirmed expectation)",
+  "automation": "Automated – Passing against unconfirmed expectation (21 Nov: PL-REG-INT-03 checks the exact quantity)",
   "script": "tests/pm-flow/inv-regression.spec.js",
   "source": "INVENTORY_FUNCTIONAL_DISCOVERY.md §2; INVENTORY_PREREQUISITE_FLOW.md"
  },
@@ -6822,7 +6822,7 @@
    "INV-REG-03",
    "INV-REG-15"
   ],
-  "automation": "Automated – Passing (against unconfirmed expectation)",
+  "automation": "Automated – Passing against unconfirmed expectation (21 Nov: stock changes checked in INV-REG-02 and 15; the list refresh in INV-REG-15 is SCP-DEF-055)",
   "script": "tests/pm-flow/inv-regression.spec.js",
   "source": "INVENTORY_FUNCTIONAL_DISCOVERY.md §3.2"
  },
@@ -7024,7 +7024,7 @@
   "testIds": [
    "INV-REG-23"
   ],
-  "automation": "Automated – Failing",
+  "automation": "Automated – Passing against unconfirmed expectation (21 Nov: each site lists only its own locations; the reload part is SCP-DEF-058)",
   "script": "tests/pm-flow/inv-regression.spec.js",
   "source": "steps/INV_REGRESSION_STEPS.md INV-REG-23; INVENTORY_MANAGEMENT_COVERAGE.md"
  },
@@ -7116,7 +7116,7 @@
   "testIds": [
    "INV-REG-11"
   ],
-  "automation": "Automated – Failing",
+  "automation": "Automated – Passing against unconfirmed expectation (category C – not to be reported pass/fail without approval; 21 Nov)",
   "script": "tests/pm-flow/inv-regression.spec.js",
   "source": "INV_SCENARIOS.md INV-REG-11; INVENTORY_FUNCTIONAL_DISCOVERY.md §10 INV-R4 (second location may be created)"
  },
@@ -7156,7 +7156,7 @@
   "testIds": [
    "INV-REG-12"
   ],
-  "automation": "Automated – Failing (against unconfirmed expectation)",
+  "automation": "Automated – Known defect SCP-DEF-053, pending confirmation (21 Nov)",
   "script": "tests/pm-flow/inv-regression.spec.js",
   "source": "INVENTORY_FUNCTIONAL_DISCOVERY.md §3; INV_SCENARIOS.md INV-REG-12"
  },
@@ -7177,7 +7177,7 @@
    "INV-REG-18",
    "INV-REG-16"
   ],
-  "automation": "Automated – Failing (against unconfirmed expectation)",
+  "automation": "Automated – Passing against an observed rule (21 Nov: compared per location; the upload deducts earlier rows of the same file, pending confirmation)",
   "script": "tests/pm-flow/inv-regression.spec.js",
   "source": "INVENTORY_FUNCTIONAL_DISCOVERY.md §4 / OBS-INV-7 / INV-R3; AUTOMATION_PROGRESS_2026-11-03.md"
  },
@@ -7197,7 +7197,7 @@
   "testIds": [
    "INV-REG-15"
   ],
-  "automation": "Automated – Failing (against unconfirmed expectation)",
+  "automation": "Automated – Known defect SCP-DEF-055, pending confirmation (21 Nov)",
   "script": "tests/pm-flow/inv-regression.spec.js",
   "source": "INVENTORY_FUNCTIONAL_DISCOVERY.md §1 / OBS-INV-4"
  },
@@ -7217,7 +7217,7 @@
   "testIds": [
    "INV-REG-20"
   ],
-  "automation": "Automated – Failing (against unconfirmed expectation)",
+  "automation": "Automated – Known defect SCP-DEF-056, pending confirmation (21 Nov)",
   "script": "tests/pm-flow/inv-regression.spec.js",
   "source": "INVENTORY_FUNCTIONAL_DISCOVERY.md §2 / OBS-INV-1"
  },
@@ -7257,7 +7257,7 @@
   "testIds": [
    "INV-REG-09"
   ],
-  "automation": "Automated – Failing (against unconfirmed expectation)",
+  "automation": "Automated – Known defect SCP-DEF-054, pending confirmation (21 Nov: rejection and unchanged stock pass; only the message wording fails)",
   "script": "tests/pm-flow/inv-regression.spec.js",
   "source": "INVENTORY_FUNCTIONAL_DISCOVERY.md §3.1 / OBS-INV-10"
  },
@@ -7450,7 +7450,7 @@
   "testIds": [
    "INV-REG-23"
   ],
-  "automation": "Automated – Failing (against unconfirmed expectation)",
+  "automation": "Automated – Known defect SCP-DEF-058, pending confirmation (21 Nov)",
   "script": "tests/pm-flow/inv-regression.spec.js",
   "source": "steps/INV_REGRESSION_STEPS.md INV-REG-23 / OBS-INV-12; INVENTORY_MANAGEMENT_COVERAGE.md application issues"
  },
@@ -8261,7 +8261,7 @@
   "testIds": [
    "PM-REG-FDI-05h"
   ],
-  "automation": "Automated – Skipped (cross-module – part 3)",
+  "automation": "Automated – Skipped in pm-flow (cross-module, part 3); standalone FDI spec updated 21 Nov to expect PDF accepted, not yet executed (needs run data from the standalone runner)",
   "script": "tests/pm-flow/pm-regression-part2.spec.js",
   "source": "PM_REGRESSION_SCENARIOS.md PM-REG-FDI-05h; R66"
  },
