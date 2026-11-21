@@ -4488,11 +4488,9 @@
   "approval": "Pending",
   "priority": "Medium",
   "priorityReason": "Wrong site shows wrong submittals and deliveries",
-  "testIds": [
-   "TC-25"
-  ],
-  "automation": "Automated – Failing",
-  "script": "tests/pm-flow/e2e-smoke.spec.js",
+  "testIds": [],
+  "automation": "Not automated (TC-25 was a mapping error: it is the E2E \"Detailed execution report generated\" test; corrected 21 Nov 2026)",
+  "script": "",
   "source": "E2E_SMOKE_SCENARIOS_STEPS.md TC-25; e2e-rerun3 20 Nov"
  },
  {
@@ -5264,11 +5262,9 @@
   "approval": "Pending",
   "priority": "High",
   "priorityReason": "Checklist could be confirmed with unanswered checks",
-  "testIds": [
-   "PL-REG-DLV-04"
-  ],
-  "automation": "Automated – Passing – Passing against unconfirmed expectation",
-  "script": "tests/pm-flow/pl-regression-3.spec.js",
+  "testIds": [],
+  "automation": "Not automated (PL-REG-DLV-04 only switches YES→NO→YES and never selects NA; mapping removed 21 Nov 2026)",
+  "script": "",
   "source": "PROCUREMENT_LOG_FUNCTIONAL_DISCOVERY.md OBS-PL-25, PL-R16"
  },
  {
@@ -6172,11 +6168,9 @@
   "priority": "Medium",
   "priorityReason": "Inspection coverage per category",
   "testIds": [
-   "T543-01",
    "T543-02",
    "T543-03",
-   "T543-04",
-   "T543-05"
+   "T543-04"
   ],
   "automation": "Automated – Passing",
   "script": "tests/pm-flow/tickets-regression.spec.js",
@@ -7863,7 +7857,6 @@
   "priorityReason": "Starts the inspection",
   "testIds": [
    "FDI-REG-06",
-   "FDI-REG-02",
    "TC-21"
   ],
   "automation": "Automated – Passing",
@@ -8122,7 +8115,6 @@
   "priorityReason": "Completes the delivery inspection",
   "testIds": [
    "FDI-REG-10",
-   "FDI-REG-03",
    "TC-21",
    "SCP-DEMO-012"
   ],
@@ -8144,7 +8136,6 @@
   "priority": "Medium",
   "priorityReason": "Failed inspections may need escalation",
   "testIds": [
-   "FDI-REG-11",
    "FDI-REG-10"
   ],
   "automation": "Automated – Passing (passing against unconfirmed expectation)",

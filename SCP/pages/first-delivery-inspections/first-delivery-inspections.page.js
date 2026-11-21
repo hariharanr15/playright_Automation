@@ -296,6 +296,24 @@ class FirstDeliveryInspectionsPage extends BasePage {
     }
   }
 
+  /**
+   * Attaches a PDF to the inspection and checks it is accepted.
+   * Rule R66 / REQ-FDI-036 (confirmed by the product owner, 30 Oct 2026): the photo upload accepts common formats,
+   * including PDF, XLSX and CSV. Replaces rejectNonImage(), which expected the opposite.
+   * Expected: the file name is listed and no file-type or format error is shown.
+   */
+  async attachNonImageFile() {
+    const fileName = 'inspection-document.pdf';
+    await this.page.locator('input[type="file"]').first().setInputFiles({
+      name: fileName, mimeType: 'application/pdf',
+      buffer: Buffer.from('%PDF-1.4\nInspection document fixture\n%%EOF')
+    });
+    await expect(this.page.getByText(fileName, { exact: true }).first()).toBeVisible({ timeout: 15000 });
+    await expect(this.page.getByRole('alert').or(this.page.getByRole('status'))
+      .filter({ hasText: /file type|format|only image/i })).toHaveCount(0);
+  }
+
+  /** @deprecated Contradicts confirmed rule R66 (PDF is accepted); no longer used. Use attachNonImageFile(). */
   async rejectNonImage() {
     await this.page.locator('input[type="file"]').first().setInputFiles({
       name: 'invalid-inspection-document.pdf', mimeType: 'application/pdf',

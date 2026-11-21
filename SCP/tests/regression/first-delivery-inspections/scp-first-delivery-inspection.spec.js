@@ -113,8 +113,9 @@ test('FDI regression: assignment, draft, required photo, completion and sync', a
       await inspections.openReport(inspections.recordRow(record));
     });
 
-    await test.step('Reject a non-image attachment without losing saved answers', async () => {
-      await inspections.rejectNonImage();
+    // Rule R66 / REQ-FDI-036 (confirmed 30 Oct 2026): PDF, XLSX and CSV are accepted, so a PDF must be attached.
+    await test.step('Attach a PDF (accepted format, R66) without losing saved answers', async () => {
+      await inspections.attachNonImageFile();
       await expect(page.getByPlaceholder('Enter response...').first()).toHaveValue(answers[0]);
     });
 

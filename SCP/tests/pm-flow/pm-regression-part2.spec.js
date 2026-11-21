@@ -1930,10 +1930,13 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-SYS-05', 'System Messages', 'Ends before Starts', async s => {
-      await s.step(`"New message": title "Order ${RUN}", a body, Ends earlier than Starts, click "Create" → outcome recorded, message not created`, async () => {
+      await s.step(`"New message": title "Order ${RUN}", a body, Ends earlier than Starts, click "Create" → message not created and an error/warning is shown (R27)`, async () => {
         const outcome = await newMessage({ heading: `Order ${RUN}`, text: `Ends before starts ${RUN}`, starts: shift(2), ends: shift(1) });
         s.observe(`${outcome.created ? 'created' : 'not created'}; message: ${outcome.message || '(none)'}`);
         await expect(messageRow(`Order ${RUN}`), 'Message not created').toHaveCount(0);
+        // Confirmed rule R27 / REQ-PM-091 (product owner, 30 Oct 2026): the user must see an error or warning.
+        // Until 21 Nov this step passed without checking it; today no message is shown (SCP-DEF-059).
+        expect(outcome.message, 'Ends before Starts: no error or warning shown (R27)').toBeTruthy();
       });
     });
     await sc('PM-REG-SYS-07', 'System Messages', 'Create scheduled message', async s => {

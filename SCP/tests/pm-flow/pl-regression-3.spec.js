@@ -8,6 +8,7 @@ const { test, expect } = require('@playwright/test');
 const { runPmSuite } = require('./support/pm-flow');
 const { plKit, MATERIAL, SUPPLIER } = require('./support/pl-flow');
 const { writePdf, writeXlsx, readXlsxRows } = require('./support/pl-files');
+const { InventoryManagementPage } = require('../../pages/inventory-management/inventory-management.page');
 
 const SUITE = 'Procurement Log Regression 3';
 const MODULE = 'Procurement Log';
@@ -510,11 +511,18 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
       });
     });
     await run.scenario(int03, async s => {
-      await s.step(`Left menu › "Inventory Management", search ${NEW_MATERIAL} → row shows received quantity 4`, async () => {
+      // Purpose: goods received through the GRN must reach Inventory with the exact quantity.
+      // Expected: the "Inventory" column of the new material equals the 4 units delivered in good condition
+      // (PL-REG-DLV-10/11b). The material is created by this run, so it has no other stock.
+      // Until 21 Nov this only checked that the row text contained "4", which any date or ID can satisfy.
+      await s.step(`Left menu › "Inventory Management", search ${NEW_MATERIAL} → "Inventory" column equals the received quantity 4`, async () => {
+        const receivedQuantity = 4;
         await k.menu('Inventory Management');
-        await page.getByRole('textbox', { name: 'Search inventory…' }).fill(NEW_MATERIAL); await k.settle(2000);
-        const r = page.locator('main tbody tr').filter({ hasText: NEW_MATERIAL }).first();
-        await expect(r).toContainText('4');
+        const inventory = new InventoryManagementPage(page);
+        await k.settle(2000);
+        const stock = await inventory.readListInventory(NEW_MATERIAL);
+        s.observe(`${NEW_MATERIAL} inventory ${stock}`);
+        expect(stock, 'Inventory of the new material differs from the received quantity').toBe(receivedQuantity);
       });
     });
     }

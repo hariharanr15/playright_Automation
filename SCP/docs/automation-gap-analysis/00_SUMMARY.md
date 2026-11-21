@@ -110,7 +110,7 @@ Until each is answered, the matching tests should either record the outcome with
 | Phase | Work | Why first |
 |---|---|---|
 | **0. Make the results trustworthy** (framework only, no new coverage). **Done 21 Nov, not yet run against the app** – see §9 | X1 scope known-defect matching by module (plus explicit `scenarioIds`). X2 single-attempt data-creating steps and flag passes that needed a retry. X6/X7/X8 turned out not to need code changes (see §3). | Every later number depends on this. Small changes inside the existing POM/runner. |
-| **1. Remove false signals** | X10 contradicting/weak assertions (`rejectNonImage`, INT-03, INV-REG-17, SYS-05, SL-REG-02, SL-REG-04 un-skip). X11 log DLV-19, CMP-19, T543-12 as defects. X12 correct register mappings. Re-run all smoke suites (X13) and the never-run POM specs (X9). | Cheap; stops the dashboard over- and under-reporting |
+| **1. Remove false signals** – **Done 21 Nov except SL-REG-02/04 (user triage of 13 Nov) and X9 standalone specs (need own data), see §12** | X10 contradicting/weak assertions (`rejectNonImage`, INT-03, INV-REG-17, SYS-05, SL-REG-02, SL-REG-04 un-skip). X11 log DLV-19, CMP-19, T543-12 as defects. X12 correct register mappings. Re-run all smoke suites (X13) and the never-run POM specs (X9). | Cheap; stops the dashboard over- and under-reporting |
 | **2. Stabilise the backbone** | Delivery → GRN chain made independent (PL-DLV-06/07, INT-01 → FDI-REG-06…10, INV-REG-21, T155). Pinned site + seeded stock (INV). Plan reset for XER. Supplier List form helper. PSC precondition step. | Removes most cascades and flakiness across PL, INV, FDI and SL |
 | **3. Prove confirmed (A) rules that need no new accounts** | PL: GAP-PL-001/002/003, T517-13…18. INV: GAP-INV-001/014, INV-R2 export. FDI: GAP-FDI-023/024/025/029-034/039/040/046/052/054. DOC: GAP-DOC-009/014. PM: GAP-PM-002 with the existing Supplier login, PM-REG-FDI-05a…n. | Highest business value for each unit of effort |
 | **4. Permission matrix** (as soon as the accounts in §5 arrive) | FDI GAP-FDI-001…015/020/042, PM-REG-ROLE-01…24, GAP-SL-001/002, GAP-PL-004, GAP-INV-012, GAP-DOC-015 | Highest risk area (cross-supplier data exposure) with no executed coverage. Blocked only on data. |
@@ -180,3 +180,21 @@ The client is not available, so the Inventory suite now runs on today's behaviou
   - INV-REG-07/08/09 check the balance before the message wording.
 - SCP-DEF-045 (INV-REG-14) was not reproduced in the 08:37 or 08:58 runs. Keep watching before removing it.
 - Gate 5 stock: each run uses about 8 units there (52 → 44 between runs). Since 21 Nov, setup step 8 stops the run with a clear message when the source location has fewer than 12 units (`minimumSourceLocationStock`); refill with `npm run procurement:regression`.
+
+## 12. Phase 1 – remove false signals (21 Nov 2026)
+
+| Item | Change | Verified by |
+|---|---|---|
+| X10 `rejectNonImage` (FDI) | It expected a PDF to be rejected, which contradicts confirmed rule R66 / REQ-FDI-036. New `attachNonImageFile()` expects the PDF to be accepted; the old method is marked deprecated and is no longer used. | Not yet: the spec stops earlier on stale data (see below) |
+| X10 PL-REG-INT-03 | Checked that the row text contained "4". It now reads the Inventory column of the run's new material and expects exactly 4. | PL part 3 run 10:06: Passed, "Auto Fdi 2611211006 inventory 4" |
+| X10 INV-REG-17 | Done in the pilot (§10) | Inventory runs |
+| X10 PM-REG-SYS-05 | It only checked that nothing was created. It now also expects the error/warning required by R27 (confirmed). | regression2 run 10:04: Known Defect SCP-DEF-059 |
+| X11 PL-REG-DLV-19, PL-REG-CMP-19, T543-12 | Registered as SCP-DEF-060, 061 and 062 (confirmed rules failing every run). | PL part 3 10:06 and tickets 10:05: all three are Known Defect |
+| X12 register | Removed T543-01/05 (no such tests), FDI-REG-02/03/11 (permanently skipped), TC-25 from REQ-PL-013 (a reporting test) and PL-REG-DLV-04 from REQ-PL-050 (never selects NA). Outputs rebuilt. | `python scripts/build-requirement-gap-analysis.py` |
+| X13 smoke | Re-run all three | PL smoke 18/18, modules smoke 40/40, PM smoke 19 passed + 1 skipped |
+
+**Not changed (decisions for the user):**
+- SL-REG-02 (toast-only check) and SL-REG-04 (skipped) were set this way at the user's triage on 13 Nov. They are left as they are unless that decision is reopened.
+- **X9 standalone POM specs:** `scp-first-delivery-inspection.spec.js` was run on 21 Nov and failed before reaching the changed step. Its fixed record "Inventory Qa B5033D231Ebf43D6" (INV-SUB-b5033d231ebf43d6, 1 Nov) is already "Inspection Completed", and the test expects "Auditor not yet assigned". These specs need their own fresh FDI record per run (Phase 2: delivery → GRN chain) before their results mean anything.
+
+**Procurement Log part 3, 05:11 → 10:06:** 46 passed / 8 failed / 1 known defect → 47 / 5 / 3. CMP-19 and DLV-19 are now known defects, and DLV-16 passed (on retry). The 5 remaining failures (LST-09, CMP-09, DLV-18, EDT-07, ALR-02) failed in both runs. They are not Phase 1 items and go to Phase 2/3 triage.

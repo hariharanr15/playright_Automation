@@ -260,7 +260,24 @@ const KNOWN_DEFECTS = [
     confirmation: 'pending',
     title: 'Site isolation',
     signature: /^Header site reverts after a reload/,
-    summary: 'PENDING TEAM CONFIRMATION. After choosing another site in the header and reloading, the header shows a different site (chose Site T2 Pmr2-2611011614, after reload Site T2 Pmr2-2611201108). Site isolation of locations itself works. OBS-INV-12.' }
+    summary: 'PENDING TEAM CONFIRMATION. After choosing another site in the header and reloading, the header shows a different site (chose Site T2 Pmr2-2611011614, after reload Site T2 Pmr2-2611201108). Site isolation of locations itself works. OBS-INV-12.' },
+  // 21 Nov 2026, Phase 1 of the gap analysis: confirmed rules that fail with no defect logged (gap report X10/X11).
+  { id: 'SCP-DEF-059', recordedOn: '2026-11-21', modules: ['Project Management'], scenarioIds: ['PM-REG-SYS-05'], reportNotReproduced: true,
+    title: 'System Messages: Ends before Starts',
+    signature: /^Ends before Starts: no error or warning shown \(R27\)/,
+    summary: 'System Messages › New message with Ends earlier than Starts: the message is not created, but no error or warning is shown. Rule R27 / REQ-PM-091 is confirmed (product owner, 30 Oct 2026). Observed 20 Nov 2026, NRVC_Hall.' },
+  { id: 'SCP-DEF-060', recordedOn: '2026-11-21', modules: ['Procurement Log'], scenarioIds: ['PL-REG-DLV-19'], reportNotReproduced: true,
+    title: 'Required Remaining Qty subtracts logged deliveries (PL-R15)',
+    signature: /^12 ordered − 4 logged/,
+    summary: '"+ Log Delivery" shows Required Remaining Qty "12 Pieces" after 4 of 12 were logged; confirmed rule PL-R15 expects 8. Failed in every Procurement Log part 3 run (14/14 up to 21 Nov 2026), NRVC_Hall.' },
+  { id: 'SCP-DEF-061', recordedOn: '2026-11-21', modules: ['Procurement Log'], scenarioIds: ['PL-REG-CMP-19'], reportNotReproduced: true,
+    title: 'Values use the project currency symbol',
+    signature: /^Project currency is INR/,
+    summary: 'The expanded component "Value" shows "$1,000.00" on a project whose currency is INR; confirmed rule R58 expects the project currency symbol (₹). Failed in every Procurement Log part 3 run (14/14 up to 21 Nov 2026), NRVC_Hall.' },
+  { id: 'SCP-DEF-062', recordedOn: '2026-11-21', scenarioIds: ['T543-12'], reportNotReproduced: true,
+    title: 'Category API without project_id returns only this project',
+    signature: /^categories leak across projects/,
+    summary: 'GET /api/project_material_category/ without project_id returns 757 categories from 15 projects instead of only the current project (BUGS-543 ticket suite, 20 Nov 2026). Possible cross-project data exposure; to be assessed by the team.' }
 ];
 
 module.exports = { KNOWN_DEFECTS };
