@@ -13,7 +13,8 @@ const GROUPS = {
   B: 'Decision or approval needed (irreversible change or shared data)',
   C: 'Accounts, test data or a mailbox needed from the team',
   D: 'Requirement / expected result needed',
-  E: 'Not safe or not possible to automate – manual check proposed'
+  E: 'Not safe or not possible to automate – manual check proposed',
+  X: 'Deferred by user decision (22 Nov 2026): Procore, International Shipments and Document Management are out of scope for now'
 };
 
 const ROLE_BLOCKED = 'Role suite set-up (22 Nov 2026): the test-only role "SCP Automation Test Role" was created as a copy of Supplier, but changing the test Supplier account\'s Project Role on NRVC_Hall to it in Voyage Control Admin › Projects › NRVC_Hall › PROJECT USERS did not stick (the row still showed "Supplier" after the change). The account was left on Supplier.';
@@ -124,3 +125,10 @@ Object.assign(module.exports.plan, {
   'PM-REG-CFG-16': { group: 'B', owner: 'User / product owner', effort: 'M', need: 'Same as CFG-13.' },
   'PM-REG-PLC-06': { group: 'B', owner: 'User / product owner', effort: 'M', need: 'Reordering the shared Procurement Log columns on NRVC_Hall – held back until after the demo; then run with restore.' }
 });
+// User decisions of 22 Nov 2026 (evening).
+{
+  const deferred = 'Deferred by the user on 22 Nov 2026 (Procore / International Shipments / Document Management out of scope for now). No action until the scope is reopened.';
+  for (const id of ['FDI-REG-12', 'DOC-REG-11', 'DOC-REG-12', 'DOC-REG-16', 'SHP-REG-03', 'SHP-REG-06', 'SHP-REG-08', 'SHP-REG-09'])
+    module.exports.plan[id] = { group: 'X', owner: 'User decision', effort: '-', need: deferred };
+  module.exports.plan['T548-16'] = { group: 'A', owner: 'Automation', effort: 'M', need: 'Expected result confirmed by the user (22 Nov 2026): a bank question used in an organisation set of any project of the organisation cannot be deleted or edited. Automate with a run-owned bank question used in a run-owned organisation set (find where the bank question delete/edit is offered first).' };
+}

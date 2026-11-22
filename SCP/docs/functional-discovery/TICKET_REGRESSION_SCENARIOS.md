@@ -102,19 +102,19 @@ Added 10 Nov 2026 from the ticket's ACs and the QA test notes (29 Oct comment); 
 | T548-13 | "Created from" line | POS | M | Copy shows "Created from: <org set> on <date> by <user>"; a hand-built set doesn't | O |
 | T548-14 | Delete | POS | M | Removed from list; copy shows "(deleted)" and keeps its questions | O ("(deleted)" seen on an older copy) |
 | T548-15 | "Edited in this project since" | POS | M | Move a question (▼) in the copy → `modified_after_copy` true and the line shows it; org set order unchanged | I |
-| T548-16 | Bank question protection | NEG | C | Deferred – a failing guard would delete a real bank question | – |
+| T548-16 | Bank question protection | NEG | C | A bank question used in an organisation set of any project of the organisation cannot be deleted or edited (confirmed by the user, 22 Nov 2026); automate with a run-owned question | User |
 | T548-17 | Audit log | INT | M | `schedule-audit-logs/list/?change_type=OrgFDIQuestionSet` / `FDIQuestionSet` mention the run | I |
 | T548-18 | Permissions | NEG | M | Deferred – needs a working view-only account | – |
 
 ## BUGS-155 – Subcontractor and the pre-shipping checklist
 
-Rule (ticket description): a subcontractor whose organisation differs from the submittal supplier's may only approve the checklist; when the organisations match, the subcontractor may also fill it. Setup per run: run submittal F (supplier `SCP_PL_SUPPLIER`, default LG) and, if `SCP_TKT155_SAME_ORG_SUPPLIER` is set, run submittal G with a supplier in the subcontractor's organisation; each gets a component and a delivery awaiting the checklist. The subcontractor signs in with `SCP_SUBCONTRACTOR_*` in a second browser context. The admin fills the checklist as the supplier's stand-in.
+Rule (updated by the user on 22 Nov 2026): a subcontractor **can fill** the pre-shipping checklist and can approve one the supplier filled. Earlier rule (ticket description): a subcontractor whose organisation differs from the submittal supplier's may only approve the checklist; when the organisations match, the subcontractor may also fill it. Setup per run: run submittal F (supplier `SCP_PL_SUPPLIER`, default LG) and, if `SCP_TKT155_SAME_ORG_SUPPLIER` is set, run submittal G with a supplier in the subcontractor's organisation; each gets a component and a delivery awaiting the checklist. The subcontractor signs in with `SCP_SUBCONTRACTOR_*` in a second browser context. The admin fills the checklist as the supplier's stand-in.
 
 | ID | Title | Type | Impact | Steps → Expected | Ev. |
 |---|---|---|---|---|---|
-| T155-01 | Other-org subcontractor cannot fill | NEG | C | Delivery on F: "Pre Shipping Info" not offered, or "Confirm Checklist" not usable | I |
+| T155-01 | Subcontractor can fill (rule updated 22 Nov 2026) | POS | C | Delivery on G: subcontractor opens "Pre Shipping Info", answers, "Confirm Checklist" → saved, "Approve Pre-Shipping Checklist" offered | User |
 | T155-02 | Subcontractor can approve | POS | C | Admin fills on F → subcontractor "Approve Pre-Shipping Checklist" › Approve → "Checklist Generated Successfully!" | I |
-| T155-03 | Same-org subcontractor can fill | POS | M | Subcontractor fills on G → "Approve Pre-Shipping Checklist" appears (needs `SCP_TKT155_SAME_ORG_SUPPLIER`) | I |
+| T155-03 | Same-org subcontractor can fill | POS | M | Covered by T155-01 since 22 Nov 2026 (a subcontractor can fill whatever the supplier organisation) | User |
 
 10 Nov: the `SCP_SUBCONTRACTOR_*` account in `.env` is rejected by the login page ("Please enter a correct email and password"), so T155-01…03 are skipped until it is updated.
 

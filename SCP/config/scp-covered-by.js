@@ -17,6 +17,8 @@ const COVERED_BY = [
   // Enterprise suite (tests/regression/enterprise, BUGS-325 oracle): open-submittal reconciliation against the Procurement
   // Log, turned into evidence with scripts/playwright-evidence.js (22 Nov 2026).
   { suite: 'app-regression', id: 'ENT-REG-01', by: [{ suite: 'enterprise', id: 'ENT-ORACLE-RECON' }] },
+  // BUGS-155 rule of 22 Nov 2026: a subcontractor can fill the checklist whatever the supplier organisation.
+  { suite: 'tickets', id: 'T155-03', by: [{ suite: 'tickets', id: 'T155-01' }] },
   // Role access applies to screens: checked by the read-only role suite (menus follow the Roles tab).
   { suite: 'app-regression', id: 'UM-REG-10', by: [{ suite: 'roles', id: 'PM-REG-ROLE-08' }] },
   // Executed by the role suite (npm: node scripts/run-pm-flow.js roles), passed as --evidence to the report.

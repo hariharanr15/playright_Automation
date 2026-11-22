@@ -1002,11 +1002,12 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
     ]) run.skip(meta(id, M548, title, 'Deferred'), why);
 
     // =============== BUGS-155 – Subcontractor and the pre-shipping checklist ===============
-    // Rule: a subcontractor whose organisation differs from the submittal supplier's can approve the checklist but not fill it;
-    // when the organisations match, the subcontractor may fill it too. Admin fills the checklist here as the supplier's stand-in.
+    // Rule (updated by the user on 22 Nov 2026): a subcontractor CAN fill the pre-shipping checklist, and can approve a
+    // checklist the supplier filled. (Earlier rule, ticket text: fill only when the subcontractor's organisation matches the
+    // supplier's.) Admin fills the checklist on F as the supplier's stand-in; the subcontractor fills the one on G.
     const M155 = 'BUGS-155 Subcontractor pre-shipping checklist';
     const SAME_ORG_SUPPLIER = process.env.SCP_TKT155_SAME_ORG_SUPPLIER || ''; // supplier in the subcontractor account's organisation
-    const sub155 = { F: { supplier: SUPPLIER }, G: { supplier: SAME_ORG_SUPPLIER } };
+    const sub155 = { F: { supplier: SUPPLIER }, G: { supplier: SAME_ORG_SUPPLIER || SUPPLIER } };
     for (const key of Object.keys(sub155)) Object.assign(sub155[key], { spec: `${RUN}-SPEC-${key}`, description: `${RUN} checklist ${key}`, number: `${RUN}-SUB-${key}`, scheduleId: num(key.charCodeAt(0) - 64) });
     const dIcon = (p, name) => p.locator(`img[title="${name}"], img[alt="${name}"]`).filter({ visible: true }).last();
     const fillChecklist = async (p, kit, tag) => {
@@ -1083,18 +1084,14 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
       await expect(subPage).toHaveURL(/[?&]schedule=/);
     };
     try {
-      await sc155('T155-01', 'Subcontractor from another organisation cannot fill the checklist', 'Negative', async s => {
-        await s.step(`Subcontractor opens delivery on ${sub155.F.number} (supplier ${SUPPLIER}) → no way to confirm a checklist`, async () => {
-          await subOpen(sub155.F);
-          const fill = dIcon(subPage, 'Pre Shipping Info');
-          if (await fill.isVisible().catch(() => false)) {
-            await fill.click();
-            const confirm = subPage.getByRole('button', { name: 'Confirm Checklist', exact: true });
-            const can = await confirm.isVisible({ timeout: 5000 }).catch(() => false) && await confirm.isEnabled().catch(() => false);
-            s.observe(`"Pre Shipping Info" shown; Confirm Checklist usable: ${can}`);
-            expect(can, 'subcontractor of another organisation can confirm the checklist').toBe(false);
-            await subPage.keyboard.press('Escape');
-          } else s.observe('"Pre Shipping Info" not offered to the subcontractor');
+      await sc155('T155-01', 'Subcontractor can fill the pre-shipping checklist', 'Positive', async s => {
+        await s.step(`Subcontractor opens the delivery on ${sub155.G.number} (supplier ${sub155.G.supplier}) › "Pre Shipping Info" › answer every question, note, "Confirm Checklist" → toast "Shipping Details updated successfully!" and "Approve Pre-Shipping Checklist" is offered`, async () => {
+          await subOpen(sub155.G);
+          const offered = await dIcon(subPage, 'Pre Shipping Info').isVisible().catch(() => false);
+          s.observe(`"Pre Shipping Info" ${offered ? 'offered' : 'not offered'} to the subcontractor`);
+          expect(offered, 'Subcontractor can open the pre-shipping checklist').toBe(true);
+          await fillChecklist(subPage, plKit(subPage), RUN);
+          await expect(dIcon(subPage, 'Approve Pre-Shipping Checklist')).toBeVisible({ timeout: 15000 });
         });
       });
       await sc155('T155-02', 'Subcontractor can approve a checklist the supplier filled', 'Positive', async s => {
@@ -1112,13 +1109,7 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
           await sk.toast('Checklist Generated Successfully!');
         });
       });
-      await sc155('T155-03', 'Subcontractor in the supplier\'s organisation can fill the checklist', 'Positive', async s => {
-        await s.step(`Subcontractor fills the checklist on ${sub155.G.number} (supplier ${SAME_ORG_SUPPLIER})`, async () => {
-          await subOpen(sub155.G);
-          await fillChecklist(subPage, plKit(subPage), RUN);
-          await expect(dIcon(subPage, 'Approve Pre-Shipping Checklist')).toBeVisible({ timeout: 15000 });
-        });
-      }, !!SAME_ORG_SUPPLIER);
+      run.skip(meta('T155-03', M155, 'Subcontractor in the supplier organisation can fill the checklist', 'Positive'), 'Covered by T155-01: since 22 Nov 2026 a subcontractor can fill the checklist whatever the supplier organisation');
     } finally {
       if (subCtx) await subCtx.close().catch(() => null);
     }
