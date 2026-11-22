@@ -813,7 +813,7 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
         });
       });
     }
-    run.skip(meta('DSH-REG-10', DSH, 'Daily alert batch', 'Integration'), 'Two-phase (seed day 1, verify day 2)');
+    run.skip(meta('DSH-REG-10', DSH, 'Daily alert batch', 'Integration'), 'No expected result yet: which alerts the 05:00–06:00 IST batch creates is not defined (question for the team, 22 Nov 2026). A met alert rule is checked by PL-REG-ALR-05');
     await run.scenario(meta('DSH-REG-11', DSH, 'View in Procurement Log', 'Integration'), async s => {
       await s.step(`Management Dashboard: click "View in Procurement Log →" → opens /procurement-log with "Only my watched" checked`, async () => {
         await dash(); await main.getByText('View in Procurement Log →').first().click(); await k.settle(2000);

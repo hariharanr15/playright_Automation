@@ -1,13 +1,13 @@
 # SCP – Known defects
 
-_Generated 2026-11-21 from `config/scp-known-defects.js` by `scripts/known-defects-report.js`. Do not edit by hand._
+_Generated 2026-11-22 from `config/scp-known-defects.js` by `scripts/known-defects-report.js`. Do not edit by hand._
 
 A test that fails exactly as described here is reported as **Known Defect** instead of Failed. Any other failure of the same test is still reported as Failed.
 
 - **Registered**: agreed with the user/team, or a confirmed rule that the application breaks.
 - **Pending confirmation**: today's behaviour looks logically wrong, but the expected behaviour has not been confirmed by the client/team yet. See `PENDING_CONFIRMATIONS.md`. These entries are reviewed (kept, changed or removed) once the team answers.
 
-**Total:** 74 entries · 57 registered · 17 pending confirmation. Nothing here is raised in Jira.
+**Total:** 75 entries · 57 registered · 18 pending confirmation. Nothing here is raised in Jira.
 
 ## Project Management
 
@@ -132,3 +132,9 @@ A test that fails exactly as described here is reported as **Known Defect** inst
 | ID | Status | Recorded | Applies to | Test / title | What happens |
 |---|---|---|---|---|---|
 | SCP-DEF-062 | Registered | 2026-11-21 | T543-12 | Category API without project_id returns only this project | GET /api/project_material_category/ without project_id returns 757 categories from 15 projects instead of only the current project (BUGS-543 ticket suite, 20 Nov 2026). Possible cross-project data exposure; to be assessed by the team. |
+
+## BUGS-517 Submittal edit rules
+
+| ID | Status | Recorded | Applies to | Test / title | What happens |
+|---|---|---|---|---|---|
+| SCP-DEF-075 | Pending confirmation | 2026-11-22 | T517-15 | Bulk Edit Roll Back does not restore Lead Time Confirmed | PENDING TEAM CONFIRMATION. Bulk Edit of Supplier Name on a submittal whose component lead time was Confirmed (2 weeks), "Confirm & Apply", then "Roll Back" in the review banner: the supplier and the 2-week lead time come back, but Lead Time Confirmed stays False (it was True before the batch). BUGS-517 expects Roll Back to restore supplier, lead times and Confirmed flags (T517-15). First automated run 22 Nov 2026 (Bulk Update #79). |

@@ -611,7 +611,38 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
         await expect(page.getByRole('row').filter({ hasText: `${RUN} alert` })).toHaveCount(0, { timeout: 15000 });
       });
     });
-    run.skip(meta('PL-REG-ALR-05', 'Alert fires (daily batch, two-phase)', 'Integration'), 'Alerts are produced by the daily batch (~05:00–06:00 IST); verify on the next day');
+    // A rule whose condition is already met is sent at once (status "Sent", seen while automating ALR-03), so the alert is
+    // checked in the same run instead of after the daily batch (22 Nov 2026).
+    await run.scenario(meta('PL-REG-ALR-05', 'A met alert rule raises an alert on the Management Dashboard', 'Integration'), async s => {
+      const message = `${RUN} met alert`;
+      await s.step(`Reload, search ${P.number}, row menu › "Alert" › "Add Alert": first field, condition ">=", value 0 (always met), message "${message}", "Submit" → toast "Alert created successfully!"; the rule's status becomes "Sent"`, async () => {
+        await fresh(); await k.search(P.number); await rowMenu(P, 'Alert');
+        await page.getByRole('button', { name: 'Add Alert' }).click();
+        await page.getByRole('button', { name: 'Choose Field' }).click(); await listbox().getByRole('option').first().click();
+        await k.pick('Choose Condition', '>=');
+        await page.getByRole('textbox', { name: 'Enter value' }).fill('0');
+        await page.getByRole('textbox', { name: 'Enter alert message' }).fill(message);
+        await page.getByRole('button', { name: 'Submit', exact: true }).click();
+        await k.toast('Alert created successfully!');
+        const rule = page.getByRole('row').filter({ hasText: message }).first();
+        await expect(rule).toBeVisible({ timeout: 15000 });
+        s.observe(`Rule row: ${(await rule.innerText()).replace(/\s+/g, ' ')}`);
+        await expect(rule, 'rule status "Sent"').toContainText('Sent', { timeout: 30000 });
+      }, { critical: true });
+      await s.step(`Left menu › "Management Dashboard" › "Alerts" (first 3 pages) → an alert with "${message}"`, async () => {
+        // The alert drawer can still cover the left menu: fall back to the route.
+        await page.keyboard.press('Escape');
+        await k.menu('Management Dashboard').catch(() => page.goto('/management-dashboard', { waitUntil: 'domcontentloaded' })); await k.settle(3000);
+        await k.main.getByRole('button', { name: /^Alerts(\s+\d+\+?)?$/ }).first().click(); await k.settle(2500);
+        const found = [];
+        for (let p = 1; p <= 3 && !found.length; p++) {
+          if (p > 1) { const next = k.main.getByRole('button', { name: String(p), exact: true }).last(); if (!(await next.isVisible().catch(() => false))) break; await next.click(); await k.settle(1500); }
+          found.push(...(await k.main.locator('tbody tr').allInnerTexts()).map(t => t.replace(/\s+/g, ' ')).filter(t => t.includes(message)));
+        }
+        s.observe(found.length ? found[0].slice(0, 200) : 'not on the first 3 pages of Alerts');
+        expect(found.length, 'Met alert rule listed in Management Dashboard › Alerts').toBeGreaterThan(0);
+      });
+    });
 
     // ---------- 8. Import / export ----------
     const importFile = async (kind, rows, name) => {

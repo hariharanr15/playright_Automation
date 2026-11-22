@@ -250,8 +250,149 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
         expect(primary(await submittal(subs.E.number))).toBe(data.m2);
       });
     });
-    for (const [id, title] of [['T517-13', 'Bulk Edit: one batch confirmation'], ['T517-14', 'Bulk Edit: locked row skipped'], ['T517-15', 'Bulk Edit Roll Back restores lead times'], ['T517-16', 'Bulk Edit: primary material change']])
-      run.skip(meta(id, M517, title, 'Bulk Edit'), 'Bulk Edit flow not automated yet: its column picker and pending-update log need a discovery pass (verified by hand on 3 Nov)');
+    // ---- Bulk Edit (T517-13…16). Discovery 22 Nov 2026: "Select Columns for Bulk Edit" offers "Supplier Name" and
+    // "Material Name"; the "Confirm Bulk Edit" preview lists every ticked record and marks a record the rules refuse as
+    // "Skipped: <reason>" ("N record can't be updated and will be skipped"). "Confirm & Apply" applies the values and puts
+    // the batch in review (banner "Bulk Update #N — reviewing changes"), where "Confirm" keeps and "Roll Back" restores.
+    // T517-14 and T517-16 stop at the preview (nothing applied); T517-13/15 apply one batch and roll it back.
+    const bulkLayer = text => page.locator('div.fixed.inset-0').filter({ visible: true }).filter({ hasText: text }).last();
+    const reviewBar = () => page.getByText(/Bulk Update #\d+ — reviewing changes/).first().locator('xpath=ancestor::div[.//button[normalize-space()="Roll Back"]][1]');
+    const bulk = { batch: null };
+    const bulkPreview = async (keys, column, value) => {
+      await fresh(); await k.search(RUN);
+      // Ticks survive navigation (seen 22 Nov 2026): untick every run row first.
+      await page.waitForTimeout(1000);
+      for (const box of await k.rows().getByRole('checkbox').all()) if (await box.isChecked().catch(() => false)) await box.uncheck().catch(() => box.click({ force: true }));
+      for (const key of keys) await k.rows().filter({ has: page.getByRole('cell', { name: subs[key].number, exact: true }) }).first().getByRole('checkbox').first().check();
+      await k.main.getByRole('button', { name: 'Select Columns for Bulk Edit' }).click();
+      const cols = bulkLayer('Select Columns for Bulk Edit');
+      await cols.getByText(column, { exact: true }).first().click();
+      await cols.getByRole('button', { name: 'Next', exact: true }).click();
+      const values = bulkLayer('Bulk Edit — Enter Values');
+      await values.getByRole('button', { name: new RegExp(`^Choose ${column}`) }).click();
+      await listbox().getByRole('option', { name: value, exact: true }).first().click();
+      await expect(values).toContainText(value);
+      await values.getByRole('button', { name: 'Preview Changes', exact: true }).click();
+      const preview = bulkLayer('Confirm Bulk Edit');
+      await expect(preview).toBeVisible({ timeout: 15000 });
+      return { preview, text: (await preview.innerText()).replace(/\s+/g, ' ') };
+    };
+    // Leaves the preview without applying anything.
+    const closePreview = async () => {
+      for (let i = 0; i < 3 && await bulkLayer('Confirm Bulk Edit').isVisible().catch(() => false); i++) await page.keyboard.press('Escape');
+      if (await bulkLayer('Confirm Bulk Edit').isVisible().catch(() => false)) await page.reload({ waitUntil: 'domcontentloaded' });
+    };
+    await sc517('T517-14', 'Bulk Edit: locked row skipped', 'Bulk Edit', async s => {
+      // C is on SUPPLIER already, so a different supplier is chosen (choosing its own supplier is no change and is not
+      // refused). A has no components, so any supplier is accepted for it.
+      await s.step(`Tick A (no components) and C (PO) › "Select Columns for Bulk Edit" › "Supplier Name" › ${OTHER_SUPPLIER} › "Preview Changes" → A will be updated; C "Skipped: … components with POs or deliveries …" (message 4); close without applying`, async () => {
+        const { text } = await bulkPreview(['A', 'C'], 'Supplier Name', OTHER_SUPPLIER);
+        s.observe(text.slice(0, 600));
+        try {
+          expect(text).toMatch(/This will update 1 record\b/);
+          expect(text).toMatch(/1 record can't be updated and will be skipped/);
+          expect(text).toMatch(new RegExp(`${esc(subs.C.number)}\\s*Skipped: Submittal has components with POs or deliveries\\. Supplier/Material cannot be modified while components with POs or deliveries are associated with the submittal\\.`));
+          expect(text).not.toMatch(new RegExp(`${esc(subs.A.number)}\\s*Skipped`));
+        } finally { await closePreview(); }
+      });
+      await s.step('Nothing applied: A and C keep their suppliers', async () => {
+        expect((await submittal(subs.A.number)).supplier_name).toBe(SECOND_SUPPLIER);
+        expect((await submittal(subs.C.number)).supplier_name).toBe(SUPPLIER);
+      });
+    });
+    await sc517('T517-16', 'Bulk Edit: primary material change', 'Bulk Edit', async s => {
+      await s.step(`Tick B (component on its primary ${MATERIAL}) and E › "Material Name" › ${data.m2} › "Preview Changes" → B "Skipped: Primary material cannot be changed as components are associated with this material." (message 9); close without applying`, async () => {
+        const { text } = await bulkPreview(['B', 'E'], 'Material Name', data.m2);
+        s.observe(text.slice(0, 600));
+        try {
+          expect(text).toMatch(/1 record can't be updated and will be skipped/);
+          expect(text).toMatch(new RegExp(`${esc(subs.B.number)}\\s*Skipped: Primary material cannot be changed as components are associated with this material\\.`));
+        } finally { await closePreview(); }
+      });
+      await s.step(`Nothing applied: B's primary material is still ${MATERIAL}`, async () => {
+        expect(primary(await submittal(subs.B.number))).toBe(MATERIAL);
+      });
+    });
+    await sc517('T517-13', 'Bulk Edit: one batch confirmation', 'Bulk Edit', async s => {
+      await s.step(`Open B › component row › "Lead Time": 2, tick confirm, "Submit" → B's component lead time 2 weeks, Confirmed (so T517-15 can see the flag restored)`, async () => {
+        await fresh(); await k.search(subs.B.number); await k.openSubmittal(subs.B.description);
+        await k.componentRow().getByRole('button', { name: 'Lead Time' }).click();
+        const m = k.dialog('Update Lead Time', 'Submit');
+        await m.getByRole('spinbutton').fill('2'); await m.getByRole('checkbox').check();
+        await m.getByRole('button', { name: 'Submit', exact: true }).click();
+        await expect.poll(async () => (await schedules(subs.B.id))[0].lead_time_confirmed_flag, { timeout: 20000 }).toBe(true);
+        expect((await schedules(subs.B.id))[0].lead_time_in_weeks).toBe(2);
+      }, { critical: true });
+      await s.step(`Tick A and B (both ${SECOND_SUPPLIER}) › "Supplier Name" › ${SUPPLIER} › "Preview Changes" → "This will update 2 records", nothing skipped, and ONE batch notice "Changing the supplier will update the lead times of all 1 component(s) on 1 submittal(s) … Lead Time Confirmed to False"`, async () => {
+        const pending = await reviewBar().isVisible().catch(() => false);
+        expect(pending, 'no bulk update already waiting for review').toBe(false);
+        const { text } = await bulkPreview(['A', 'B'], 'Supplier Name', SUPPLIER);
+        s.observe(text.slice(0, 500));
+        const ok = /This will update 2 records/.test(text) && !/Skipped:/.test(text);
+        if (!ok) await closePreview();
+        expect(text).toMatch(/This will update 2 records/);
+        expect(text).not.toMatch(/Skipped:/);
+        expect(text.match(/Changing the supplier will update the lead times/g) || [], 'one batch notice').toHaveLength(1);
+        expect(text).toMatch(/all 1 component\(s\) on 1 submittal\(s\) to the new supplier's lead times, and will set Lead Time Confirmed to False/);
+      }, { critical: true });
+      await s.step('"Confirm & Apply" (once) → at most one confirmation for the whole batch; banner "Bulk Update #N — reviewing changes"', async () => {
+        await bulkLayer('Confirm Bulk Edit').getByRole('button', { name: 'Confirm & Apply', exact: true }).click();
+        bulk.applied = true;
+        const dialogs = [];
+        // A supplier change with components asks once per batch (BUGS-517): answer each confirmation that appears.
+        for (let i = 0; i < 3; i++) {
+          const ask = page.locator('div.fixed.inset-0').filter({ visible: true }).filter({ has: page.getByRole('button', { name: /^(Confirm|Yes|OK)$/ }) }).filter({ hasNotText: /Bulk Update #\d+ — reviewing/ }).last();
+          if (!(await ask.isVisible({ timeout: 4000 }).catch(() => false))) break;
+          dialogs.push((await ask.innerText()).replace(/\s+/g, ' ').slice(0, 300));
+          await ask.getByRole('button', { name: /^(Confirm|Yes|OK)$/ }).last().click();
+          await page.waitForTimeout(1500);
+        }
+        s.observe(dialogs.length ? `Confirmation(s): ${dialogs.join(' || ')}` : 'No separate confirmation dialog after "Confirm & Apply"');
+        await expect(reviewBar(), 'review banner').toBeVisible({ timeout: 30000 });
+        const banner = (await reviewBar().innerText()).replace(/\s+/g, ' ');
+        bulk.batch = (banner.match(/#(\d+)/) || [])[1];
+        s.observe(banner.slice(0, 200));
+        expect(dialogs.length, 'one confirmation for the whole batch, not one per submittal').toBeLessThanOrEqual(1);
+        expect(banner).toMatch(/2 applied/);
+      }, { critical: true });
+      await s.step(`While in review: A and B show ${SUPPLIER}; B's lead time is ${SUPPLIER}'s (1 week) and not confirmed`, async () => {
+        expect((await submittal(subs.A.number)).supplier_name).toBe(SUPPLIER);
+        expect((await submittal(subs.B.number)).supplier_name).toBe(SUPPLIER);
+        const [c] = await schedules(subs.B.id);
+        s.observe(`B: lead time ${c.lead_time_in_weeks} week(s), confirmed ${c.lead_time_confirmed_flag}`);
+        expect(c.lead_time_in_weeks).toBe(1); expect(c.lead_time_confirmed_flag).toBe(false);
+      });
+    });
+    await sc517('T517-15', 'Bulk Edit Roll Back restores lead times', 'Bulk Edit', async s => {
+      await s.step('Review banner of the T517-13 batch › "Roll Back" → banner gone', async () => {
+        expect(bulk.batch, 'batch applied by T517-13').toBeTruthy();
+        const bar = reviewBar();
+        expect(await bar.innerText()).toContain(`#${bulk.batch}`);
+        await bar.getByRole('button', { name: 'Roll Back', exact: true }).click();
+        await page.waitForTimeout(1500);
+        const ask = page.locator('div.fixed.inset-0').filter({ visible: true }).filter({ has: page.getByRole('button', { name: /^(Roll Back|Yes|Confirm)$/ }) }).last();
+        if (await ask.isVisible().catch(() => false)) await ask.getByRole('button', { name: /^(Roll Back|Yes|Confirm)$/ }).last().click();
+        await expect(bar).toBeHidden({ timeout: 30000 });
+        bulk.rolledBack = true;
+      }, { critical: true });
+      await s.step(`A and B are back on ${SECOND_SUPPLIER}; B's lead time is 2 weeks and Confirmed again`, async () => {
+        expect((await submittal(subs.A.number)).supplier_name).toBe(SECOND_SUPPLIER);
+        expect((await submittal(subs.B.number)).supplier_name).toBe(SECOND_SUPPLIER);
+        const [c] = await schedules(subs.B.id);
+        s.observe(`B: lead time ${c.lead_time_in_weeks} week(s), confirmed ${c.lead_time_confirmed_flag}`);
+        expect(c.lead_time_in_weeks, 'lead time restored').toBe(2);
+        expect(c.lead_time_confirmed_flag, 'Lead Time Confirmed restored').toBe(true);
+      });
+    });
+    // Safety net: a batch this run applied must not stay in review (it blocks Procurement Log search for later suites).
+    if (bulk.applied && !bulk.rolledBack && bulk.batch) {
+      await fresh().catch(() => null);
+      const bar = reviewBar();
+      if (await bar.isVisible().catch(() => false) && (await bar.innerText()).includes(`#${bulk.batch}`)) {
+        console.log(`  ⚠ Bulk Update #${bulk.batch} left in review by T517-13 – rolled back`);
+        await bar.getByRole('button', { name: 'Roll Back', exact: true }).click().catch(() => null);
+      }
+    }
 
     // =============== BUGS-543 – FDI question set categories from the Material Category master ===============
     const M543 = 'BUGS-543 FDI question set categories';

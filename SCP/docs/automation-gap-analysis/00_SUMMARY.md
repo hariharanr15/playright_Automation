@@ -272,3 +272,25 @@ Also on 21 Nov:
 **Re-runs (02:11–04:02 IST, inside the same window):** PL part 1 15 passed / 0 failed (3 known defects); PL part 3 47 / 0; System Messages cases 8 / 0, then SYS-00 cleaned the test banners; E2E smoke 27 passed, 3 known defects (TC-23/24/25), 0 failed, 0 blocked.
 
 **Consolidated result** (`reports/full-regression-2026-11-21T17-43-03-393Z/NON_PASSED_TEST_CASES.md` and `.pdf`, `KNOWN_DEFECT_TEST_CASES.md` and `.pdf`): 594 cases · 435 passed · 43 known defect · **0 failed · 0 blocked** · 116 skipped.
+
+## 16. Skipped cases turned into results (22 Nov 2026)
+
+**Counted as Passed when the covering check passed (12):** UM-REG-04/05, FDI-REG-01/01a/02/03/11, SHP-REG-07, and PM-REG-FDI-25a, FDI-42c, UPL-MM-15, UPL-SITE-13 (the same cases also run in PM part 2). The list is in `config/scp-covered-by.js`. `scripts/non-pass-report.js` checks the covering case, or the named step, in the consolidated results and lists these cases in their own section. Three stay Skipped:
+
+- INV-REG-03: its covering step in INV-REG-15 is a Known Defect.
+- INV-REG-21: no executed check reads Incoming Load.
+- The "Regression part 3" items: that suite does not exist.
+
+**Newly automated (5):**
+
+| Case | What it checks | Result |
+|---|---|---|
+| T517-14 | Bulk Edit Supplier Name on A (no components) + C (PO): the preview skips C with "Submittal has components with POs or deliveries …" | Passed (preview only, nothing applied) |
+| T517-16 | Bulk Edit Material Name on B + E: the preview skips B with "Primary material cannot be changed as components are associated with this material." | Passed (preview only) |
+| T517-13 | Bulk Edit Supplier Name on A + B: one batch notice "all 1 component(s) on 1 submittal(s) … Lead Time Confirmed to False"; Confirm & Apply → review banner, B on LG with 1 week, not confirmed | Passed |
+| T517-15 | Roll Back of that batch | Known Defect **SCP-DEF-075** (pending): supplier and lead time restored, Lead Time Confirmed not restored |
+| PL-REG-ALR-05 | Alert rule ">= 0" turns "Sent" and its alert is on Management Dashboard › Alerts | Passed |
+
+Discovery facts used: row ticks survive navigation (untick first); choosing a row's own supplier is "no change" and is not refused. DSH-REG-10 stays Skipped with a question for the team (item 22).
+
+**Consolidated result now:** 594 cases · 451 passed · 44 known defect · 0 failed · 0 blocked · 99 skipped.

@@ -84,6 +84,24 @@ for (const run of runs) {
     byId.set(id, item);
   }
 }
+// Skipped cases checked by another executed case (config/scp-covered-by.js) count as Passed when that check passed.
+const { COVERED_BY } = require('../config/scp-covered-by');
+const covered = [];
+for (const entry of COVERED_BY) {
+  const item = byId.get(`${entry.suite}|${entry.id}`);
+  if (!item || item.status !== 'Skipped') continue;
+  const checks = entry.by.map(ref => {
+    const source = byId.get(`${ref.suite}|${ref.id}`);
+    const step = source && ref.step ? (source.steps || []).find(entry => ref.step.test(entry.name)) : null;
+    const status = !source ? 'not run' : ref.step ? (step ? step.status : 'step not found') : source.status;
+    return { ref, status, label: `${ref.id}${ref.step ? ' (step)' : ''}` };
+  });
+  const passed = checks.every(check => check.status === 'Passed');
+  const text = checks.map(check => `${check.label}: ${check.status}`).join(', ');
+  if (passed) { item.status = 'Passed'; item.coveredBy = text; }
+  else item.reason = `${plain(item.reason)} · Covering check did not pass: ${text}`;
+  covered.push({ item, passed, text });
+}
 const cases = [...byId.values()];
 const totals = {};
 for (const item of cases) totals[item.status] = (totals[item.status] || 0) + 1;
@@ -119,6 +137,14 @@ const lines = [
   ...runs.map(run => `| ${cell(run.title)} | \`${cell(path.relative(process.cwd(), run.dir))}\` |`),
   ''
 ];
+
+const coveredPassed = covered.filter(entry => entry.passed);
+if (coveredPassed.length) {
+  lines.push('## Skipped cases counted as Passed (checked by another case)', '',
+    `${coveredPassed.length} case(s) are not executed on their own because another case of this run performs the same check. They count as Passed because that check passed (list: \`config/scp-covered-by.js\`).`, '',
+    '| Module | Test case | Checked by (result) |', '|---|---|---|',
+    ...coveredPassed.map(({ item, text }) => `| ${cell(item.module)} | ${cell(item.id)} – ${cell(item.title)} | ${cell(text)} |`), '');
+}
 
 const modules = [...new Set(nonPassed.map(item => item.module || 'Other'))].sort();
 if (!modules.length) lines.push('## Result', '', 'Every executed test case passed or failed only as a registered known defect. Nothing is Failed, Blocked or Skipped.', '');

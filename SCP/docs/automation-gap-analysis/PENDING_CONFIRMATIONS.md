@@ -98,6 +98,10 @@ These failed in **every** full regression run from 17 to 21 Nov 2026 with the sa
 
 **20. SCP-DEF-074 (found by the overnight run, 22 Nov 2026)** – Between 00:00 and 05:30 IST, open any submittal › **Add Component** › choose PO Date = today in the date picker › **ADD**. The dialog shows "Invalid data provided." and the server replies "PO date cannot be in the future. Use today's date or an earlier date.", because it compares with its UTC date, which is still the day before. In the same window, the Procurement Log **Start date** = today filter hides records created that day, and Alerts/Notifications show the previous day's date on items created that night. Question: should "today" follow the user's or project's time zone? The tests now use the server's date so night runs keep working. Daytime runs and the demo are not affected.
 
+**21. SCP-DEF-075 / T517-15 (22 Nov 2026)** – Open a submittal with one component on its primary material and confirm its lead time (component row › **Lead Time** › tick confirm › **Submit**). Then in Procurement Log tick that submittal › **Select Columns for Bulk Edit** › **Supplier Name** › another mapped supplier › **Preview Changes** › **Confirm & Apply**. In the review banner click **Roll Back**. The supplier and the lead time come back, but **Lead Time Confirmed stays False**. BUGS-517 expects Roll Back to restore the Confirmed flag too.
+
+**22. DSH-REG-10 (question, not a defect)** – Which alerts does the 05:00–06:00 IST daily batch create, and where do they show? Without that, the case has no expected result and stays Skipped. A met alert rule raising an alert is now checked by PL-REG-ALR-05: the rule turns "Sent" at once.
+
 ## Corrected test (not an application issue)
 
 **INV-REG-18** compared the upload error file's "available" figure (stock at the row's From Location, e.g. Gate 5 = 59) with the ledger Closing Balance (whole site, 582). These can never be equal. Since 21 Nov it compares with the Add Activity hint for the same location, which is the figure the save check uses (INV-R3), minus the valid rows above the invalid row in the file (item 8).
