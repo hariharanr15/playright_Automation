@@ -89,27 +89,57 @@ const lines = [
   ''
 ];
 
+// One block per case (used by both documents).
+const caseBlock = (item, { withGroup = false } = {}) => {
+  const out = [`### ${item.id} – ${item.title.replace(/^\[[^\]]+\]\s*/, '')}`, '', '| Field | Value |', '|---|---|'];
+  out.push(`| Module | ${cell(item.module)}${item.submodule ? ` › ${cell(item.submodule)}` : ''} |`);
+  out.push(`| Suite | ${cell(item.suite)} |`);
+  if (item.navPath.length) out.push(`| Where in the app | ${cell(item.navPath.join(' › '))} |`);
+  if (item.type || item.impact) out.push(`| Type / impact | ${cell([item.type, item.impact].filter(Boolean).join(' · '))} |`);
+  out.push(`| Test description | ${cell(item.title.replace(/^\[[^\]]+\]\s*/, ''))} |`);
+  if (item.steps) out.push(`| Steps${item.expected ? '' : ' → expected result'} | ${cell(item.steps)} |`);
+  if (item.expected) out.push(`| Expected result | ${cell(item.expected)} |`);
+  if (item.def) out.push(`| Defined in | \`${cell(item.def.file)}\`${item.def.section ? ` – ${cell(item.def.section)}` : ''} |`);
+  out.push(`| Why it is skipped today | ${cell(item.reason)} |`);
+  if (item.p.blocker) out.push(`| Current blocker | ${cell(item.p.blocker)} |`);
+  if (withGroup) out.push(`| Closure group | **${item.p.group}** – ${cell(GROUPS[item.p.group] || '')} |`);
+  out.push(`| What is needed to close it | **${cell(item.p.need)}** |`);
+  out.push(`| Who acts first | ${cell(item.p.owner)} |`, `| Automation effort once unblocked | ${cell(item.p.effort)} |`, '');
+  return out;
+};
+
 for (const g of order) {
   const inGroup = items.filter(item => item.p.group === g);
   if (!inGroup.length) continue;
   lines.push(`## Group ${g} – ${GROUPS[g]} (${inGroup.length})`, '');
-  for (const item of inGroup) {
-    lines.push(`### ${item.id} – ${item.title.replace(/^\[[^\]]+\]\s*/, '')}`, '');
-    lines.push('| Field | Value |', '|---|---|');
-    lines.push(`| Module | ${cell(item.module)}${item.submodule ? ` › ${cell(item.submodule)}` : ''} |`);
-    lines.push(`| Suite | ${cell(item.suite)} |`);
-    if (item.navPath.length) lines.push(`| Where in the app | ${cell(item.navPath.join(' › '))} |`);
-    if (item.type || item.impact) lines.push(`| Type / impact | ${cell([item.type, item.impact].filter(Boolean).join(' · '))} |`);
-    lines.push(`| What it checks | ${cell(item.title.replace(/^\[[^\]]+\]\s*/, ''))} |`);
-    if (item.steps) lines.push(`| Steps${item.expected ? '' : ' → expected result'} | ${cell(item.steps)} |`);
-    if (item.expected) lines.push(`| Expected result | ${cell(item.expected)} |`);
-    if (item.def) lines.push(`| Defined in | \`${cell(item.def.file)}\`${item.def.section ? ` – ${cell(item.def.section)}` : ''} |`);
-    lines.push(`| Why it is skipped today | ${cell(item.reason)} |`);
-    if (item.p.blocker) lines.push(`| Current blocker | ${cell(item.p.blocker)} |`);
-    lines.push(`| What is needed to close it | **${cell(item.p.need)}** |`);
-    lines.push(`| Who acts first | ${cell(item.p.owner)} |`, `| Automation effort once unblocked | ${cell(item.p.effort)} |`, '');
-  }
+  for (const item of inGroup) lines.push(...caseBlock(item));
 }
+
+// ---------- Second document: the same cases, module by module ----------
+const moduleName = item => /^BUGS-/.test(item.module) ? `Tickets (BUGS) › ${item.module}` : item.module;
+const modules = [...new Set(items.map(moduleName))].sort((a, b) => (/^Tickets/.test(a) - /^Tickets/.test(b)) || a.localeCompare(b));
+const byModule = [
+  '# SCP – Open Skipped test cases by module',
+  '',
+  `_Generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC by \`scripts/skipped-cases-report.js\` from the consolidated full-regression results (\`${path.basename(folder)}\` plus re-runs)._`,
+  '',
+  `**${items.length} test cases are still Skipped.** Each module lists its cases with the test description, the steps and expected result (from the scenario documents), why the case is skipped today and what is needed to close it. Closure groups: ${order.map(g => `**${g}** ${GROUPS[g].toLowerCase()}`).join(' · ')}.`,
+  '',
+  '## Summary by module',
+  '',
+  `| Module | Skipped | ${order.join(' | ')} |`,
+  `|---|---|${order.map(() => '---').join('|')}|`,
+  ...modules.map(m => { const inM = items.filter(item => moduleName(item) === m); return `| ${cell(m)} | ${inM.length} | ${order.map(g => inM.filter(item => item.p.group === g).length || '').join(' | ')} |`; }),
+  `| **Total** | **${items.length}** | ${order.map(g => items.filter(item => item.p.group === g).length).join(' | ')} |`,
+  ''
+];
+for (const m of modules) {
+  const inM = items.filter(item => moduleName(item) === m).sort((a, b) => (a.submodule || '').localeCompare(b.submodule || '') || a.id.localeCompare(b.id, 'en', { numeric: true }));
+  byModule.push(`## ${m} (${inM.length})`, '', '| # | Test case | Test description | Group | What is needed to close it |', '|---|---|---|---|---|',
+    ...inM.map((item, i) => `| ${i + 1} | ${cell(item.id)} | ${cell(item.title.replace(/^\[[^\]]+\]\s*/, ''))} | ${item.p.group} | ${cell(item.p.need)} |`), '');
+  for (const item of inM) byModule.push(...caseBlock(item, { withGroup: true }));
+}
+fs.writeFileSync(path.join(folder, 'OPEN_SKIPPED_TEST_CASES_BY_MODULE.md'), byModule.join('\n'));
 
 const missing = items.filter(item => item.p.group === '?').map(item => item.id);
 if (missing.length) lines.push('## Not classified yet', '', missing.join(', '), '');

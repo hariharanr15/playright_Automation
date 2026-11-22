@@ -366,6 +366,47 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
         expect(remaining, '12 ordered − 4 logged').toMatch(/^8\b/);
       });
     });
+    // PM-REG-PSC-03 (cross-module, 22 Nov 2026; skipped in PM part 2 until now): the enabled questions of Project
+    // Management › PreShipping Checklist are the ones the delivery checklist asks.
+    const psc = { disabled: [], checklist: '' };
+    await run.scenario({ ...meta('PM-REG-PSC-03', 'Enabled PreShipping questions appear in the delivery checklist', 'Integration'), module: 'Project Management', submodule: 'PreShipping Checklist', navPath: ['Project Management', 'PreShipping Checklist'] }, async s => {
+      const enabled = [];
+      await s.step('Left menu › Project Management › "PreShipping Checklist" → read the questions whose "Enabled" box is ticked', async () => {
+        // By route: a component drawer can cover the left menu here.
+        await page.goto('/preshipping-checklist', { waitUntil: 'domcontentloaded' });
+        await page.locator('main tbody tr').first().waitFor({ timeout: 30000 }); await k.settle(1500);
+        const rows = await page.locator('main tbody tr').evaluateAll(trs => trs.map(tr => ({ cells: [...tr.cells].map(c => c.innerText.trim()), on: !!tr.querySelector('input[type=checkbox]')?.checked })));
+        for (const row of rows) if (row.on) enabled.push(row.cells[1]); else psc.disabled.push(row.cells[1]);
+        s.observe(`${enabled.length} enabled of ${rows.length}: ${enabled.join(' | ').slice(0, 300)}`);
+        expect(enabled.length, 'enabled questions').toBeGreaterThan(0);
+      }, { critical: true });
+      await s.step('Reload the component view, click the "Pre Shipping Info" icon → the checklist lists every enabled question; close it without answering', async () => {
+        await page.goto(ids.componentUrl, { waitUntil: 'domcontentloaded' });
+        await page.getByRole('button', { name: '+ Log Delivery' }).last().waitFor({ timeout: 30000 }); await k.settle(1500);
+        await icon('Pre Shipping Info').click();
+        await checklist().getByRole('button', { name: 'Y/N', exact: true }).first().waitFor({ timeout: 20000 });
+        const text = (await checklist().innerText()).replace(/\s+/g, ' ');
+        psc.checklist = text;
+        const norm = t => t.replace(/\s+/g, ' ').trim().toLowerCase();
+        const missing = enabled.filter(q => !norm(text).includes(norm(q)));
+        s.observe(missing.length ? `Not in the checklist: ${missing.join(' | ')}` : `All ${enabled.length} enabled questions shown`);
+        await k.closeDialog('Add Pre-Shipping Details').catch(() => page.keyboard.press('Escape'));
+        expect(missing, `enabled questions missing from the delivery checklist: ${missing.join(' | ')}`).toEqual([]);
+      });
+    });
+    // PM-REG-PSC-04 (read-only, 22 Nov 2026): switching a question off is not kept by the app (SCP-DEF-063), so the
+    // questions that are already disabled are checked instead: none of them is asked in the delivery checklist.
+    await run.scenario({ ...meta('PM-REG-PSC-04', 'Disabled PreShipping questions are not in the delivery checklist', 'Integration'), module: 'Project Management', submodule: 'PreShipping Checklist', navPath: ['Project Management', 'PreShipping Checklist'] }, async s => {
+      await s.step('Questions whose "Enabled" box is not ticked (read in PM-REG-PSC-03) → none of them appears in the delivery checklist read there', async () => {
+        if (!psc.checklist) throw new Error('PM-REG-PSC-03 did not read the delivery checklist');
+        const norm = t => t.replace(/\s+/g, ' ').trim().toLowerCase();
+        // A disabled question that is also the start of an enabled question's text is not judged (cannot be told apart).
+        const shown = psc.disabled.filter(q => q && norm(psc.checklist).includes(norm(q)));
+        s.observe(`${psc.disabled.length} disabled question(s)${shown.length ? `; shown anyway: ${shown.join(' | ')}` : '; none shown'}`);
+        if (!psc.disabled.length) s.observe('no disabled question on the project – nothing to check');
+        expect(shown, `disabled questions asked in the delivery checklist: ${shown.join(' | ')}`).toEqual([]);
+      });
+    });
     await run.scenario(meta('PL-REG-DLV-03', 'Checklist needs every answer and comment', 'Negative'), async s => {
       await s.step(`Reload component view, click "Pre Shipping Info" icon, click "Confirm Checklist" with no answers → toast "Answer every Questions"`, async () => {
         await page.goto(ids.componentUrl, { waitUntil: 'domcontentloaded' });
@@ -558,9 +599,10 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
         }
       });
       await s.step(`Left menu › "International Shipments" → exactly one row for ${P.number} (PL-REG-INT-02); row text recorded`, async () => {
-        await k.menu('International Shipments'); await page.getByText('Loading international shipments').waitFor({ state: 'hidden', timeout: 60000 }).catch(() => null);
+        // International Shipments needs up to 158 s to load on staging (21 Nov 2026): wait up to 3 minutes, as SHP-REG does.
+        await k.menu('International Shipments'); await page.getByText('Loading international shipments').waitFor({ state: 'hidden', timeout: 180000 }).catch(() => null);
         const r = page.locator('main tbody tr').filter({ hasText: P.number });
-        await expect(r).toHaveCount(1, { timeout: 30000 });
+        await expect(r).toHaveCount(1, { timeout: 60000 });
         ids.shipRow = (await r.innerText()).replace(/\s+/g, ' '); s.observe(ids.shipRow);
       });
       await s.step(`Check the International Shipments row → it contains the component Required Date (today+28 days, dd/mm/yyyy)`, async () => expect(ids.shipRow, 'International Shipments row shows the component Required Date').toContain(gb(plusDays(28))));

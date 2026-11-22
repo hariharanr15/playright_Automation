@@ -230,8 +230,14 @@ test('Inventory Management – regression', async ({ page, browserName }) => {
         expect(await inventory.readClosingBalance()).toBe(shared.startingStock);
       });
     });
+    // =================================================================================================================
+    // INV-REG-21 – Damaged units are counted as received (PL-R16)
+    // =================================================================================================================
+    // INV-REG-21 was automated on 22 Nov 2026, but Procurement Log part 1's GRNs are not booked on this suite's site:
+    // the header site resets during PL part 1 (SCP-DEF-058), so the Incoming Load of its partial delivery is not in this
+    // site's ledger. Back to Skipped until the delivery's site is fixed in PL part 1.
     run.skip(scenarioInfo('INV-REG-21', 'Damaged units counted as received (PL-R16)', 'Integration'),
-      'Checked in the Procurement regression (PL-REG-DLV-13: Incoming Load = delivered QTY incl. damaged)');
+      'Procurement Log part 1 books its partial delivery (4 delivered, 1 damaged) on whatever site the header shows after a reset (SCP-DEF-058), not on Warehoust _NR, so its Incoming Load is not in this ledger; needs PL part 1 to deliver to a fixed site');
 
     // =================================================================================================================
     // INV-REG-13 – The form only offers suppliers, submittals and schedules of the chosen material
@@ -311,14 +317,32 @@ test('Inventory Management – regression', async ({ page, browserName }) => {
     // =================================================================================================================
     // INV-REG-15 – The list page shows the new stock right after an activity (no page reload)
     // =================================================================================================================
+    // INV-REG-03 records the Loss and checks the ledger; INV-REG-15 then reads the list grid for that same Loss, so the
+    // run uses one Loss of 1 for both rules (22 Nov 2026; before, INV-REG-03 was skipped as "covered by INV-REG-15").
+    const loss = {};
+    await run.scenario(scenarioInfo('INV-REG-03', 'Loss', 'Positive'), async s => {
+      const { action, quantity, expectedChange } = CHANGES.loss;
+      await s.step(`Ledger › "Add Activity": action "${action}", QTY ${quantity}, "ADD" → form closes (saved)`, async () => {
+        await openLedger();
+        loss.balanceBefore = await inventory.readClosingBalance();
+        await recordActivity({ action, quantity });
+        loss.recorded = true;
+        expect(await inventory.isActivityFormOpen(), `Form still open: ${await inventory.readActivityMessages()}`).toBe(false);
+      }, { critical: true, attempts: 1 });
+      await s.step(`Reopen the ledger → "Closing Balance" changes by ${expectedChange} and a "${action}" row is listed`, async () => {
+        await page.keyboard.press('Escape');
+        await openLedger();
+        expect(await inventory.readClosingBalance()).toBe(loss.balanceBefore + expectedChange);
+        await expect(inventory.ledgerRows().filter({ hasText: action }).first()).toBeVisible();
+      });
+    });
     await run.scenario(scenarioInfo('INV-REG-15', 'Grid refreshes after an activity', 'Positive'), async s => {
-      // STEP 1: Record a "Loss" of 1, close the ledger and go back to the list through the menu (not a reload).
+      // STEP 1: After the Loss of INV-REG-03, close the ledger and go back to the list through the menu (not a reload).
       // Purpose: users read stock on the list page; a stale figure leads to wrong decisions.
       // Expected: the list shows 1 unit less than the ledger before the loss (today it is stale, OBS-INV-4).
-      await s.step(`Ledger › "Add Activity": action "Loss", QTY 1, "ADD"; Escape, sidebar › "Inventory Management" (no reload) → grid Inventory of ${MATERIAL} is 1 lower (OBS-INV-4 if stale)`, async () => {
-        await openLedger();
-        const balanceBefore = await inventory.readClosingBalance();
-        await recordActivity({ action: CHANGES.loss.action, quantity: CHANGES.loss.quantity });
+      await s.step(`After the "Loss" of 1 recorded in INV-REG-03: Escape, sidebar › "Inventory Management" (no reload) → grid Inventory of ${MATERIAL} is 1 lower (OBS-INV-4 if stale)`, async () => {
+        if (!loss.recorded) throw new Error('INV-REG-03 did not record the Loss');
+        const balanceBefore = loss.balanceBefore;
         await page.keyboard.press('Escape');
         await procurement.menu(MODULE).catch(() => null);
         await procurement.settle(1000);
@@ -327,7 +351,6 @@ test('Inventory Management – regression', async ({ page, browserName }) => {
         expect(listStock, 'Grid inventory is stale after a manual activity (OBS-INV-4)').toBe(balanceBefore - 1);
       }, { attempts: 1 });
     });
-    run.skip(scenarioInfo('INV-REG-03', 'Loss', 'Positive'), 'Loss 1 is executed and its balance checked in INV-REG-15');
 
     // =================================================================================================================
     // INV-REG-04 – A "Return" reduces stock and is written back to the Procurement Log

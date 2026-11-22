@@ -87,6 +87,19 @@ for (const run of runs) {
     byId.set(id, item);
   }
 }
+// The same test case ID skipped in one suite but executed in another (e.g. PM-REG-ROLE-* skipped in PM part 2 and run by
+// the role suite) counts once, by its executed result; a case skipped in several suites counts once (latest reason).
+let deduplicated = 0;
+{
+  const byScenario = new Map();
+  for (const [key, item] of byId) { const list = byScenario.get(item.id) || []; list.push(key); byScenario.set(item.id, list); }
+  for (const keys of byScenario.values()) {
+    if (keys.length < 2) continue;
+    const executed = keys.filter(key => byId.get(key).status !== 'Skipped');
+    const drop = executed.length ? keys.filter(key => byId.get(key).status === 'Skipped') : keys.slice(0, -1);
+    for (const key of drop) { byId.delete(key); deduplicated++; }
+  }
+}
 // Skipped cases checked by another executed case (config/scp-covered-by.js) count as Passed when that check passed.
 const { COVERED_BY } = require('../config/scp-covered-by');
 const evidence = new Map();
@@ -102,12 +115,19 @@ for (const entry of COVERED_BY) {
     const source = byId.get(`${ref.suite}|${ref.id}`) || evidence.get(`${ref.suite}|${ref.id}`);
     const step = source && ref.step ? (source.steps || []).find(entry => ref.step.test(entry.name)) : null;
     const status = !source ? 'not run' : ref.step ? (step ? step.status : 'step not found') : source.status;
-    return { ref, status, label: `${ref.id}${ref.step ? ' (step)' : ''}` };
+    const defects = ref.step ? (step && step.defect ? [step.defect] : []) : (source && source.defects) || [];
+    return { ref, status, defects, label: `${ref.id}${ref.step ? ' (step)' : ''}` };
   });
   const passed = checks.every(check => check.status === 'Passed');
+  // A covering check that failed only as a registered known defect makes this case a Known Defect with the same defect.
+  const knownOnly = !passed && checks.every(check => ['Passed', 'Known Defect'].includes(check.status));
   const text = checks.map(check => `${check.label}: ${check.status}`).join(', ');
   if (passed) { item.status = 'Passed'; item.coveredBy = text; }
-  else item.reason = `${plain(item.reason)} · Covering check did not pass: ${text}`;
+  else if (knownOnly) {
+    item.status = 'Known Defect'; item.coveredBy = text;
+    item.defects = [...new Set(checks.flatMap(check => check.defects))];
+    item.steps = [{ name: `Checked by ${checks.map(check => check.label).join(', ')} → same check`, status: 'Known Defect', defect: item.defects[0], reason: `Covered: ${text}` }];
+  } else item.reason = `${plain(item.reason)} · Covering check did not pass: ${text}`;
   covered.push({ item, passed, text });
 }
 const cases = [...byId.values()];
@@ -124,6 +144,7 @@ const lines = [
   '',
   ...(replaced ? [`_${replaced} result(s) come from a later re-run of the same case (the re-run replaces the first result)._`, ''] : []),
   ...(reclassified ? [`_${reclassified} case(s) failed before their defect was registered and are shown as Known Defect ("re-classified")._`, ''] : []),
+  ...(deduplicated ? [`_${deduplicated} duplicate Skipped entr(ies) removed: the same test case is executed, or also skipped, in another suite and is counted once._`, ''] : []),
   '## Summary',
   '',
   '| Result | Test cases |',

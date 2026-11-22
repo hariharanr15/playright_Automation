@@ -45,12 +45,16 @@ test('Procurement Log – regression part 1', async ({ page, browserName }) => {
         await expect(page.getByRole('textbox', { name: 'Start date' })).toHaveValue(fmt(from));
       });
     });
+    let sortClicked = false;
     await run.scenario(meta('PL-REG-LST-13', 'Sorting by Submittal No is ascending on first click', 'Positive'), async s => {
       await s.step(`Click the "Submittal No" column header once → rows are sorted ascending by Submittal No`, async () => {
-        await main.getByRole('columnheader', { name: 'Submittal No' }).click(); await k.settle(1000);
+        // The sorted page arrives after the click (22 Nov 2026 the rows were read too early), so wait for it. A retry of
+        // this step does not click again: a second click sorts descending.
         const col = (await main.getByRole('columnheader').allInnerTexts()).map(t => t.trim()).indexOf('Submittal No');
-        const vals = await k.rows().evaluateAll((rs, i) => rs.map(r => r.querySelectorAll('td')[i]?.innerText.trim() || ''), col);
-        expect(vals).toEqual([...vals].sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base', numeric: false })));
+        const values = () => k.rows().evaluateAll((rs, i) => rs.map(r => r.querySelectorAll('td')[i]?.innerText.trim() || ''), col);
+        const ascending = vals => JSON.stringify(vals) === JSON.stringify([...vals].sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base', numeric: false })));
+        if (!sortClicked) { sortClicked = true; await main.getByRole('columnheader', { name: 'Submittal No' }).click(); }
+        await expect.poll(async () => ascending(await values()), { timeout: 20000, message: 'Rows sorted ascending by Submittal No' }).toBe(true);
       });
     });
 

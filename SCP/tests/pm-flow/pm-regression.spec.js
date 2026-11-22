@@ -1027,17 +1027,7 @@ test('Project Management – Regression (part 1: read-only and form-only)', asyn
         await expect(button('Save')).toBeHidden();
       });
     });
-    // The notice label reads "Project notice" (shown upper-case by CSS) inside a role=status banner.
-    const notice = () => page.getByRole('status').filter({ hasText: /^Project notice/i }).first();
-    if (!(await notice().isVisible().catch(() => false))) {
-      skip('PM-REG-SYS-11', 'System Messages', 'Banner dismiss', 'No active project notice at run time');
-    } else await sc('PM-REG-SYS-11', 'System Messages', 'Banner dismiss', async s => {
-      await s.step(`Project notice banner: click "Dismiss ×" → the "Project notice" banner disappears`, async () => {
-        await visible(notice(), 'Project notice');
-        await click(notice().getByRole('button', { name: 'Dismiss' }), 'Dismiss ×');
-        await expect(page.getByRole('status').filter({ hasText: /^Project notice/i })).toHaveCount(0, { timeout: 10000 });
-      });
-    });
+    // PM-REG-SYS-11 (banner dismiss) moved to part 2 on 22 Nov 2026, where the run's own active banner guarantees a notice.
 
     // ================= Watched Materials =================
     const userSelect = () => main.locator('select').first();

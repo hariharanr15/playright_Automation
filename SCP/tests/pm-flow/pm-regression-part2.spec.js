@@ -56,10 +56,8 @@ const DEFERRED = [
   ['PM-REG-FDI-49', 'First Delivery Inspection Config', 'Enabling on one project doesn\'t spread', 'Blocked: no second project in NRVC_Hall\'s organization yet (R62, Q-FDI-8)'],
   ['PM-REG-INV-06', 'Inventory Control', 'Breach notification', 'Cross-module (stock change in Inventory Management) – Regression part 3'],
   ['PM-REG-MM-11', 'Material Master', 'Delete material in use', 'Not run: if the app allows it, a material used by submittals would be deleted (R14) – needs approval'],
-  ['PM-REG-PSC-03', 'PreShipping Checklist', 'Enabled question appears in delivery checklist', 'Cross-module (Procurement Log delivery checklist) – Regression part 3'],
   ['PM-REG-PSC-04', 'PreShipping Checklist', 'Disabled question hidden downstream', 'Cross-module (Procurement Log delivery checklist) – Regression part 3'],
   ['PM-REG-PLC-06', 'Procurement Log Configuration', 'Drag reorder', 'Cross-module (Procurement Log column order) – Regression part 3'],
-  ['PM-REG-PLC-07', 'Procurement Log Configuration', 'Custom field in Add Submittal', 'Cross-module (Procurement Log Add Submittal) – Regression part 3'],
   ['PM-REG-SITE-07', 'Site Details', 'Delete site in use', 'Not run: if the app allows it, a site with deliveries would be deleted (R14) – needs approval'],
   ...Array.from({ length: 24 }, (_, i) => [`PM-REG-ROLE-${pad(i + 1)}`, 'Role-based access', 'Role-based access', 'Role suite (Regression part 3): needs the Org Admin portal session and separate role logins'])
 ];
@@ -1632,6 +1630,31 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       }
     });
 
+    // Cross-module (22 Nov 2026): every enabled custom field of the configuration is offered in Add Submittal.
+    await sc('PM-REG-PLC-07', 'Procurement Log Configuration', 'Custom field in Add Submittal', async s => {
+      const enabled = [];
+      await s.step('Procurement Log Configuration → read the enabled custom fields ("<name>(Custom)" rows with a ticked box)', async () => {
+        await navigator.open('Procurement Log Configuration'); await reload();
+        const rows = await main.locator('tbody tr').evaluateAll(trs => trs.map(tr => ({ text: tr.innerText, on: !!tr.querySelector('input[type=checkbox]')?.checked })));
+        for (const row of rows) { const m = row.text.match(/([^\n\t]+?)\s*\(Custom\)/); if (m && row.on) enabled.push(m[1].trim()); }
+        s.observe(`Enabled custom fields: ${enabled.join(', ') || 'none'}`);
+        expect(enabled.length, 'at least one enabled custom field').toBeGreaterThan(0);
+      }, { critical: true });
+      await s.step('Left menu › "Procurement Log" › "Add Submittal" → every enabled custom field is a field of the form; close without saving', async () => {
+        await page.locator('nav').getByRole('button', { name: /^\s*Procurement Log\s*$/ }).first().click();
+        await expect(page).toHaveURL(/\/procurement-log/, { timeout: 20000 });
+        await main.getByRole('button', { name: 'Add Submittal', exact: true }).click();
+        const form = page.getByRole('heading', { name: 'Add Submittal' }).locator('xpath=../..');
+        await expect(form).toBeVisible({ timeout: 15000 });
+        const text = await form.innerText();
+        const missing = enabled.filter(name => !text.includes(name));
+        s.observe(missing.length ? `Not in the form: ${missing.join(', ')}` : `All ${enabled.length} shown`);
+        await page.keyboard.press('Escape');
+        if (await form.isVisible().catch(() => false)) await form.getByRole('button').first().click().catch(() => null);
+        expect(missing, `custom fields missing from Add Submittal: ${missing.join(', ')}`).toEqual([]);
+      });
+    });
+
     // ================= Site Details =================
     const siteRows = () => main.locator('tbody tr').evaluateAll(rows => rows.map(r => [...r.cells].map(c => c.innerText.trim())));
     const siteByName = async name => (await siteRows()).filter(cells => norm(cells[2]) === norm(name));
@@ -1977,6 +2000,19 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
         const warning = await colour(banner(`Warn ${RUN}`));
         s.observe(`Info ${info}, Warning ${warning}`);
         expect(warning).not.toBe(info);
+      });
+    });
+    // Also run in part 1 when a notice happens to be active; here the run's own banners guarantee one (22 Nov 2026).
+    await sc('PM-REG-SYS-11', 'System Messages', 'Banner dismiss', async s => {
+      await s.step(`"Project notice" banner "Active ${RUN}": click "Dismiss ×" → that banner disappears`, async () => {
+        await visible(banner(`Active ${RUN}`), 'Project notice banner');
+        await click(banner(`Active ${RUN}`).getByRole('button', { name: 'Dismiss' }), 'Dismiss ×');
+        await expect(banner(`Active ${RUN}`)).toHaveCount(0, { timeout: 10000 });
+      });
+      await s.step('Reload → whether the dismissed banner stays hidden is recorded (persistence not specified)', async () => {
+        await reload();
+        const back = await banner(`Active ${RUN}`).first().isVisible().catch(() => false);
+        s.observe(back ? 'Banner shown again after reload (dismiss is not kept)' : 'Banner stays hidden after reload (dismiss is kept)');
       });
     });
     await sc('PM-REG-SYS-09', 'System Messages', 'Inactive / expired not shown', async s => {

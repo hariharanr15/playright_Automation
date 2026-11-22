@@ -514,7 +514,38 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
         await page.keyboard.press('Escape');
       });
     });
-    run.skip(meta('T543-06', M543, 'Inspector mapping uses the master list', 'Deferred'), 'Covered in the PM regression part 2 FDI scenarios; to be linked to BUGS-543 there');
+    // T543-06 (22 Nov 2026): the inspector scope "By Material Category" offers the master list, including the run's
+    // category that has no materials yet. Nothing is saved (the dialog is closed).
+    await run.scenario(meta('T543-06', M543, 'Inspector mapping uses the master list', 'Positive'), async s => {
+      const inspectorDialog = () => page.locator(OVERLAY).filter({ visible: true }).filter({ hasText: /Add Inspector/ }).last();
+      await s.step(`First Delivery Inspection Config › Inspectors › "Add Inspector" › scope "By Material Category" › "+ Add Category", search "${NEW_CAT}" → the run category (no materials) is offered`, async () => {
+        // A dialog left by T543-11 covered "Add Inspector" (22 Nov 2026): reopen the page.
+        await page.keyboard.press('Escape');
+        await page.goto('/first-delivery-inspection-config', { waitUntil: 'domcontentloaded' }); await k.settle(3000);
+        const tab = page.getByRole('tab', { name: /Inspectors/ }).or(page.getByRole('button', { name: /^Inspectors$/ })).first();
+        if (await tab.isVisible().catch(() => false)) await tab.click();
+        await page.getByRole('button', { name: 'Add Inspector', exact: true }).first().click();
+        await expect(inspectorDialog()).toBeVisible({ timeout: 15000 });
+        await inspectorDialog().getByText('By Material Category', { exact: true }).click();
+        await inspectorDialog().getByRole('button', { name: '+ Add Category', exact: true }).click();
+        await inspectorDialog().getByPlaceholder('Search category...').last().fill(NEW_CAT);
+        await page.waitForTimeout(1000);
+        const offered = inspectorDialog().getByRole('button', { name: new RegExp(`^\\s*${esc(NEW_CAT)}\\s*$`, 'i') }).first();
+        await expect(offered, `"${NEW_CAT}" offered`).toBeVisible({ timeout: 10000 });
+        await offered.click(); await page.waitForTimeout(800);
+      }, { critical: true });
+      await s.step('Chosen category without materials → "No materials in this category yet" shown for specific materials; "All materials" still selectable; close without saving', async () => {
+        const text = (await inspectorDialog().innerText()).replace(/\s+/g, ' ');
+        s.observe(text.slice(0, 400));
+        try {
+          expect(text, '"No materials in this category yet"').toMatch(/No materials in this category yet/i);
+          expect(text, '"All materials" option').toMatch(/All materials/i);
+        } finally {
+          await page.keyboard.press('Escape');
+          if (await inspectorDialog().isVisible().catch(() => false)) await inspectorDialog().getByRole('button', { name: /^(Cancel|Close)$/ }).last().click().catch(() => null);
+        }
+      });
+    });
 
     // =============== BUGS-508 + BUGS-507 – Material bulk upload ===============
     const M508 = 'BUGS-508/507 Material bulk upload';
@@ -628,8 +659,32 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
     await sc508('T508-13', 'Conversion without item_name → default SKU', 'Positive', async s => {
       await s.step(rows.skuConvOnly, async () => { const [m] = await byName(rows.skuConvOnly); expect(m && m.item_count).toBe(1); });
     });
-    for (const [id, title] of [['T508-14', 'Cancel upload rolls back'], ['T508-17', 'Bulk Upload Status matches the outcome'], ['T508-18', 'Non-Project-Admin has no upload'], ['T508-19', 'Resume at the decision step']])
+    for (const [id, title] of [['T508-14', 'Cancel upload rolls back'], ['T508-17', 'Bulk Upload Status matches the outcome'], ['T508-19', 'Resume at the decision step']])
       run.skip(meta(id, M508, title, 'Deferred'), 'Not in this pass (credit budget); see BUGS-508_Tracker.xlsx for the 3 Nov manual result');
+    // T508-18 (22 Nov 2026): the Supplier account, in its own browser context, must not be offered the material upload.
+    const supAcct = config.accounts.supplier || {};
+    if (!supAcct.username) run.skip(meta('T508-18', M508, 'Non-Project-Admin has no upload', 'Negative'), 'SCP_SUPPLIER_USERNAME / PASSWORD not set');
+    else await run.scenario(meta('T508-18', M508, 'Non-Project-Admin has no upload', 'Negative'), async s => {
+      const ctx = await page.context().browser().newContext({ viewport: null, baseURL: config.baseUrl });
+      const sp = await ctx.newPage();
+      try {
+        await s.step('Supplier window: sign in with the Supplier account → SCP opens (directly or via the platform chooser) on /management-dashboard', async () => {
+          await sp.goto(config.loginUrl, { waitUntil: 'domcontentloaded' });
+          await new LoginPage(sp).login(supAcct.username, supAcct.password);
+          await sp.waitForURL(u => /platforms\/choose/i.test(u.pathname) || u.origin === new URL(config.baseUrl).origin, { timeout: 45000 });
+          if (/platforms\/choose/i.test(sp.url())) await new PlatformChooserPage(sp, config).openSupplyChainPlanner();
+          await expect(sp).toHaveURL(/\/management-dashboard\/?$/, { timeout: 30000 });
+          await new ProjectSelectorPage(sp, config).ensureProject(config.projectName);
+        }, { critical: true });
+        await s.step('Supplier: left menu has no "Project Management" › Material Master; opening /material-master directly offers no "Upload" / "Upload File"', async () => {
+          const pmMenu = await sp.locator('nav').getByRole('button', { name: 'Project Management', exact: true }).first().isVisible().catch(() => false);
+          await sp.goto('/material-master', { waitUntil: 'domcontentloaded' }); await plKit(sp).settle(3000);
+          const upload = await sp.locator('main').getByRole('button', { name: /^(Upload|Upload File)$/ }).first().isVisible().catch(() => false);
+          s.observe(`PM menu ${pmMenu ? 'shown' : 'hidden'}; /material-master → ${new URL(sp.url()).pathname}; Upload ${upload ? 'offered' : 'not offered'}`);
+          expect(upload, 'material bulk upload offered to the Supplier').toBe(false);
+        });
+      } finally { await ctx.close().catch(() => null); }
+    });
 
     // =============== BUGS-548 – Organisation question sets ===============
     // Screens and API observed on staging 10 Nov (read-only discovery). The source set is an existing project set;

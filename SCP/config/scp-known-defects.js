@@ -345,7 +345,22 @@ const KNOWN_DEFECTS = [
     confirmation: 'pending',
     title: 'Bulk Edit Roll Back does not restore Lead Time Confirmed',
     signature: /^Lead Time Confirmed restored/,
-    summary: 'PENDING TEAM CONFIRMATION. Bulk Edit of Supplier Name on a submittal whose component lead time was Confirmed (2 weeks), "Confirm & Apply", then "Roll Back" in the review banner: the supplier and the 2-week lead time come back, but Lead Time Confirmed stays False (it was True before the batch). BUGS-517 expects Roll Back to restore supplier, lead times and Confirmed flags (T517-15). First automated run 22 Nov 2026 (Bulk Update #79).' }
+    summary: 'PENDING TEAM CONFIRMATION. Bulk Edit of Supplier Name on a submittal whose component lead time was Confirmed (2 weeks), "Confirm & Apply", then "Roll Back" in the review banner: the supplier and the 2-week lead time come back, but Lead Time Confirmed stays False (it was True before the batch). BUGS-517 expects Roll Back to restore supplier, lead times and Confirmed flags (T517-15). First automated run 22 Nov 2026 (Bulk Update #79).' },
+  { id: 'SCP-DEF-076', recordedOn: '2026-11-22', modules: ['BUGS-508/507 Material bulk upload'], scenarioIds: ['T508-18'], reportNotReproduced: true,
+    confirmation: 'pending',
+    title: 'Supplier is offered the material bulk upload',
+    signature: /^material bulk upload offered to the Supplier/,
+    summary: 'PENDING TEAM CONFIRMATION. Signed in as the Supplier account, the left menu has no Project Management, but opening /material-master directly shows Material Master with "Upload". BUGS-508 (T508-18) expects the material bulk upload to be unavailable to non-Project-Admin roles. Note: the Supplier role (Voyage Control Admin) has Material: List/Add/Edit/Delete ticked. Question: should the upload follow those permissions, or be Project-Admin only, and should the page open by URL without the PM menu?' },
+  { id: 'SCP-DEF-077', recordedOn: '2026-11-22', modules: ['Role-based access'], scenarioIds: ['PM-REG-ROLE-05'], reportNotReproduced: true,
+    confirmation: 'pending',
+    title: 'Project Management pages open by URL without the role\'s PM tab access',
+    signature: /^PM pages usable by URL without PM tab access/,
+    summary: 'PENDING TEAM CONFIRMATION. The Supplier and Subcontractor roles (Voyage Control Admin › Roles) do not enable "Menu: Project Management section" / "Screen: Project Management: View project management screen", and the menu is hidden, but both accounts can open Material Master and Site Details by typing the URL (/material-master, /site-details); the Subcontractor also Inventory Control and Watched Materials. System Messages is blocked. Read-only role suite, 22 Nov 2026. Question: should every PM page be refused without PM tab access (R52)?' },
+  { id: 'SCP-DEF-078', recordedOn: '2026-11-22', modules: ['Role-based access'], scenarioIds: ['PM-REG-ROLE-08'], reportNotReproduced: true,
+    confirmation: 'pending',
+    title: 'Subcontractor sees the Enterprise menu that its role does not enable',
+    signature: /^menu entries that do not follow the role: Enterprise/,
+    summary: 'PENDING TEAM CONFIRMATION. The Subcontractor role does not enable "Menu: Enterprise", but the Subcontractor account\'s left menu shows "Enterprise" (the Supplier role enables it and shows it, as expected). Read-only role suite, 22 Nov 2026. Question: is Enterprise meant to be shown regardless of the menu permission?' }
 ];
 
 // Label for reports: "SCP-DEF-053 (pending confirmation)" for entries whose expected behaviour the client/team has not

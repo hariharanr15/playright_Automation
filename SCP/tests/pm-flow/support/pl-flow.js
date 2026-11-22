@@ -174,8 +174,15 @@ function plKit(page) {
       await d.getByRole('button', { name: 'Add', exact: true }).click();
       await expect(page.getByRole('heading', { name: 'Add Delivery', exact: true })).toBeHidden({ timeout: 20000 });
       await settle(1500);
-      const row = () => page.getByRole('row').filter({ has: page.locator('img[title="Pre Shipping Info"], img[title="Approved"], img[title="Approve Pre-Shipping Checklist"], img[title="Generate GRN"]') }).last();
-      await row().locator('img[title="Pre Shipping Info"]').click();
+      // The pending delivery is the row that offers the next action's icon. Completed deliveries never show these icons,
+      // and the new delivery is not always the last row (22 Nov 2026 it was listed above an earlier, completed one).
+      const action = selector => page.getByRole('row').filter({ has: page.locator(selector) }).last().locator(selector);
+      // Position of the new delivery among the delivery rows (rows with any delivery action icon); the order is kept
+      // after a reload.
+      const deliveryRows = () => page.getByRole('row').filter({ has: page.locator('img[alt="Edit"], img[title="Pre Shipping Info"], img[title="Approved"], img[title="View Delivery Details"]') });
+      const pendingIndex = await deliveryRows().evaluateAll(rows => rows.findIndex(r => r.querySelector('img[title="Pre Shipping Info"]')));
+      if (pendingIndex < 0) throw new Error('New delivery row (with "Pre Shipping Info") not found');
+      await action('img[title="Pre Shipping Info"]').click();
       const c = kit.dialog('Add Pre-Shipping Details', 'Confirm Checklist');
       await c.getByRole('button', { name: 'Y/N', exact: true }).first().waitFor({ timeout: 20000 }); // questions load after the dialog opens
       const inputs = c.locator('input:visible:not([type="checkbox"]):not([type="radio"]):not([type="hidden"])');
@@ -185,7 +192,7 @@ function plKit(page) {
       await c.locator('textarea:visible').first().fill(`${tag} supplier note`);
       await c.getByRole('button', { name: 'Confirm Checklist', exact: true }).click();
       await toast('Shipping Details updated successfully!');
-      await row().locator('img[title="Approve Pre-Shipping Checklist"]').click();
+      await action('img[title="Approve Pre-Shipping Checklist"]').click();
       const a = kit.dialog('Approve Pre-Shipping Checklist', 'Approve');
       await a.locator('textarea').last().fill(`${tag} approved`);
       await a.getByRole('button', { name: 'Approve', exact: true }).click();
@@ -193,25 +200,27 @@ function plKit(page) {
       // The edit form keeps the pre-approval state until the page reloads (OBS-PL-26).
       await page.reload({ waitUntil: 'domcontentloaded' });
       await page.getByRole('button', { name: '+ Log Delivery' }).last().waitFor({ timeout: 30000 }); await settle(1500);
-      await row().locator('img[alt="Edit"]').last().click();
+      // Edit THE NEW delivery, found by its position among the delivery rows (recorded when it offered "Pre Shipping
+      // Info"); a completed delivery can also carry an Edit icon, whose dialog has no actual-date box.
+      await deliveryRows().nth(pendingIndex).locator('img[alt="Edit"]').last().click();
       const e = kit.dialog('Edit Delivery', 'Update');
       await kit.day(e.getByRole('textbox').nth(1), today);
       await e.getByRole('button', { name: 'Update', exact: true }).click();
       await expect(page.getByRole('heading', { name: 'Edit Delivery' })).toBeHidden({ timeout: 15000 }); await settle(1500);
-      await row().locator('img[title="Update Shipping Info"]').click();
+      await action('img[title="Update Shipping Info"]').click();
       const sh = kit.dialog('Add Shipping Info', 'Add');
       await kit.pick('Choose Shipping Mode', 'Other', sh);
       await sh.getByRole('textbox').nth(0).fill(`${tag}-SHIP`); await sh.getByRole('textbox').nth(1).fill('Origin'); await sh.locator('textarea').fill(tag);
       await sh.getByRole('button', { name: 'Add', exact: true }).click();
       await toast('Shipping Details updated successfully!');
-      await row().locator('img[title="Update Delivery Condition"]').click();
+      await action('img[title="Update Delivery Condition"]').click();
       const dc = kit.dialog('Add Delivery Conditions', 'Add');
       await dc.getByRole('spinbutton').nth(0).fill(String(good));
       await dc.getByRole('spinbutton').nth(1).fill(String(damage));
       const shortage = Number(await dc.getByRole('spinbutton').nth(2).inputValue());
       await dc.getByRole('button', { name: 'Add', exact: true }).click();
       await toast('Delivery Conditions updated successfully!');
-      await row().locator('img[title="Generate GRN"]').click();
+      await action('img[title="Generate GRN"]').click();
       await toast('GRN Generated Successfully!', 30000);
       return { shortage };
     }

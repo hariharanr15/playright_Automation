@@ -21,11 +21,11 @@ const roleNeed = 'Find out why the Project Role change does not stick (app defec
 const plan = {
   // ---------------- User Management / Supplier List ----------------
   'UM-REG-09': { group: 'C', owner: 'Team', effort: 'S', need: 'A mailbox the automation may read without a "verify you are human" check (YOPmail shows Cloudflare to automation), or an API/link to activate an invited user.' },
-  'UM-REG-10': { group: 'B', owner: 'Automation (after the role set-up works)', effort: 'S', need: 'Use the test-only role instead of the shared Roles configuration (same blocker as the PM-REG-ROLE cases).', blocker: ROLE_BLOCKED },
+  'UM-REG-10': { group: 'A', owner: 'Automation', effort: 'S', need: 'Covered by the read-only role suite (PM-REG-ROLE-08 and the page cases): link this case to it.' },
   'SL-REG-04': { group: 'D', owner: 'Product owner', effort: 'S', need: 'Confirm the case is obsolete (the app refuses a supplier with an invalid e-mail, which other cases already check) so it can be removed from the plan.' },
   'SL-REG-15': { group: 'B', owner: 'User / product owner', effort: 'M', need: 'Approval to change a supplier\'s organisation / login on staging, and which supplier may be used.' },
   // ---------------- FDI / Documents / Shipments / Dashboard / Enterprise ----------------
-  'FDI-REG-01c': { group: 'B', owner: 'Automation (after the role set-up works)', effort: 'S', need: 'Run it on the test-only role with "FDI: View" unticked instead of changing a shared role.', blocker: ROLE_BLOCKED },
+  'FDI-REG-01c': { group: 'A', owner: 'Automation', effort: 'S', need: 'Add to the read-only role suite: the First Delivery Inspections menu/page is shown only when the role of the account enables "FDI: View".' },
   'FDI-REG-12': { group: 'E', owner: 'Team', effort: '-', need: 'Sync to Procore writes to an external system. Manual check against a Procore sandbox, or a sandbox the automation may use.' },
   'DOC-REG-11': { group: 'C', owner: 'Client / team', effort: 'S', need: 'A sample PO document with line items (Q-DOC-3, Q-PL-13).' },
   'DOC-REG-12': { group: 'C', owner: 'Client / team', effort: 'S', need: 'A sample BOM file (Q-DOC-3).' },
@@ -87,13 +87,13 @@ const plan = {
   'PM-REG-ROLE-11': { group: 'C', owner: 'Team', effort: 'S', need: 'An Organisation-Admin-only account (the available admin accounts are platform/global admins).' },
   'PM-REG-ROLE-12': { group: 'C', owner: 'Team', effort: 'M', need: 'Mailbox / activation need as UM-REG-09.' },
   'PM-REG-ROLE-13': { group: 'C', owner: 'Team', effort: 'M', need: 'Mailbox / activation need as UM-REG-09.' },
-  'PM-REG-ROLE-16': { group: 'A', owner: 'Automation (after the role set-up works)', effort: 'S', need: 'Create a System Message as the Supplier account (with the create permission on the test role), then check Delete with and without the permission.', blocker: ROLE_BLOCKED },
+  'PM-REG-ROLE-16': { group: 'C', owner: 'Team', effort: 'S', need: 'An account whose role enables System Messages create and delete (neither Supplier nor Subcontractor does today), so a message it owns can be deleted.' },
   'PM-REG-ROLE-22': { group: 'B', owner: 'User / product owner', effort: 'S', need: 'Creates a project, which cannot be undone. Approval, or check only that the organisation list offers every organisation (without saving).' },
   'PM-REG-ROLE-23': { group: 'C', owner: 'Team', effort: 'S', need: 'A Project-Admin-only account (the available Project Admin account is a platform admin).' },
   'PM-REG-ROLE-24': { group: 'D', owner: 'Product owner', effort: 'S', need: 'The Supplier role has "Project: Create a new project" ticked (22 Nov 2026) and SCP has no project-creation entry. Is the permission intended, and where should creation be refused?' },
   // ---------------- Inventory ----------------
   'INV-REG-03': { group: 'A', owner: 'Automation', effort: 'S', need: 'Check the Loss balance after a reload in INV-REG-15 (its grid-refresh step is Known Defect OBS-INV-4), so this case can count on the saved balance.' },
-  'INV-REG-21': { group: 'A', owner: 'Automation', effort: 'S', need: 'Add an "Incoming Load = delivered QTY incl. damaged" check after PL-REG-DLV-13 (no executed check reads it yet).' },
+  'INV-REG-21': { group: 'A', owner: 'Automation', effort: 'M', need: 'Make Procurement Log part 1 deliver to a fixed site (Warehoust _NR) despite the header-site reset (SCP-DEF-058); the check itself is written (22 Nov 2026) and reads the Incoming Load of that delivery.' },
   'INV-REG-24': { group: 'E', owner: 'Team', effort: '-', need: 'SCP-DEF-002: the ledger date picker freezes the tab. Manual check until the defect is fixed.' },
   'INV-REG-25': { group: 'E', owner: 'Team', effort: '-', need: 'SCP-DEF-002 (same as INV-REG-24).' }
 };
@@ -103,3 +103,8 @@ for (const id of ['PM-REG-ROLE-02', 'PM-REG-ROLE-03', 'PM-REG-ROLE-14', 'PM-REG-
   plan[id] = { group: 'C', owner: 'Automation + developer', effort: 'S (written, tests/pm-flow/role-regression.spec.js)', need: roleNeed, blocker: ROLE_BLOCKED };
 
 module.exports = { GROUPS, plan };
+// Read-only role suite (22 Nov 2026): cases that would need a role change stay skipped.
+Object.assign(module.exports.plan, {
+  'PM-REG-ROLE-02': { group: 'B', owner: 'User / product owner', effort: 'S', need: 'Saving a change in the Roles tab. The suite now only reads the configured access (user decision 22 Nov 2026); run only with approval to change a role and restore it.' },
+  'PM-REG-ROLE-06': { group: 'B', owner: 'User / product owner', effort: 'S', need: 'Same as ROLE-02: needs a role change while the user is signed in.' }
+});
