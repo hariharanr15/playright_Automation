@@ -659,8 +659,43 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
     await sc508('T508-13', 'Conversion without item_name → default SKU', 'Positive', async s => {
       await s.step(rows.skuConvOnly, async () => { const [m] = await byName(rows.skuConvOnly); expect(m && m.item_count).toBe(1); });
     });
-    for (const [id, title] of [['T508-14', 'Cancel upload rolls back'], ['T508-17', 'Bulk Upload Status matches the outcome'], ['T508-19', 'Resume at the decision step']])
-      run.skip(meta(id, M508, title, 'Deferred'), 'Not in this pass (credit budget); see BUGS-508_Tracker.xlsx for the 3 Nov manual result');
+    // T508-19 and T508-14 (22 Nov 2026): a second upload with one row whose category is new stops at the decision step;
+    // a reload must come back to that step with nothing imported, and Cancel must save nothing.
+    const cancelRow = { category: `Cat508c ${RUN}`, uom: 'pieces', material_name: `Mat508 Cancel ${RUN}` };
+    const atDecision = () => progress().getByRole('status').filter({ hasText: /Waiting for your input/ });
+    const second = !data.template ? null : await run.scenario(meta('T508-19', M508, 'Resume at the decision step', 'Integration'), async s => {
+      await s.step(`Upload a one-row file (new category "${cancelRow.category}", material "${cancelRow.material_name}") → decision step "Waiting for your input"`, async () => {
+        const file = writeUpload({ template: data.template, sheet: 'Materials', output: path.join(outDir, 'uploads', `tkt-508-cancel-${RUN}.xlsx`), rows: [cancelRow] });
+        await navigator.open('Material Master');
+        await ui.click(ui.button('Upload'), 'Upload');
+        const chooser = page.waitForEvent('filechooser', { timeout: 15000 });
+        await page.getByText('Upload File', { exact: true }).last().click();
+        await (await chooser).setFiles(file);
+        const conf = layers().filter({ hasText: 'Upload Confirmation' }).last();
+        if (await conf.isVisible({ timeout: 5000 }).catch(() => false)) await conf.getByRole('button', { name: 'Upload', exact: true }).click();
+        await expect(atDecision()).toBeVisible({ timeout: 180000 });
+      }, { critical: true });
+      await s.step('Reload the page (Material Master) → the upload comes back at the same decision step; the material is not created', async () => {
+        await page.reload({ waitUntil: 'domcontentloaded' }); await k.settle(4000);
+        if (!(await atDecision().isVisible().catch(() => false))) await navigator.open('Material Master').catch(() => null);
+        await expect(atDecision(), 'decision step shown again after reload').toBeVisible({ timeout: 60000 });
+        expect(await byName(cancelRow.material_name), 'nothing imported').toHaveLength(0);
+      });
+      // Never leave the run's upload waiting (Material Master would reopen it for every Project Admin session).
+      await s.step('Finish the run upload: "Reject all", "Continue" → upload completes with nothing imported; Close', async () => {
+        const dlg = layers().filter({ hasText: /Material bulk upload/i }).last();
+        if (await atDecision().isVisible().catch(() => false)) {
+          await dlg.getByText('Reject all', { exact: true }).first().click();
+          await dlg.getByRole('button', { name: 'Continue', exact: true }).click();
+          await expect(dlg).toContainText(/Total rows|Complete/i, { timeout: 180000 });
+        }
+        await dlg.getByRole('button', { name: 'Close', exact: true }).last().click().catch(() => page.keyboard.press('Escape'));
+        expect(await byName(cancelRow.material_name), 'nothing imported').toHaveLength(0);
+      });
+    });
+    run.skip(meta('T508-14', M508, 'Cancel upload rolls back', 'Negative'), 'The "Cancel upload" control at the decision step is not exposed as a button to the tests (22 Nov 2026); needs a locator for it');
+
+    run.skip(meta('T508-17', M508, 'Bulk Upload Status matches the outcome', 'Deferred'), 'Needs a fully failed upload file (every row rejected without a decision step); next step');
     // T508-18 (22 Nov 2026): the Supplier account, in its own browser context, must not be offered the material upload.
     const supAcct = config.accounts.supplier || {};
     if (!supAcct.username) run.skip(meta('T508-18', M508, 'Non-Project-Admin has no upload', 'Negative'), 'SCP_SUPPLIER_USERNAME / PASSWORD not set');

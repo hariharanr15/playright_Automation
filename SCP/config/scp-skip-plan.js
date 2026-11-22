@@ -108,3 +108,19 @@ Object.assign(module.exports.plan, {
   'PM-REG-ROLE-02': { group: 'B', owner: 'User / product owner', effort: 'S', need: 'Saving a change in the Roles tab. The suite now only reads the configured access (user decision 22 Nov 2026); run only with approval to change a role and restore it.' },
   'PM-REG-ROLE-06': { group: 'B', owner: 'User / product owner', effort: 'S', need: 'Same as ROLE-02: needs a role change while the user is signed in.' }
 });
+// Updates of 22 Nov 2026 (evening): FDI settings suite and BUGS-508 cases.
+Object.assign(module.exports.plan, {
+  'T508-14': { group: 'A', owner: 'Automation', effort: 'S', need: 'A locator for the "Cancel upload" control of the upload window at the decision step (it is not exposed as a button); the rest of the case is written (T508-19 reaches the decision step).' },
+  'T508-17': { group: 'A', owner: 'Automation', effort: 'M', need: 'A fully failed upload file (every row rejected without a decision step), then compare its Bulk Upload Status row.' },
+  'PM-REG-FDI-05d': { group: 'C', owner: 'Team', effort: 'S', need: 'A delivery whose submittal has a Spec Section No WITH linked documents (Document Management), so the form shows the spec documents.' },
+  'PM-REG-FDI-05k': { group: 'C', owner: 'Team', effort: 'S', need: 'Same data as PM-REG-FDI-05d (a linked spec document to open).' },
+  'PM-REG-FDI-05m': { group: 'C', owner: 'Team', effort: 'S', need: 'A delivery whose submittal has an EMPTY Spec Section No (run submittals always have one).' },
+  'PM-REG-FDI-05e': { group: 'A', owner: 'Automation', effort: 'M', need: 'Identify the FDI question set that covers the run material and add a run question to it (shared question sets – add only, then delete in 05f).' },
+  'PM-REG-FDI-05f': { group: 'A', owner: 'Automation', effort: 'S', need: 'Depends on PM-REG-FDI-05e (delete the run question, check it is gone).' },
+  'PM-REG-CFG-09': { group: 'B', owner: 'User / product owner', effort: 'M', need: 'Switching Pre-Shipping off on NRVC_Hall (shared live setting) – held back until after the demo of 23 Nov 2026; then run with restore.' },
+  'PM-REG-CFG-10': { group: 'B', owner: 'User / product owner', effort: 'M', need: 'Switching GRN off on NRVC_Hall (shared live setting) – held back until after the demo.' },
+  'PM-REG-CFG-13': { group: 'B', owner: 'User / product owner', effort: 'M', need: 'Alert week thresholds on NRVC_Hall would raise real alerts overnight – held back until after the demo; then seed and verify the next morning.' },
+  'PM-REG-CFG-15': { group: 'B', owner: 'User / product owner', effort: 'M', need: 'Same as CFG-13.' },
+  'PM-REG-CFG-16': { group: 'B', owner: 'User / product owner', effort: 'M', need: 'Same as CFG-13.' },
+  'PM-REG-PLC-06': { group: 'B', owner: 'User / product owner', effort: 'M', need: 'Reordering the shared Procurement Log columns on NRVC_Hall – held back until after the demo; then run with restore.' }
+});

@@ -117,13 +117,19 @@ test('FDI settings – effect on the inspection form', async ({ page, browserNam
           expect(await photoSection(), 'Photos section hidden').toBe(false);
         });
       });
-      await run.scenario(meta('PM-REG-FDI-05m', 'Spec link on, submittal without Spec Section No → exact message'), async s => {
-        await s.step(`${SPEC} Yes, Save → form of a run inspection (run submittals have no Spec Section No) shows exactly "No Spec Section No provided in submittal." and no error`, async () => {
+      // Run submittals have a Spec Section No without linked documents (seen 22 Nov 2026), which is case 05l.
+      await run.scenario(meta('PM-REG-FDI-05l', 'Spec link on, Spec Section No without documents → clear "no documents" state'), async s => {
+        await s.step(`${SPEC} Yes, Save → form of a run inspection shows "No documents linked for this Spec Section No." and no error`, async () => {
           await applySettings({ [SPEC]: true });
           await openForm(state.viewForm);
-          const text = await formText(); s.observe(text.slice(0, 400));
-          expect(text).toContain('No Spec Section No provided in submittal.');
+          const text = await formText(); s.observe(text.slice(-300));
+          expect(text).toContain('No documents linked for this Spec Section No.');
           expect(text).not.toMatch(/something went wrong|error occurred/i);
+        });
+        await s.step(`${SPEC} No, Save → reopen the form → no "Submittal Spec Documents" section`, async () => {
+          await applySettings({ [SPEC]: false });
+          await openForm(state.viewForm);
+          expect(await formText()).not.toContain('Submittal Spec Documents');
         });
       });
       await run.scenario(meta('PM-REG-FDI-05h', 'Upload accepts jpg, png, pdf, xlsx, csv'), async s => {
@@ -139,6 +145,8 @@ test('FDI settings – effect on the inspection form', async ({ page, browserNam
           const images = await page.locator('main img').count();
           s.observe(`listed by name: ${listed.join(', ') || 'none'}; images on the form: ${images}; rejected: ${rejected.join(' | ') || 'none'}`);
           expect(rejected, 'all five types accepted').toEqual([]);
+          // Each attachment must appear on the form: images as thumbnails, other files by name.
+          expect(images + listed.filter(n => !/\.(png|jpg)$/.test(n)).length, 'jpg, png, pdf, xlsx and csv all listed on the form').toBeGreaterThanOrEqual(5);
         });
       });
       await run.scenario(meta('PM-REG-FDI-05b', 'Uploads on, photos not mandatory → submit without a photo'), async s => {
@@ -164,7 +172,7 @@ test('FDI settings – effect on the inspection form', async ({ page, browserNam
           expect(await submitted()).toBe(false);
         }, { critical: true });
         await s.step('Add two photos, "Save Progress", reopen the form in edit mode → both thumbnails shown (PM-REG-FDI-05i, edit mode)', async () => {
-          await addPhoto([file(`${RUN}-a.png`, PNG), file(`${RUN}-b.png`, PNG)]);
+          await addPhoto(file(`${RUN}-a.png`, PNG)); await addPhoto(file(`${RUN}-b.png`, PNG)); // the picker takes one file at a time
           await page.getByRole('button', { name: 'Save Progress' }).click(); await k.settle(2000);
           await openForm(state.photoForm);
           state.thumbsEdit = await page.locator('main img').filter({ hasNot: page.locator('[alt*="logo" i]') }).count();
@@ -227,7 +235,7 @@ test('FDI settings – effect on the inspection form', async ({ page, browserNam
     for (const [id, title, reason] of [
       ['PM-REG-FDI-05d', 'Spec documents shown as thumbnails', 'Needs a run delivery whose submittal has a Spec Section No with linked documents (test data to prepare in Document Management)'],
       ['PM-REG-FDI-05k', 'Spec document opens in a viewer', 'Same data need as PM-REG-FDI-05d'],
-      ['PM-REG-FDI-05l', 'Spec Section No without documents → "no documents" state', 'Needs a run submittal with a Spec Section No that has no linked documents'],
+      ['PM-REG-FDI-05m', 'Empty Spec Section No → exact message', 'Needs a delivery whose submittal has an EMPTY Spec Section No (run submittals have one)'],
       ['PM-REG-FDI-05e', 'New question appears on the form', 'Needs the question set that covers the run material to be identified and a question added to it (shared FDI question sets) – next step'],
       ['PM-REG-FDI-05f', 'Deleted / other-category question not shown', 'Depends on PM-REG-FDI-05e']
     ]) run.skip(meta(id, title), reason);

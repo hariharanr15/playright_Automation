@@ -102,6 +102,16 @@ These failed in **every** full regression run from 17 to 21 Nov 2026 with the sa
 
 **22. DSH-REG-10 (question, not a defect)** – Which alerts does the 05:00–06:00 IST daily batch create, and where do they show? Without that, the case has no expected result and stays Skipped. A met alert rule raising an alert is now checked by PL-REG-ALR-05: the rule turns "Sent" at once.
 
+**23. SCP-DEF-076 / T508-18** – Sign in as the Supplier account, open `/material-master` by URL. The Upload button is offered, although BUGS-508 limits material bulk upload to the Project Admin. The Supplier role does have Material: List/Add/Edit/Delete enabled. Should the upload follow those permissions?
+
+**24. SCP-DEF-077 / PM-REG-ROLE-05** – The Supplier and Subcontractor roles do not enable the Project Management tab, and the menu is hidden. Even so, `/material-master` and `/site-details` open by URL for both accounts. The Subcontractor can also open `/inventory-control` and `/watched-materials`. Should every PM page be refused without PM tab access (R52)?
+
+**25. SCP-DEF-078 / PM-REG-ROLE-08** – The Subcontractor role does not enable "Menu: Enterprise", but the Subcontractor account's left menu shows Enterprise.
+
+**26. SCP-DEF-079 / PM-REG-FDI-05n** – Submit an inspection with Overall Notes, then switch "Need Overall Notes to be captured" to No. The submitted report no longer shows its notes. Should a submitted report stay as it was submitted?
+
+**27. SCP-DEF-080 / PM-REG-FDI-05h** – On the inspection form, use "Add photo" to add a .pdf, .xlsx and .csv file. No error is shown, but only images appear on the form. Are only images meant to be accepted? If so, the picker should refuse the other types with a message.
+
 ## Corrected test (not an application issue)
 
 **INV-REG-18** compared the upload error file's "available" figure (stock at the row's From Location, e.g. Gate 5 = 59) with the ledger Closing Balance (whole site, 582). These can never be equal. Since 21 Nov it compares with the Add Activity hint for the same location, which is the figure the save check uses (INV-R3), minus the valid rows above the invalid row in the file (item 8).

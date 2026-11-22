@@ -7,7 +7,7 @@ A test that fails exactly as described here is reported as **Known Defect** inst
 - **Registered**: agreed with the user/team, or a confirmed rule that the application breaks.
 - **Pending confirmation**: today's behaviour looks logically wrong, but the expected behaviour has not been confirmed by the client/team yet. See `PENDING_CONFIRMATIONS.md`. These entries are reviewed (kept, changed or removed) once the team answers.
 
-**Total:** 78 entries · 57 registered · 21 pending confirmation. Nothing here is raised in Jira.
+**Total:** 80 entries · 57 registered · 23 pending confirmation. Nothing here is raised in Jira.
 
 ## Project Management
 
@@ -31,6 +31,8 @@ A test that fails exactly as described here is reported as **Known Defect** inst
 | SCP-DEF-059 | Registered | 2026-11-21 | PM-REG-SYS-05 | System Messages: Ends before Starts | System Messages › New message with Ends earlier than Starts: the message is not created, but no error or warning is shown. Rule R27 / REQ-PM-091 is confirmed (product owner, 30 Oct 2026). Observed 20 Nov 2026, NRVC_Hall. |
 | SCP-DEF-063 | Pending confirmation | 2026-11-21 | PM-REG-PSC-02 | PreShipping Checklist: Enabled tick saves automatically | PENDING TEAM CONFIRMATION. PreShipping Checklist: unticking "Enabled" on the last question (Count 1) shows no message and the box is ticked again after a reload (both attempts, 21 Nov 2026, NRVC_Hall). Switching a question ON was saved on 13 and 17 Nov. Question: may a question that is already in use be disabled? |
 | SCP-DEF-071 | Pending confirmation | 2026-11-21 | PM-REG-SITE-11 | Export sites | PENDING TEAM CONFIRMATION. Site Details › Export: the .xlsx has fewer distinct sites than the page (79 vs 92 on 21 Nov 2026), includes a row from another project and shows an internal ID in the Location Type column. Failed in every PM regression run (17–21 Nov 2026). Possible cross-project data in the export; to be assessed by the team. |
+| SCP-DEF-079 | Pending confirmation | 2026-11-22 | PM-REG-FDI-05n | A submitted FDI report hides its notes after "Need Overall Notes" is switched off | PENDING TEAM CONFIRMATION. With "Need Overall Notes to be captured" = Yes an inspection was submitted with Observation/Notes text, and Inspection Detail showed it. After the setting was switched to No, the same submitted report (Inspection Detail) no longer shows the notes. PM-REG-FDI-05n expects a submitted report to stay as it was submitted; only new reports should follow the new setting. FDI settings suite, 22 Nov 2026. |
+| SCP-DEF-080 | Pending confirmation | 2026-11-22 | PM-REG-FDI-05h | FDI inspection form lists only image files; pdf, xlsx and csv are not shown | PENDING TEAM CONFIRMATION. With "Enable Uploading of Photos?" = Yes, one file each of .jpg, .png, .pdf, .xlsx and .csv was added through "Add photo" on the inspection form. No error is shown, but only the two images appear on the form; the pdf, xlsx and csv files are not listed. PM-REG-FDI-05h expects all five types to be accepted and listed. Question: are only images meant to be accepted (then the picker should refuse the others with a message)? FDI settings suite, 22 Nov 2026. |
 
 ## Inventory Management
 

@@ -360,7 +360,17 @@ const KNOWN_DEFECTS = [
     confirmation: 'pending',
     title: 'Subcontractor sees the Enterprise menu that its role does not enable',
     signature: /^menu entries that do not follow the role: Enterprise/,
-    summary: 'PENDING TEAM CONFIRMATION. The Subcontractor role does not enable "Menu: Enterprise", but the Subcontractor account\'s left menu shows "Enterprise" (the Supplier role enables it and shows it, as expected). Read-only role suite, 22 Nov 2026. Question: is Enterprise meant to be shown regardless of the menu permission?' }
+    summary: 'PENDING TEAM CONFIRMATION. The Subcontractor role does not enable "Menu: Enterprise", but the Subcontractor account\'s left menu shows "Enterprise" (the Supplier role enables it and shows it, as expected). Read-only role suite, 22 Nov 2026. Question: is Enterprise meant to be shown regardless of the menu permission?' },
+  { id: 'SCP-DEF-079', recordedOn: '2026-11-22', modules: ['Project Management'], scenarioIds: ['PM-REG-FDI-05n'], reportNotReproduced: true,
+    confirmation: 'pending',
+    title: 'A submitted FDI report hides its notes after "Need Overall Notes" is switched off',
+    signature: /^submitted report unchanged/,
+    summary: 'PENDING TEAM CONFIRMATION. With "Need Overall Notes to be captured" = Yes an inspection was submitted with Observation/Notes text, and Inspection Detail showed it. After the setting was switched to No, the same submitted report (Inspection Detail) no longer shows the notes. PM-REG-FDI-05n expects a submitted report to stay as it was submitted; only new reports should follow the new setting. FDI settings suite, 22 Nov 2026.' },
+  { id: 'SCP-DEF-080', recordedOn: '2026-11-22', modules: ['Project Management'], scenarioIds: ['PM-REG-FDI-05h'], reportNotReproduced: true,
+    confirmation: 'pending',
+    title: 'FDI inspection form lists only image files; pdf, xlsx and csv are not shown',
+    signature: /^jpg, png, pdf, xlsx and csv all listed on the form/,
+    summary: 'PENDING TEAM CONFIRMATION. With "Enable Uploading of Photos?" = Yes, one file each of .jpg, .png, .pdf, .xlsx and .csv was added through "Add photo" on the inspection form. No error is shown, but only the two images appear on the form; the pdf, xlsx and csv files are not listed. PM-REG-FDI-05h expects all five types to be accepted and listed. Question: are only images meant to be accepted (then the picker should refuse the others with a message)? FDI settings suite, 22 Nov 2026.' }
 ];
 
 // Label for reports: "SCP-DEF-053 (pending confirmation)" for entries whose expected behaviour the client/team has not
