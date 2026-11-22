@@ -27,7 +27,8 @@ const { maskEmail } = require('../../utils/access/access-model');
 if (!process.env.PM_FLOW_STEP_INTERVAL_MS) process.env.PM_FLOW_STEP_INTERVAL_MS = process.env.E2E_STEP_PAUSE_MS || '2000';
 const LOGIN_PAUSE = Number(process.env.E2E_LOGIN_PAUSE_MS || 3000);
 const USER_PAUSE = Number(process.env.E2E_USER_PAUSE_MS || 2000);
-const STEP_LIMIT = Number(process.env.E2E_STEP_TIMEOUT_MS || 300000);
+// With the optional manual YOPmail pause a person may need several minutes: allow 15 minutes per step then.
+const STEP_LIMIT = Number(process.env.E2E_STEP_TIMEOUT_MS || (/^(1|true|yes)$/i.test(process.env.SCP_YOPMAIL_MANUAL_VERIFY || '') && !HEADLESS ? 900000 : 300000));
 // A screenshot after every executed step (E2E_SCREENSHOT_EVERY_STEP=false limits it to evidence steps and failures).
 const SHOT_EVERY_STEP = !/^(false|0|off)$/i.test(process.env.E2E_SCREENSHOT_EVERY_STEP || '');
 const SUITE = 'E2E Smoke';
@@ -42,12 +43,15 @@ const USER_ORG = process.env.SCP_E2E_USER_ORG || 'Voyage Control';
 const MATERIAL_2 = process.env.SCP_E2E_MATERIAL_2 || '43 Inches';
 const INSPECTOR_ROLE = process.env.SCP_E2E_INSPECTOR_ROLE || 'Subcontractor';
 // Who approves the checklist in TC-16 and becomes the FDI inspector in TC-18:
-//   existing (default) – the existing Subcontractor account SCP_SUBCONTRACTOR_* (organisation Voyage Control);
-//   invite             – the user invited in TC-06, activated from YOPmail. Since 20 Nov 2026 YOPmail shows a Cloudflare
-//                        human-verification check, so the invite e-mail cannot be read automatically. When the
-//                        activation fails, the run falls back to the existing account (21 Nov 2026) and says so in
-//                        TC-16; the check is never bypassed.
-// TC-06 still creates and verifies the invitation in both modes.
+//   existing (default) – the existing Subcontractor account SCP_SUBCONTRACTOR_*; also the fallback when activation fails.
+//   invite             – the user invited in TC-06, activated from YOPmail. YOPmail shows a Cloudflare human check that the
+//                        automation never answers, so this mode falls back unless SCP_YOPMAIL_MANUAL_VERIFY=1 (a person
+//                        completes the check in a headed run). The user asked for no manual intervention (22 Nov 2026).
+// TC-06 creates and verifies the invitation in both modes.
+const HEADLESS = /^(1|true)$/i.test(process.env.PM_FLOW_HEADLESS || '');
+// Default "existing" (pre-created Subcontractor account). "invite" (SCP_E2E_SUBCON_LOGIN=invite) activates the TC-06 user
+// through its mail.tm mailbox; 22 Nov 2026 SCP's invitation did not reach the mail.tm inbox within 5 minutes, so invite
+// is opt-in until delivery is proven. A failed activation falls back to the existing account.
 const SUBCON_LOGIN = /^invite$/i.test(process.env.SCP_E2E_SUBCON_LOGIN || '') ? 'invite' : 'existing';
 const FILTER_STATUS = process.env.SCP_E2E_FILTER_STATUS || 'Ordered';
 const BULK_SEARCH = process.env.SCP_E2E_BULK_SEARCH || 'E2E26';
@@ -451,14 +455,23 @@ test('SCP – End-to-end smoke', async ({ page }) => {
       // ================= TC-06 Normal organisation user =================
       await scenario('user', ['login'], async s => {
         // The invited Subcontractor user (Subcontractor approvals in TC-16) logs in with "subcontractor<N><DDMMYYYY>@yopmail.com",
-        // N = next number not yet used by a user today.
-        await s.step(`User Management: search "subcontractor" → next free login e-mail "subcontractor<N><DDMMYYYY>@yopmail.com"`, async () => {
+        // N = next number not yet used by a user today. Since 22 Nov 2026 the address is a mail.tm mailbox created through its
+        // API, so TC-16 reads the invitation without a browser mailbox and no human check (SCP_E2E_INVITE_MAILBOX=yopmail keeps
+        // the old "@yopmail.com" address).
+        await s.step(`User Management: search "subcontractor" → next free login "subcontractor<N><DDMMYYYY>…"; create its mail.tm mailbox (API)`, async () => {
           if (!R.newUser.email) {
             const dmy = `${DATE.slice(6, 8)}${DATE.slice(4, 6)}${DATE.slice(0, 4)}`;
             const emails = await v2.userEmails(dmy); // only today's e-mails (the list is paged)
-            const used = emails.map(e => (e.match(new RegExp(`^subcontractor(\\d+)${dmy}@`)) || [])[1]).filter(Boolean).map(Number);
+            const used = emails.map(e => (e.match(new RegExp(`^subcontractor(\\d+)${dmy}`)) || [])[1]).filter(Boolean).map(Number);
             const n = (used.length ? Math.max(...used) : 0) + 1;
-            R.subcon.seq = n; R.subcon.email = `subcontractor${n}${dmy}@yopmail.com`;
+            R.subcon.seq = n;
+            // mail.tm can be unavailable or rate-limited (22 Nov 2026): then the old YOPmail address is used, the invite is
+            // still sent, and TC-16 falls back to the existing Subcontractor account – the flow never stops here.
+            R.subcon.email = `subcontractor${n}${dmy}@yopmail.com`;
+            if (!/^yopmail$/i.test(process.env.SCP_E2E_INVITE_MAILBOX || '')) {
+              try { R.subcon.email = (await require('../../utils/mailtm').createMailbox(`subcontractor${n}${dmy}`)).address; }
+              catch (error) { s.observe(`mail.tm unavailable (${String(error.message).slice(0, 120)}): YOPmail address used; TC-16 will fall back to the existing Subcontractor account`); }
+            }
             Object.assign(R.newUser, { firstName: `subcontractor${n}`, displayName: `subcontractor${n} ${DATE}`, email: R.subcon.email });
             s.observe(`${used.length} subcontractor login(s) of today; using "${R.newUser.displayName}" (${maskEmail(R.newUser.email)})`);
           }
@@ -898,9 +911,9 @@ test('SCP – End-to-end smoke', async ({ page }) => {
         await logoutAs(s, SUP);
         let activated = false;
         if (subconLogin === 'invite') {
-          // STEP: activate the invited user from YOPmail. Fallback: when YOPmail cannot be read (Cloudflare check) or the
-          // activation fails, the existing Subcontractor account approves instead, so the rest of the flow still runs.
-          await s.step(`Pause ${LOGIN_PAUSE / 1000} s; Yopmail ${maskEmail(R.newUser.email)} › "Accept Invite" → set password → profile "${R.newUser.displayName}" → signed in (no organisation setup); if YOPmail cannot be read, the existing Subcontractor account is used instead`, async () => {
+          // STEP: activate the invited user from its mailbox (mail.tm API since 22 Nov 2026; no human check). Fallback: when
+          // the invitation cannot be read or the activation fails, the existing Subcontractor account approves instead.
+          await s.step(`Pause ${LOGIN_PAUSE / 1000} s; mailbox ${maskEmail(R.newUser.email)} (read through the mail.tm API) › "Accept Invite" → set password → profile "${R.newUser.displayName}" → signed in (no organisation setup); if YOPmail cannot be read, the existing Subcontractor account is used instead`, async () => {
             await pause();
             try {
               await transition('Login (invite activation)', NEW, () => kit.activateInvite(R.newUser, t => s.observe(t)));
@@ -1361,7 +1374,9 @@ test('SCP – End-to-end smoke', async ({ page }) => {
           expect(have, 'FDI inspection').toContain('FDI inspection');
         });
         await s.step(`Project and location selected once per login (${env.projectSelections} selection(s) for ${env.logins} login(s))`, async () => {
-          expect(env.projectSelections).toBe(env.logins - sessions.filter(x => /activation/i.test(x.action)).length);
+          // Counted against the sign-ins that select the project (loginAs). An invite activation – including one that fell
+          // back to the existing account – signs in without that selection, so it is not counted (fixed 22 Nov 2026).
+          expect(env.projectSelections).toBe(sessions.filter(x => x.action === 'Login').length);
         });
         await s.step('Location reuse in the Procurement Log → location verified before each action; dropdown opened only when the app had cleared/changed it; no FAIL', async () => {
           env.siteReselections = v2.siteReselections;

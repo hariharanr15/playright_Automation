@@ -370,7 +370,12 @@ const KNOWN_DEFECTS = [
     confirmation: 'pending',
     title: 'FDI inspection form lists only image files; pdf, xlsx and csv are not shown',
     signature: /^jpg, png, pdf, xlsx and csv all listed on the form/,
-    summary: 'PENDING TEAM CONFIRMATION. With "Enable Uploading of Photos?" = Yes, one file each of .jpg, .png, .pdf, .xlsx and .csv was added through "Add photo" on the inspection form. No error is shown, but only the two images appear on the form; the pdf, xlsx and csv files are not listed. PM-REG-FDI-05h expects all five types to be accepted and listed. Question: are only images meant to be accepted (then the picker should refuse the others with a message)? FDI settings suite, 22 Nov 2026.' }
+    summary: 'PENDING TEAM CONFIRMATION. With "Enable Uploading of Photos?" = Yes, one file each of .jpg, .png, .pdf, .xlsx and .csv was added through "Add photo" on the inspection form. No error is shown, but only the two images appear on the form; the pdf, xlsx and csv files are not listed. PM-REG-FDI-05h expects all five types to be accepted and listed. Question: are only images meant to be accepted (then the picker should refuse the others with a message)? FDI settings suite, 22 Nov 2026.' },
+  { id: 'SCP-DEF-081', recordedOn: '2026-11-22', modules: ['Project Management'], scenarioIds: ['PM-REG-SITE-07'], reportNotReproduced: true,
+    confirmation: 'pending',
+    title: 'A site that has deliveries and stock can be deleted',
+    signature: /still listed \(delete of a site with deliveries must be refused\)/,
+    summary: 'PENDING TEAM CONFIRMATION. Site Details › run site "Site T2 Pmr2-2611211745" (it had received run deliveries; Inventory showed 4 units there) › Delete › the generic "Are you sure you want to proceed?" › Delete → "Site deleted successfully!". PM-REG-SITE-07 expects deleting a site in use to be blocked or warned (as Material Master does for a material with stock history: "This material can\'t be deleted because stock has already been received, issued, or moved for it"). PM decision cases, 22 Nov 2026 (run-created site; approved by the user).' }
 ];
 
 // Label for reports: "SCP-DEF-053 (pending confirmation)" for entries whose expected behaviour the client/team has not

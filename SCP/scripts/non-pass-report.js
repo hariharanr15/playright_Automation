@@ -221,6 +221,17 @@ if (knownDefects.length) {
 fs.writeFileSync(path.join(path.resolve(inputs[0]), 'SKIPPED_CASES.json'), JSON.stringify(cases.filter(item => item.status === 'Skipped').map(item => ({
   id: item.id, suite: item.suiteTitle, module: item.module || 'Other', submodule: item.submodule || '', title: plain(item.title), reason: plain(item.reason || ''), navPath: item.navPath || []
 })), null, 1));
+// Passed cases as data, for the passed-case register (scripts/testcase-register.js).
+fs.writeFileSync(path.join(path.resolve(inputs[0]), 'PASSED_CASES.json'), JSON.stringify(cases.filter(item => item.status === 'Passed').map(item => ({
+  id: item.id, suite: item.suiteTitle, module: item.module || 'Other', submodule: item.submodule || '', title: plain(item.title), coveredBy: item.coveredBy || '',
+  steps: (item.steps || []).map(s => ({ name: plain(s.name), status: s.status, observed: fullObserved(s), retried: !!s.retried }))
+})), null, 1));
+// Known Defect and Failed/Blocked cases as data, for scripts/testcase-register.js (human-readable registers).
+fs.writeFileSync(path.join(path.resolve(inputs[0]), 'DEFECT_CASES.json'), JSON.stringify(cases.filter(item => ['Known Defect', 'Failed', 'Blocked'].includes(item.status)).map(item => ({
+  id: item.id, suite: item.suiteTitle, module: item.module || 'Other', submodule: item.submodule || '', title: plain(item.title), status: item.status,
+  defects: item.defects || [...new Set((item.steps || []).map(s => s.defect).filter(Boolean))], coveredBy: item.coveredBy || '', reason: plain(item.reason || ''),
+  steps: (item.steps || []).map(s => ({ name: plain(s.name), status: s.status, defect: s.defect || '', error: fullError(s), observed: fullObserved(s) }))
+})), null, 1));
 const output = path.join(path.resolve(inputs[0]), 'NON_PASSED_TEST_CASES.md');
 fs.writeFileSync(output, lines.join('\n'));
 console.log(`${nonPassed.length} failed/blocked/skipped and ${knownDefects.length} known-defect cases of ${cases.length} -> ${path.relative(process.cwd(), output)}`);

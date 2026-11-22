@@ -147,6 +147,15 @@ class PmRun {
       console.log(`    ✔ ${name}${step.retried ? ' (passed on retry)' : ''}`);
     }
     step.durationMs = Date.now() - started;
+    // PM_FLOW_STEP_SHOTS=on (set by the full regression, 22 Nov 2026): one screenshot after every executed step, in
+    // steps/<test case>/<nn>-<result>-<step>.png. The E2E smoke takes its own screenshot after every step already.
+    if (/^on$/i.test(process.env.PM_FLOW_STEP_SHOTS || '') && !/e2e/i.test(this.suite)) {
+      const index = String(record.steps.length).padStart(2, '0');
+      const file = path.join('steps', slug(record.id), `${index}-${slug(step.status)}-${slug(name).slice(0, 80)}.png`);
+      fs.mkdirSync(path.join(this.outDir, path.dirname(file)), { recursive: true });
+      await this.page.screenshot({ path: path.join(this.outDir, file), timeout: 8000 }).catch(() => null);
+      if (fs.existsSync(path.join(this.outDir, file))) step.stepShot = file.replace(/\\/g, '/');
+    }
     if (stepInterval()) await this.page.waitForTimeout(stepInterval());
     return value;
   }

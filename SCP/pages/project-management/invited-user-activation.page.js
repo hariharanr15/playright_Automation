@@ -15,6 +15,18 @@ class InvitedUserActivationPage extends BasePage {
 
   async openInvitationFromYopmail(email) {
     this.invitationEmail = email;
+    // mail.tm mailbox created by this run (utils/mailtm.js, user decision 22 Nov 2026): read the invitation through the
+    // API – no browser mailbox, no human check – and open its "Accept Invite" link.
+    const mailtm = require('../../utils/mailtm');
+    const inbox = mailtm.mailboxFor(email);
+    if (inbox) {
+      const { href } = await mailtm.waitForLink(inbox, /Accept Invite/i);
+      if (this.page.isClosed()) this.page = await this.page.context().newPage();
+      await this.goto(new URL(href, this.config.loginUrl).toString());
+      await expect(this.page.getByRole('heading', { name: 'Welcome To Voyage Control', exact: true })).toBeVisible();
+      await expect.poll(async () => (await this.page.locator('input[name="username"]').inputValue()).toLowerCase()).toBe(email.toLowerCase());
+      return this.page;
+    }
     const mailboxUrl = new URL(this.config.yopmailUrl);
     mailboxUrl.searchParams.set('login', email.split('@')[0]);
     const context = this.page.context();
@@ -29,11 +41,10 @@ class InvitedUserActivationPage extends BasePage {
       await this.goto(mailboxUrl.toString()).catch(() => null);
       const mailboxReady = await this.page.locator('iframe#ifmail')
         .waitFor({ state: 'attached', timeout: 15000 }).then(() => true).catch(() => false);
-      // 19 Nov 2026: YOPmail shows a Cloudflare "Verify you are human" check to the automated browser. It is not
-      // bypassed; the step stops with a clear blocked reason (use another mailbox or a pre-created account).
-      if (await this.page.getByText(/Verify you are human|confirm you.re human/i).first().isVisible().catch(() => false)) {
-        throw new Error('BLOCKED: YOPmail shows a Cloudflare human-verification check, so the invitation e-mail cannot be read automatically.');
-      }
+      // 19 Nov 2026: YOPmail shows a Cloudflare "Verify you are human" check to the automated browser. It is never
+      // solved by the automation: the step stops with a clear blocked reason and callers fall back to a pre-created
+      // account. Optional (off by default): SCP_YOPMAIL_MANUAL_VERIFY=1 in a headed run pauses for a person instead.
+      if (await this.humanCheckVisible()) await this.waitForManualVerification();
       // YOPmail sometimes loads slowly (17–18 Nov runs): retry within the delivery window instead of failing at once.
       if (!mailboxReady) { await this.page.waitForTimeout(5000); continue; }
       frameSeen = true;
@@ -65,6 +76,28 @@ class InvitedUserActivationPage extends BasePage {
       await this.page.locator('input[name="username"]').inputValue()
     ).toLowerCase()).toBe(email.toLowerCase());
     return this.page;
+  }
+
+  humanCheckVisible() {
+    return this.page.getByText(/are you human|verify you are human|confirm you.re human/i).first().isVisible().catch(() => false);
+  }
+
+  // Pauses for a person to complete YOPmail's human verification; never answers it automatically.
+  async waitForManualVerification() {
+    // Off by default (user, 22 Nov 2026: no manual intervention); SCP_YOPMAIL_MANUAL_VERIFY=1 turns the pause on.
+    const manual = /^(1|true|yes)$/i.test(process.env.SCP_YOPMAIL_MANUAL_VERIFY || '');
+    const headed = !/^(1|true)$/i.test(process.env.PM_FLOW_HEADLESS || '');
+    if (!manual || !headed) {
+      throw new Error('BLOCKED: YOPmail shows a Cloudflare human-verification check, so the invitation e-mail cannot be read automatically. '
+        + 'It is never answered by the automation; the caller falls back to a pre-created account.');
+    }
+    console.log('  ⏸ YOPmail human verification required.');
+    console.log('    Please complete the verification manually in the browser window, then click "Resume" in the Playwright Inspector.');
+    await this.page.bringToFront().catch(() => null);
+    await this.page.pause();
+    await this.page.waitForLoadState('domcontentloaded');
+    if (await this.humanCheckVisible()) throw new Error('BLOCKED: the YOPmail human verification is still shown after Resume.');
+    console.log('    Verification completed by the user – continuing.');
   }
 
   async setInvitationPassword(password) {

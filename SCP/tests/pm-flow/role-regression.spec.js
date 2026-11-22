@@ -6,7 +6,8 @@
 //   1. reads the account's Project Role on NRVC_Hall (SCP session),
 //   2. reads that role's enabled permissions from the Roles tab (the editor is closed without Save),
 //   3. signs in as the account and checks menus, pages and buttons against those permissions.
-// Cases that need a role change (ROLE-02, ROLE-06, ROLE-16) or other accounts stay Skipped with the reason.
+// Cases that need a role change (ROLE-02, ROLE-06), a creation in the portal (ROLE-13, ROLE-22) or other accounts stay
+// Skipped with the reason.
 const { test, expect } = require('@playwright/test');
 const { runPmSuite } = require('./support/pm-flow');
 const { plKit } = require('./support/pl-flow');
@@ -239,6 +240,62 @@ test('Role-based access – regression (read-only)', async ({ page, browserName 
             });
           }
         });
+        // Rules confirmed by the user on 22 Nov 2026 (ROLE-11, ROLE-16).
+        await run.scenario(meta('PM-REG-ROLE-11', 'Only the Org Admin sees Voyage Control Admin', 'Role'), async s => {
+          await s.step('Admin account: the platform chooser shows "Voyage Control Admin" (opened in set-up); Supplier and Subcontractor: no "Voyage Control Admin" tile', async () => {
+            expect(state.adm, 'admin portal opened from the admin account tile').toBeTruthy();
+            for (const acct of ACCOUNTS) {
+              const tile = (acct.chooser || []).includes('Voyage Control Admin');
+              s.observe(`${acct.key}: ${acct.chooser ? `chooser ${acct.chooser.join(', ')}` : 'no platform chooser (single-platform account)'}`);
+              expect(tile, `${acct.key} sees Voyage Control Admin`).toBe(false);
+            }
+          });
+        });
+        await run.scenario(meta('PM-REG-ROLE-16', 'Deleting a System Message follows "System Messages: Delete"', 'Role'), async s => {
+          await s.step('Project Admin role: read "System Messages: Delete (Project)" (no Save); System Messages as Project Admin → a "Delete" action is offered only when it is enabled', async () => {
+            const on = (await readRole('Project Admin')).on.has('System Messages: Delete (Project)');
+            await page.goto('/system-messages', { waitUntil: 'domcontentloaded' }); await k.settle(3000);
+            const del = await page.locator('main').getByRole('button', { name: /^Delete$/ }).first().isVisible().catch(() => false)
+              || await page.locator('main [title="Delete"], main img[alt="Delete"]').first().isVisible().catch(() => false);
+            s.observe(`Delete (Project) ${on ? 'enabled' : 'not enabled'}; "Delete" ${del ? 'offered' : 'not offered'} (deleting an owned message is PM-REG-SYS-10)`);
+            expect(del).toBe(on);
+          });
+          for (const acct of ACCOUNTS) {
+            await s.step(`${acct.key} (${acct.role}): "System Messages: Delete" not enabled → no way to delete a message (page not usable or no "Delete")`, async () => {
+              const on = acct.perms.on.has('System Messages: Delete (Project)') || acct.perms.on.has('System Messages: Delete (Platform)');
+              const r = await openPage(acct.page, 'System Messages');
+              const del = r.open && await acct.page.locator('main').getByRole('button', { name: /^Delete$/ }).first().isVisible().catch(() => false);
+              s.observe(`Delete permission ${on ? 'enabled' : 'not enabled'}; page ${r.open ? 'usable' : 'not usable'}; "Delete" ${del ? 'offered' : 'not offered'}`);
+              if (!on) expect(del, 'Delete offered without the permission').toBe(false);
+            });
+          }
+        });
+        // Rule (user, 22 Nov 2026): projects are created only in the organisation admin portal (Voyage Control Admin › New
+        // Project); SCP has no create-project control for anyone.
+        await run.scenario(meta('PM-REG-ROLE-24', 'Project creation only in the admin portal; non-admin users cannot create projects', 'Role'), async s => {
+          const createText = /create (a )?(new )?project|new project|add project/i;
+          await s.step('Org Admin: Voyage Control Admin shows "New Project"', async () => {
+            await expect(state.adm.getByText('New Project', { exact: true }).first()).toBeVisible({ timeout: 20000 });
+          });
+          await s.step('Project Admin in SCP: no create-project control on the dashboard, the menu or the project selector', async () => {
+            await page.goto('/management-dashboard', { waitUntil: 'domcontentloaded' }); await k.settle(3000);
+            const found = await page.getByText(createText).count();
+            s.observe(`create-project controls in SCP: ${found}`);
+            expect(found).toBe(0);
+          });
+          for (const acct of ACCOUNTS) {
+            await s.step(`${acct.key} (${acct.role}): no create-project control in SCP, and the admin portal's projects page is not available`, async () => {
+              await acct.page.goto('/management-dashboard', { waitUntil: 'domcontentloaded' }); await settle(acct.page, 3000);
+              const inScp = await acct.page.getByText(createText).count();
+              await acct.page.goto(new URL('/dashboard/projects', state.adm.url()).toString(), { waitUntil: 'domcontentloaded' }); await settle(acct.page, 5000);
+              const portal = await acct.page.getByText('New Project', { exact: true }).first().isVisible().catch(() => false);
+              const perm = acct.perms.on.has('Project: Create a new project');
+              s.observe(`"Project: Create a new project" ${perm ? 'enabled' : 'not enabled'} in the role; create-project controls in SCP ${inScp}; admin portal New Project ${portal ? 'available' : 'not available'}${perm && !portal ? ' – the permission is enabled but there is no place where this user could create a project (question for the team)' : ''}`);
+              expect(inScp, 'create-project control in SCP').toBe(0);
+              expect(portal, 'admin portal New Project available to a non-admin account').toBe(false);
+            });
+          }
+        });
         await run.scenario(meta('PM-REG-ROLE-14', 'Non-admin accounts cannot reach the role administration', 'Role'), async s => {
           for (const acct of ACCOUNTS) {
             await s.step(`${acct.key}: no "Voyage Control Admin" tile; the admin portal's Roles page is not available`, async () => {
@@ -284,13 +341,10 @@ test('Role-based access – regression (read-only)', async ({ page, browserName 
       ['PM-REG-ROLE-06', 'A role change applies to a signed-in user', 'Needs a role change; this suite only reads the configured access'],
       ['PM-REG-ROLE-09', 'Nav matches permission keys', 'The session permission list to compare with is not exposed to the tests yet'],
       ['PM-REG-ROLE-10', 'Disabled FDI inspector', 'Covered by PM-REG-FDI-18 (needs an inspector login)'],
-      ['PM-REG-ROLE-11', 'Only Org Admin sees Voyage Control Admin', 'No Organisation-Admin-only account (the admin accounts are platform admins)'],
       ['PM-REG-ROLE-12', 'Role assigned at user creation (SCP)', 'Needs YOPmail invite acceptance (Cloudflare check, not bypassed)'],
-      ['PM-REG-ROLE-13', 'Org Admin creates a user in the portal', 'Needs YOPmail activation (Cloudflare check, not bypassed)'],
-      ['PM-REG-ROLE-16', 'System Messages delete permission', 'Needs a message owned by an account whose role may create messages'],
-      ['PM-REG-ROLE-22', 'Org Admin can create a project in any organization', 'Creates a project, which cannot be undone – not approved'],
+      ['PM-REG-ROLE-13', 'Org Admin creates a user in the portal', 'Expected (user, 22 Nov 2026): the Org Admin can create a user in the organisation admin portal. Creating a platform user is a write in the shared portal: awaiting approval (the new user could then be activated automatically through mail.tm)'],
+      ['PM-REG-ROLE-22', 'Org Admin can create a project in any organization', 'Expected (user, 22 Nov 2026): the Org Admin can create projects in any organisation in the admin portal. The New Project form has no organisation field (Project Name, Region, Address, Project Owner e-mail, HubSpot link); creating a project cannot be undone: awaiting approval'],
       ['PM-REG-ROLE-23', 'Project Admin limited to their associated organization', 'No Project-Admin-only account (the Project Admin account is a platform admin)'],
-      ['PM-REG-ROLE-24', 'Users without the permission cannot create projects', 'The Supplier role has "Project: Create a new project" enabled and SCP has no project-creation entry – question for the team']
     ]) run.skip(meta(id, title, 'Role'), reason);
   } });
 });

@@ -21,6 +21,13 @@ const SUITES = [
   // they run again here, right after part 3. Select with --only=fdi-followup.
   { suite: 'app-regression', key: 'fdi-followup', npm: 'modules:regression', title: 'FDI follow-up (after Procurement Log part 3)',
     only: 'FDI-REG-06,FDI-REG-07,FDI-REG-08,FDI-REG-09,FDI-REG-10' },
+  // Added 22 Nov 2026. FDI settings needs the free run inspections that Procurement Log part 3 creates; the Configuration
+  // Options suite switches Pre-Shipping / GRN (restored) and seeds the next alert batch; the role suite only reads.
+  // Not part of the regular run (they create a project/user or delete run data each time): roles-write, fresh-project,
+  // pm-decisions – run them on their own when needed.
+  { suite: 'fdi-settings', npm: 'fdi-settings', title: 'FDI settings → inspection form' },
+  { suite: 'cfg-live', npm: 'cfg-live', title: 'Configuration Options live effects (Pre-Shipping, GRN, alert batch)' },
+  { suite: 'roles', npm: 'roles', title: 'Role-based access (read-only)' },
   { suite: 'e2e-smoke', npm: 'e2e:smoke', title: 'E2E smoke (TC-01 … TC-26)' }
 ];
 const args = process.argv.slice(2);
@@ -41,7 +48,7 @@ for (const s of chosen) {
   console.log(`\n==================== ${s.title} (${s.suite}) – ${new Date().toLocaleTimeString('en-GB')} ====================`);
   const res = spawnSync('node', [path.join('scripts', 'run-pm-flow.js'), s.suite, ...(s.only ? [`--only=${s.only}`] : []),
     ...(args.includes('--headless') ? ['--headless'] : [])],
-    { cwd: root, stdio: 'inherit', shell: false, env: { ...process.env, PM_FLOW_VIDEO: process.env.PM_FLOW_VIDEO || 'on' } });
+    { cwd: root, stdio: 'inherit', shell: false, env: { ...process.env, PM_FLOW_VIDEO: process.env.PM_FLOW_VIDEO || 'on', PM_FLOW_STEP_SHOTS: process.env.PM_FLOW_STEP_SHOTS || 'on' } });
   const fresh = fs.readdirSync(pmDir).filter(d => !before.has(d) && d.startsWith(`${s.suite}-`)).sort();
   entry.reportDir = fresh.length ? path.join(pmDir, fresh[fresh.length - 1]) : null;
   entry.exitCode = res.status; entry.finishedAt = new Date().toISOString();

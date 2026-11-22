@@ -16,6 +16,7 @@
 | Purpose | Command | Duration (approx.) |
 |---|---|---|
 | **Full regression + E2E smoke** (one command, all suites in the right order) | `npm run full:regression -- --headless` | 2.5–3 h |
+| **E2E smoke with the real invite (default when headed)**: the new subcontractor is invited, YOPmail is opened, the run **pauses** on YOPmail's "verify you are human" check, **you tick it** and click **Resume** in the Playwright Inspector, then the run activates the account and continues | `npm run e2e:smoke` (headed; someone at the screen). Headless (`-- --headless`) uses the existing Subcontractor account instead | about 25 min |
 | Smoke suites (page-load health, not part of the full regression) | `npm run procurement:smoke`, `npm run modules:smoke`, `npm run pm:smoke` | 2–5 min each |
 | E2E smoke only (the demo flow) | `npm run e2e:smoke` | about 20 min |
 | One suite | e.g. `npm run inventory:regression` (needs `npm run procurement:regression` just before it) | 10–25 min |
@@ -55,7 +56,7 @@
 
 | Risk | Effect | Mitigation |
 |---|---|---|
-| YOPmail shows a "verify you are human" check to automation (E2E invite acceptance) | Would block TC-16 and the cases after it | **Covered.** By default (`SCP_E2E_SUBCON_LOGIN` unset or `existing`) TC-16 to TC-18 use the pre-created Subcontractor account `SCP_SUBCONTRACTOR_USERNAME` / `_PASSWORD` (organisation Voyage Control), so YOPmail is not needed. With `SCP_E2E_SUBCON_LOGIN=invite` the run tries YOPmail first and **falls back** to that account when activation fails; TC-16 then shows "FALLBACK: …". TC-06 still creates and checks the invitation. The check is never bypassed |
+| YOPmail shows a "verify you are human" check to automation (E2E invite acceptance) | Would block TC-16 and the cases after it | **Covered.** By default (`SCP_E2E_SUBCON_LOGIN` unset or `existing`) TC-16 to TC-18 use the pre-created Subcontractor account `SCP_SUBCONTRACTOR_USERNAME` / `_PASSWORD` (organisation Voyage Control), so YOPmail is not needed. With `SCP_E2E_SUBCON_LOGIN=invite` the run tries YOPmail first and **falls back** to that account when activation fails; TC-16 then shows "FALLBACK: …". TC-06 still creates and checks the invitation. The check is never bypassed by the automation. **Since 22 Nov 2026 (default):** a headed run pauses on the check so a person completes it and clicks Resume, then activation continues automatically; headless runs keep the fallback. `SCP_YOPMAIL_MANUAL_VERIFY=0` turns the pause off |
 | The app resets the header site after a reload or when changing module (SCP-DEF-058) | Location lists may be empty | The tests restore the site themselves (`keepSite`). E2E TC-25 reports the count as a known defect |
 | Shared staging data grows (sites, run submittals, system messages) | Slower pages; leftover banners on screen | Check System Messages for active test messages before presenting |
 | **International Shipments is very slow** ("Loading international shipments…") | On 21 Nov 2026 the page needed **148–158 s** to show its data (it was under 90 s earlier the same day) | The tests wait up to 3 min and print "SLOW PAGE: …" in the report. For a live demo, open the page in advance or show the recorded run |

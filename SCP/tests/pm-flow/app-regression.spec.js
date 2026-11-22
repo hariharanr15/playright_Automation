@@ -353,7 +353,27 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
         await slOpen(); await slSearch(RUN); await expect(supRow(SUB)).toBeHidden();
       });
     });
-    run.skip(slm('SL-REG-15', 'Promote to SSO Organisation', 'Positive'), 'Changes organisations/login; not executed without explicit approval');
+    // SL-REG-15 (approved by the user on 22 Nov 2026: "can create – system will allow"): the run supplier is promoted.
+    await run.scenario(slm('SL-REG-15', 'Promote to SSO Organisation', 'Positive'), async s => {
+      await s.step(`Supplier List › search ${RUN} › row "${SUP}" › menu "Promote to SSO Organisation" → the promotion dialog opens`, async () => {
+        await slOpen(); await slSearch(RUN);
+        await expect(supRow(SUP), `${SUP} listed`).toBeVisible({ timeout: 15000 });
+        await supRow(SUP).locator('img[alt="Menu"]').click();
+        await page.getByRole('menuitem', { name: 'Promote to SSO Organisation' }).or(page.getByText('Promote to SSO Organisation', { exact: true })).last().click();
+        await k.settle(1500);
+        const dlg = page.locator('div.fixed.inset-0').filter({ visible: true }).last();
+        s.observe(`dialog: ${(await dlg.innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 400)}`);
+      }, { critical: true });
+      await s.step('Confirm the promotion once → success message; the supplier is shown as an SSO organisation', async () => {
+        const dlg = page.locator('div.fixed.inset-0').filter({ visible: true }).last();
+        await dlg.getByRole('button', { name: /^(Promote|Confirm|Yes|Submit|Save)/ }).last().click(); await k.settle(2500);
+        const toastText = await anyToast();
+        s.observe(`message: ${toastText || '(none)'}`);
+        expect(toastText, 'promotion confirmed').toMatch(/success|promoted|created/i);
+        await slOpen(); await slSearch(RUN);
+        s.observe(`row after promotion: ${(await supRow(SUP).innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 200)}`);
+      }, { attempts: 1 });
+    });
 
     // ======================= First Delivery Inspections =======================
     const FDI = 'First Delivery Inspections';

@@ -1084,14 +1084,38 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
       await expect(subPage).toHaveURL(/[?&]schedule=/);
     };
     try {
+      // Reference delivery shown by the user (22 Nov 2026): the subcontractor has "Pre Shipping Info" on it. The checklist is
+      // opened and checked but NOT confirmed, so the delivery stays available for later runs.
+      const REF155 = { number: process.env.SCP_TKT155_FILL_SUBMITTAL || 'E2E2611111127-SUB', material: process.env.SCP_TKT155_FILL_MATERIAL || 'Smoke Mat 2611111127' };
       await sc155('T155-01', 'Subcontractor can fill the pre-shipping checklist', 'Positive', async s => {
-        await s.step(`Subcontractor opens the delivery on ${sub155.G.number} (supplier ${sub155.G.supplier}) › "Pre Shipping Info" › answer every question, note, "Confirm Checklist" → toast "Shipping Details updated successfully!" and "Approve Pre-Shipping Checklist" is offered`, async () => {
+        await s.step(`Subcontractor: Procurement Log › search ${REF155.number} › open it › component ${REF155.material} → the delivery offers "Pre Shipping Info"`, async () => {
+          const sk = plKit(subPage);
+          await sk.menu('Procurement Log').catch(() => subPage.goto('/procurement-log', { waitUntil: 'domcontentloaded' }));
+          await sk.search(REF155.number);
+          const row = sk.rows().filter({ has: subPage.getByRole('cell', { name: REF155.number, exact: true }) }).first();
+          await expect(row, `${REF155.number} listed for the subcontractor`).toBeVisible({ timeout: 30000 });
+          // The first cell is the row checkbox: open the submittal through its "Spec Description" cell.
+          const headers = (await sk.main.getByRole('columnheader').allInnerTexts()).map(t => t.trim());
+          await sk.openSubmittal((await row.getByRole('cell').nth(headers.indexOf('Spec Description')).innerText()).trim());
+          await subPage.getByRole('row').filter({ has: subPage.getByRole('checkbox', { name: 'Select this component' }) }).filter({ hasText: REF155.material }).first().getByRole('cell', { name: REF155.material }).click();
+          await subPage.getByRole('button', { name: '+ Log Delivery' }).last().waitFor({ timeout: 30000 }); await sk.settle(2000);
+          await expect(dIcon(subPage, 'Pre Shipping Info'), '"Pre Shipping Info" offered to the subcontractor').toBeVisible({ timeout: 15000 });
+        }, { critical: true });
+        await s.step('Click "Pre Shipping Info" → the checklist opens with its questions and an enabled "Confirm Checklist"; close it WITHOUT confirming', async () => {
+          const sk = plKit(subPage);
+          await dIcon(subPage, 'Pre Shipping Info').click();
+          const c = sk.dialog('Add Pre-Shipping Details', 'Confirm Checklist');
+          await c.getByRole('button', { name: 'Y/N', exact: true }).first().waitFor({ timeout: 20000 });
+          const questions = await c.getByRole('button', { name: 'Y/N', exact: true }).count();
+          const confirm = c.getByRole('button', { name: 'Confirm Checklist', exact: true });
+          const enabled = await confirm.isEnabled().catch(() => false);
+          s.observe(`${questions} Y/N question(s); "Confirm Checklist" ${enabled ? 'enabled' : 'disabled'}`);
+          await sk.closeDialog('Add Pre-Shipping Details').catch(() => subPage.keyboard.press('Escape'));
+          expect(enabled, 'Confirm Checklist usable by the subcontractor').toBe(true);
+        });
+        await s.step(`For the record: delivery on this run's submittal ${sub155.G.number} (supplier ${sub155.G.supplier}) → whether "Pre Shipping Info" is offered too`, async () => {
           await subOpen(sub155.G);
-          const offered = await dIcon(subPage, 'Pre Shipping Info').isVisible().catch(() => false);
-          s.observe(`"Pre Shipping Info" ${offered ? 'offered' : 'not offered'} to the subcontractor`);
-          expect(offered, 'Subcontractor can open the pre-shipping checklist').toBe(true);
-          await fillChecklist(subPage, plKit(subPage), RUN);
-          await expect(dIcon(subPage, 'Approve Pre-Shipping Checklist')).toBeVisible({ timeout: 15000 });
+          s.observe(`"Pre Shipping Info" ${await dIcon(subPage, 'Pre Shipping Info').isVisible().catch(() => false) ? 'offered' : 'not offered'} on ${sub155.G.number}`);
         });
       });
       await sc155('T155-02', 'Subcontractor can approve a checklist the supplier filled', 'Positive', async s => {

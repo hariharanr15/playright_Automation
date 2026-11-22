@@ -2,7 +2,7 @@
 // with the same Chromium print used by full-regression-pdf.js. Handles only the Markdown these scripts write:
 // headings, paragraphs, pipe tables, numbered lists with indented continuation lines, **bold**, _italic_ and `code`.
 //
-// Usage (from SCP):  node scripts/md-to-pdf.js <file.md> [output.pdf] [--title="Footer title"]
+// Usage (from SCP):  node scripts/md-to-pdf.js <file.md> [output.pdf] [--title="Footer title"] [--landscape]
 const fs = require('fs');
 const path = require('path');
 
@@ -13,6 +13,7 @@ if (!input) {
   process.exit(1);
 }
 const output = args.filter(arg => !arg.startsWith('--'))[1] || input.replace(/\.md$/i, '.pdf');
+const landscape = args.includes('--landscape'); // A4 landscape for wide registers
 const footerTitle = ((args.find(arg => arg.startsWith('--title=')) || '').slice('--title='.length)) || path.basename(input, '.md').replace(/_/g, ' ');
 
 const escape = text => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -20,7 +21,8 @@ const inline = text => escape(text)
   .replace(/`([^`]+)`/g, '<code>$1</code>')
   .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
   .replace(/(^|[\s(])_([^_]+?)_(?=[\s.,;:)]|$)/g, '$1<em>$2</em>')
-  .replace(/\b(SCP|BUGS)-(DEF-)?(\d+)/g, (match) => match.replace(/-/g, '‑')); // keep IDs on one line
+  .replace(/\b(SCP|BUGS)-(DEF-)?(\d+)/g, (match) => match.replace(/-/g, '‑')) // keep IDs on one line
+  .replace(/ ¶ /g, '<br>'); // line break inside a table cell (test case registers)
 const cells = line => line.trim().replace(/^\||\|$/g, '').split('|').map(cell => cell.trim());
 
 const lines = fs.readFileSync(input, 'utf8').split(/\r?\n/);
@@ -107,7 +109,7 @@ fs.writeFileSync(htmlFile, html);
   const browser = await chromium.launch();
   const page = await browser.newPage();
   await page.goto(`file:///${path.resolve(htmlFile).replace(/\\/g, '/')}`);
-  await page.pdf({ path: output, format: 'A4', margin: { top: '12mm', bottom: '14mm', left: '10mm', right: '10mm' }, printBackground: true, displayHeaderFooter: true,
+  await page.pdf({ path: output, format: 'A4', landscape, margin: { top: '12mm', bottom: '14mm', left: '10mm', right: '10mm' }, printBackground: true, displayHeaderFooter: true,
     headerTemplate: '<span></span>',
     footerTemplate: `<div style="font-size:8px;width:100%;text-align:center;color:#777">${escape(footerTitle)} · page <span class="pageNumber"></span> / <span class="totalPages"></span></div>` });
   await browser.close();

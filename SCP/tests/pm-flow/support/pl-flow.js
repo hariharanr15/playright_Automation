@@ -159,7 +159,7 @@ function plKit(page) {
     },
     deliveryRow() { return page.getByRole('row').filter({ has: page.locator('img[title="View Delivery Details"], img[alt="Edit"]') }).last(); },
     // Full receipt chain: delivery → checklist (all YES, PL-R16) → approve → reload → actual date → shipping → conditions → GRN.
-    async deliverToGrn({ material = MATERIAL, qty, good = qty, damage = 0, today = new Date(), tag }) {
+    async deliverToGrn({ material = MATERIAL, qty, good = qty, damage = 0, today = new Date(), tag, stopBeforeGrn = false }) {
       // Restore the header site BEFORE opening the component: when the site has reverted (after a reload, OBS-INV-12),
       // restoring it collapses the open drawers, which would close the component view again.
       await kit.keepSite();
@@ -220,6 +220,8 @@ function plKit(page) {
       const shortage = Number(await dc.getByRole('spinbutton').nth(2).inputValue());
       await dc.getByRole('button', { name: 'Add', exact: true }).click();
       await toast('Delivery Conditions updated successfully!');
+      // Optionally stop at the GRN step (Configuration Options › GRN check, PM-REG-CFG-10).
+      if (stopBeforeGrn) return { shortage, stoppedBeforeGrn: true };
       await action('img[title="Generate GRN"]').click();
       await toast('GRN Generated Successfully!', 30000);
       return { shortage };
