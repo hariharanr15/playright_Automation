@@ -22,6 +22,8 @@
 | Selected cases of a suite | `node scripts/run-pm-flow.js <suite> --only=ID1,ID2 --headless` | minutes |
 | Known-defect list | `npm run defects:report` → `docs/automation-gap-analysis/KNOWN_DEFECTS.md` | seconds |
 | Failed / Blocked / Skipped list and Known Defect cases for any run (add re-run folders after the first to replace earlier results) | `node scripts/non-pass-report.js <run folder> [re-run folder …]` | seconds |
+| Open Skipped cases with steps and what closes each (after non-pass-report) | `node scripts/skipped-cases-report.js <full-regression folder>` | seconds |
+| Role-based access suite (test-only role, restores the account) | `node scripts/run-pm-flow.js roles --headless` | 10–20 min |
 | Any of these lists as an A4 PDF | `node scripts/md-to-pdf.js <file.md>` | seconds |
 
 **Order inside the full regression:** Other modules → Tickets → PM part 1 → PL part 2 → PM part 2 → PL part 1 → Inventory → PL part 3 → FDI follow-up → E2E smoke.
@@ -34,6 +36,7 @@
 | Video of each suite (MP4) | same folder, `run.mp4` (E2E: `e2e-run.mp4`) |
 | Consolidated A4 report (all suites) | `reports/full-regression-<timestamp>/SCP_Full_Regression_Report.pdf` |
 | **Failed, Blocked and Skipped test cases, module by module, with steps** | `reports/full-regression-<timestamp>/NON_PASSED_TEST_CASES.md` and `.pdf` |
+| **Open Skipped test cases, each with steps, reason and what closes it** | `reports/full-regression-<timestamp>/OPEN_SKIPPED_TEST_CASES.md` and `.pdf` |
 | **Known Defect test cases, each with its defect, expected vs actual and the full flow** | `reports/full-regression-<timestamp>/KNOWN_DEFECT_TEST_CASES.md` and `.pdf` |
 
 ## 4. How to read a result

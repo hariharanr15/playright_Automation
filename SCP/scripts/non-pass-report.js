@@ -13,7 +13,10 @@ const fs = require('fs');
 const path = require('path');
 const { KNOWN_DEFECTS, defectLabel } = require('../config/scp-known-defects');
 
-const inputs = process.argv.slice(2);
+// --evidence=<run folder> (repeatable): runs used ONLY to check config/scp-covered-by.js entries (e.g. the role suite),
+// not counted as results themselves.
+const evidenceDirs = process.argv.slice(2).filter(arg => arg.startsWith('--evidence=')).map(arg => path.resolve(arg.slice('--evidence='.length)));
+const inputs = process.argv.slice(2).filter(arg => !arg.startsWith('--'));
 if (!inputs.length) {
   console.error('Usage: node scripts/non-pass-report.js <full-regression folder | pm-flow run folder …>');
   process.exit(1);
@@ -86,12 +89,17 @@ for (const run of runs) {
 }
 // Skipped cases checked by another executed case (config/scp-covered-by.js) count as Passed when that check passed.
 const { COVERED_BY } = require('../config/scp-covered-by');
+const evidence = new Map();
+for (const dir of evidenceDirs) {
+  const key = path.basename(dir).replace(/-\d{4}-\d\d-\d\dT.*$/, '');
+  for (const scenario of JSON.parse(fs.readFileSync(path.join(dir, 'results.json'), 'utf8')).scenarios || []) evidence.set(`${key}|${scenario.id}`, scenario);
+}
 const covered = [];
 for (const entry of COVERED_BY) {
   const item = byId.get(`${entry.suite}|${entry.id}`);
   if (!item || item.status !== 'Skipped') continue;
   const checks = entry.by.map(ref => {
-    const source = byId.get(`${ref.suite}|${ref.id}`);
+    const source = byId.get(`${ref.suite}|${ref.id}`) || evidence.get(`${ref.suite}|${ref.id}`);
     const step = source && ref.step ? (source.steps || []).find(entry => ref.step.test(entry.name)) : null;
     const status = !source ? 'not run' : ref.step ? (step ? step.status : 'step not found') : source.status;
     return { ref, status, label: `${ref.id}${ref.step ? ' (step)' : ''}` };
@@ -188,6 +196,10 @@ if (knownDefects.length) {
   lines.push('');
 }
 
+// Skipped cases as data, for scripts/skipped-cases-report.js (OPEN_SKIPPED_TEST_CASES.md).
+fs.writeFileSync(path.join(path.resolve(inputs[0]), 'SKIPPED_CASES.json'), JSON.stringify(cases.filter(item => item.status === 'Skipped').map(item => ({
+  id: item.id, suite: item.suiteTitle, module: item.module || 'Other', submodule: item.submodule || '', title: plain(item.title), reason: plain(item.reason || ''), navPath: item.navPath || []
+})), null, 1));
 const output = path.join(path.resolve(inputs[0]), 'NON_PASSED_TEST_CASES.md');
 fs.writeFileSync(output, lines.join('\n'));
 console.log(`${nonPassed.length} failed/blocked/skipped and ${knownDefects.length} known-defect cases of ${cases.length} -> ${path.relative(process.cwd(), output)}`);

@@ -14,6 +14,8 @@ const COVERED_BY = [
   { suite: 'app-regression', id: 'SHP-REG-07', by: [{ suite: 'pl-regression3', id: 'PL-REG-EDT-07', step: /\(PL-REG-INT-02\)/ }] },
   // The Loss activity is executed in INV-REG-15; that step is a Known Defect (grid not refreshed), so INV-REG-03 stays Skipped.
   { suite: 'inv-regression', id: 'INV-REG-03', by: [{ suite: 'inv-regression', id: 'INV-REG-15', step: /action "Loss"/ }] },
+  // Executed by the role suite (npm: node scripts/run-pm-flow.js roles), passed as --evidence to the report.
+  ...['PM-REG-ROLE-01', 'PM-REG-ROLE-20'].map(id => ({ suite: 'regression2', id, by: [{ suite: 'roles', id }] })),
   // Same case executed in PM regression part 2 with the data that part creates.
   ...['PM-REG-FDI-25a', 'PM-REG-FDI-42c', 'UPL-MM-15', 'UPL-SITE-13'].map(id => ({ suite: 'regression', id, by: [{ suite: 'regression2', id }] }))
 ];
