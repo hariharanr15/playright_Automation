@@ -1,0 +1,64 @@
+{
+  "_comment": "Test data for tests/pm-flow/inv-regression.spec.js (Inventory Management regression). Material, supplier and site come from tests/pm-flow/support/pl-flow.js (SCP_PL_MATERIAL / SCP_PL_SUPPLIER / SCP_PL_SITE), because the Procurement regression delivers the stock this suite uses.",
+
+  "minimumStartingStock": 4,
+  "_minimumSourceLocationStock": "Stock needed at the run's source location (setup picks the real location with the most stock and checks it with the form hint). One run uses about 8-9 units there; 12 leaves a margin. When no location has enough, deliver stock with the Procurement regression (npm run procurement:regression).",
+  "minimumSourceLocationStock": 12,
+  "_maximumSourceLocationCandidates": "Setup ranks real locations by Location-view QTY and checks at most this many with the form hint before giving up.",
+  "maximumSourceLocationCandidates": 3,
+
+  "submittals": {
+    "_comment": "Run submittals created by the Procurement regression runs. Imported ones (-SUB-I1/I2) have no schedule lines, so the form tries several candidates. PLD1102-SUB-01 exists twice on the project and the upload rejects it as ambiguous (OBS-INV-13).",
+    "runSubmittalPattern": "^PL[DTRS]\\d+-SUB-\\w+$",
+    "preferredSubmittalPattern": "^PLD1102-SUB-0[17]$",
+    "ambiguousForUpload": "PLD1102-SUB-01",
+    "maximumCandidates": 12,
+    "maximumIncomingLoadCandidates": 8
+  },
+
+  "locations": {
+    "_comment": "Run-created locations are named 'Loc <run tag>' and usually hold no stock, so they are never used as the source location.",
+    "placeholderOrRunLocationPattern": "^(All Locations|Choose|Select|Loc INR)",
+    "newLocationType": "Construction Area"
+  },
+
+  "secondSite": {
+    "_comment": "Site used for the site-isolation check (INV-REG-23). SCP_INV_SITE2 overrides it.",
+    "whenStartingOnWarehouse": "Site T2 Pmr2-2611011614",
+    "warehouseSiteName": "Warehoust _NR"
+  },
+
+  "stockChanges": {
+    "issueToConstruction": { "action": "Issue To Construction", "quantity": 2, "expectedChange": -2 },
+    "loss": { "action": "Loss", "quantity": 1, "expectedChange": -1 },
+    "return": { "action": "Return", "quantity": 1, "expectedChange": -1 },
+    "incomingLoad": { "action": "Incoming Load", "quantity": 1 },
+    "internalMovement": { "action": "Internal Movement", "quantity": 1 }
+  },
+
+  "invalidQuantities": {
+    "overdraw": 99999,
+    "zero": 0,
+    "threeDecimals": "1.555",
+    "overReceipt": 99999
+  },
+
+  "expectedMessages": {
+    "_comment": "Application messages observed on NRVC_Hall (INV_SCENARIOS.md). The 3-decimal message is the expected rule; today the app shows only 'Invalid data provided.' (OBS-INV-10).",
+    "overdraw": "Not enough stock at .+: only [\\d.]+ .+ available, 99999 requested",
+    "zeroQuantity": "Quantity cannot be empty or zero or less",
+    "threeDecimals": "2 decimal|two decimal|decimal places",
+    "incomingRejected": "Cannot add this activity|exceeds",
+    "incomingRejectedOnFullSchedule": "scheduled_quantity|Cannot add this activity",
+    "sameLocation": "From Location and To Location must be different.",
+    "uploadSucceeded": "uploaded successfully",
+    "uploadFailedNothingSaved": "The upload failed. Nothing was saved."
+  },
+
+  "uploadTemplate": {
+    "sheetName": "Inventory Template",
+    "header": ["Submittal No", "Material", "Item", "Date Required On Site", "PO Number", "Action", "From Location", "To Location", "Quantity", "UoM", "Supplier", "Comments"]
+  },
+
+  "exportBalanceListColumns": ["Material ID", "Material Name", "Inventory"]
+}

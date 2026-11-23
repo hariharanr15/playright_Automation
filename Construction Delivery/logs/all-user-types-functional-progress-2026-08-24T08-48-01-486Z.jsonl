@@ -1,0 +1,11 @@
+{"timestamp":"2026-08-24T08:48:12.973Z","event":"role-functional-suite-start","roles":["Super Project User","Project User","Security Guard","View-Only User","Project Admin","Project Manager","Project Owner","All Role Access","All User Access","Project Senior User"]}
+{"timestamp":"2026-08-24T08:48:12.975Z","event":"role-skipped","role":"Super Project User","reason":"Credentials not configured. Set ROLE_SUPER_PROJECT_USER_EMAIL/ROLE_SUPER_PROJECT_USER_PASSWORD."}
+{"timestamp":"2026-08-24T08:48:12.977Z","event":"role-start","role":"Project User","username":"hari@yopmail.com"}
+{"timestamp":"2026-08-24T08:48:49.764Z","event":"role-tabs-collected","role":"Project User","tabs":["Booking List","Calendar","New Booking"]}
+{"timestamp":"2026-08-24T08:48:49.766Z","event":"role-flow-start","role":"Project User","tab":"New Booking","flow":"All available booking creation flows"}
+{"timestamp":"2026-08-24T08:51:10.298Z","event":"role-flow-finished","role":"Project User","tab":"New Booking","flow":"All available booking creation flows","status":"passed","durationMs":140532}
+{"timestamp":"2026-08-24T08:51:10.300Z","event":"role-flow-start","role":"Project User","tab":"Booking List","flow":"Booking lifecycle edit flow"}
+{"timestamp":"2026-08-24T08:53:46.793Z","event":"role-flow-finished","role":"Project User","tab":"Booking List","flow":"Booking lifecycle edit flow","status":"failed","durationMs":156493,"reason":"TC-75 Select first Scheduled booking failed: locator.waitFor: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#myModal2') to be visible\u001b[22m\n"}
+{"timestamp":"2026-08-24T08:53:46.794Z","event":"role-flow-start","role":"Project User","tab":"Booking List","flow":"Booking List filters"}
+{"timestamp":"2026-08-24T08:55:39.717Z","event":"role-flow-finished","role":"Project User","tab":"Booking List","flow":"Booking List filters","status":"passed","durationMs":112923}
+{"timestamp":"2026-08-24T08:55:39.718Z","event":"role-flow-start","role":"Project User","tab":"Booking List","flow":"Booking List statuses and sorting"}

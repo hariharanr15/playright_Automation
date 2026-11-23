@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Consolidated Role Summary Report</title>
+  <style>
+    body { margin: 0; background: #f4f6f9; color: #172033; font-family: Inter, Segoe UI, Arial, sans-serif; }
+    header, main { padding: 28px 40px; }
+    header { background: #fff; border-bottom: 1px solid #dfe5ee; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #dfe5ee; table-layout: fixed; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid #dfe5ee; text-align: left; vertical-align: top; font-size: 14px; overflow-wrap: anywhere; }
+    th { background: #f8fafc; color: #3e4b61; text-transform: uppercase; font-size: 12px; letter-spacing: .05em; }
+    .status { display: inline-flex; border-radius: 999px; padding: 4px 9px; font-weight: 800; font-size: 12px; text-transform: uppercase; }
+    .passed { background: #dff8ee; color: #04745a; }
+    .failed { background: #ffe3e0; color: #af2f2a; }
+    .skipped { background: #fff7d6; color: #8a5a00; }
+    tr.failed { box-shadow: inset 6px 0 0 #e02424; background: #fff0ef; }
+    tr.skipped { box-shadow: inset 6px 0 0 #d99a00; background: #fffaf0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Consolidated Role Summary Report</h1>
+    <p>Environment: Staging | Browser: Google Chrome 152.0.7977.64 | Execution: 31 Aug 2026, 17:21 | Duration: 26m 56s</p>
+  </header>
+  <main>
+    <table>
+      <thead><tr><th>Role</th><th>Status</th><th>Total</th><th>Passed</th><th>Failed</th><th>Skipped</th><th>Executed</th><th>Pass %</th><th>Available Features</th><th>Restricted Features</th></tr></thead>
+      <tbody><tr class="testcase-row skipped">
+      <td>Project Admin</td>
+      <td><span class="status skipped">skipped</span></td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0.00%</td>
+      <td>-</td>
+      <td>-</td>
+    </tr><tr class="testcase-row skipped">
+      <td>Project User</td>
+      <td><span class="status skipped">skipped</span></td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0.00%</td>
+      <td>-</td>
+      <td>-</td>
+    </tr><tr class="testcase-row skipped">
+      <td>View-Only User</td>
+      <td><span class="status skipped">skipped</span></td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0.00%</td>
+      <td>-</td>
+      <td>-</td>
+    </tr></tbody>
+    </table>
+  </main>
+</body>
+</html>

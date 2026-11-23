@@ -169,6 +169,7 @@ class MyOrganizationPage {
     const before = await this.validateOrganizationDetailsVisible();
     let submitted = false;
     let tradeTypeUpdated = false;
+    let tradeTypeReadOnly = false;
     let selectedTradeType = '';
 
     await highlight(this.organizationName, 'Organization Name read-only verification');
@@ -190,11 +191,17 @@ class MyOrganizationPage {
     }
 
     if (await this.tradeTypeSelectRoot.isVisible({ timeout: 1500 }).catch(() => false)) {
-      selectedTradeType = this.options.tradeType
-        ? await this.selectReactValue('#tradeType', this.options.tradeType, /site|construction|concrete|utilities/i)
-        : await this.selectRandomReactValue('#tradeType', 'Trade Type', before.tradeType);
-      tradeTypeUpdated = Boolean(selectedTradeType);
-      submitted = tradeTypeUpdated || submitted;
+      tradeTypeReadOnly = await this.isReactSelectReadOnly(this.tradeTypeSelectRoot);
+      if (tradeTypeReadOnly) {
+        selectedTradeType = before.tradeType || '';
+        await highlight(this.tradeTypeSelectRoot, 'Trade Type read-only verification');
+      } else {
+        selectedTradeType = this.options.tradeType
+          ? await this.selectReactValue('#tradeType', this.options.tradeType, /site|construction|concrete|utilities/i)
+          : await this.selectRandomReactValue('#tradeType', 'Trade Type', before.tradeType);
+        tradeTypeUpdated = Boolean(selectedTradeType);
+        submitted = tradeTypeUpdated || submitted;
+      }
     }
 
     if (submitted &&
@@ -207,10 +214,24 @@ class MyOrganizationPage {
     return {
       submitted,
       tradeTypeUpdated,
+      tradeTypeReadOnly,
       selectedTradeType,
       before,
       after: await this.validateOrganizationDetailsVisible()
     };
+  }
+
+  async isReactSelectReadOnly(root) {
+    return root.evaluate((element) => {
+      const classText = String(element.className || '');
+      const style = window.getComputedStyle(element);
+      const disabledInput = element.querySelector('input:disabled, [aria-disabled="true"]');
+      return element.hasAttribute('disabled') ||
+        element.getAttribute('aria-disabled') === 'true' ||
+        /disabled|is-disabled/i.test(classText) ||
+        Boolean(disabledInput) ||
+        style.pointerEvents === 'none';
+    }).catch(() => false);
   }
 
   async openUsersTab() {

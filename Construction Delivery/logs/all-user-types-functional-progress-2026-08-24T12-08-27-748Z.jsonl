@@ -1,0 +1,49 @@
+{"timestamp":"2026-08-24T12:08:45.794Z","event":"role-functional-suite-start","roles":["Project Admin","Project User","View-Only User"]}
+{"timestamp":"2026-08-24T12:08:45.804Z","event":"role-start","role":"Project Admin","username":"hariharan.r@neuralrays.ai"}
+{"timestamp":"2026-08-24T12:09:15.929Z","event":"role-tabs-collected","role":"Project Admin","tabs":["Analytics","Booking List","Calendar","Equipment Management","New Booking","Project Management","User Management","Vehicle Tracking"]}
+{"timestamp":"2026-08-24T12:09:15.959Z","event":"role-flow-start","role":"Project Admin","tab":"Project Management","flow":"Project Management setup validation"}
+{"timestamp":"2026-08-24T12:09:16.003Z","event":"role-flow-finished","role":"Project Admin","tab":"Project Management","flow":"Project Management setup validation","status":"passed","durationMs":44}
+{"timestamp":"2026-08-24T12:09:16.006Z","event":"role-flow-start","role":"Project Admin","tab":"New Booking","flow":"All available booking creation flows"}
+{"timestamp":"2026-08-24T12:12:32.661Z","event":"role-flow-finished","role":"Project Admin","tab":"New Booking","flow":"All available booking creation flows","status":"passed","durationMs":196655}
+{"timestamp":"2026-08-24T12:12:32.690Z","event":"role-flow-start","role":"Project Admin","tab":"Booking List","flow":"Booking lifecycle edit flow"}
+{"timestamp":"2026-08-24T12:14:11.053Z","event":"role-flow-finished","role":"Project Admin","tab":"Booking List","flow":"Booking lifecycle edit flow","status":"passed","durationMs":98363}
+{"timestamp":"2026-08-24T12:14:11.059Z","event":"role-flow-start","role":"Project Admin","tab":"Booking List","flow":"Booking List filters"}
+{"timestamp":"2026-08-24T12:16:17.651Z","event":"role-flow-finished","role":"Project Admin","tab":"Booking List","flow":"Booking List filters","status":"passed","durationMs":126593}
+{"timestamp":"2026-08-24T12:16:17.654Z","event":"role-flow-start","role":"Project Admin","tab":"Booking List","flow":"Booking List statuses and sorting"}
+{"timestamp":"2026-08-24T12:17:04.979Z","event":"role-flow-finished","role":"Project Admin","tab":"Booking List","flow":"Booking List statuses and sorting","status":"passed","durationMs":47325}
+{"timestamp":"2026-08-24T12:17:04.982Z","event":"role-flow-start","role":"Project Admin","tab":"Calendar","flow":"Calendar functional flow"}
+{"timestamp":"2026-08-24T12:17:11.166Z","event":"role-flow-finished","role":"Project Admin","tab":"Calendar","flow":"Calendar functional flow","status":"passed","durationMs":6184}
+{"timestamp":"2026-08-24T12:17:11.168Z","event":"role-flow-start","role":"Project Admin","tab":"Analytics","flow":"Analytics and Environment Reports flow"}
+{"timestamp":"2026-08-24T12:18:57.812Z","event":"role-flow-finished","role":"Project Admin","tab":"Analytics","flow":"Analytics and Environment Reports flow","status":"passed","durationMs":106644}
+{"timestamp":"2026-08-24T12:18:57.816Z","event":"role-flow-start","role":"Project Admin","tab":"Equipment Management","flow":"Equipment Management functional flow"}
+{"timestamp":"2026-08-24T12:19:05.046Z","event":"role-flow-finished","role":"Project Admin","tab":"Equipment Management","flow":"Equipment Management functional flow","status":"passed","durationMs":7230}
+{"timestamp":"2026-08-24T12:19:05.047Z","event":"role-flow-start","role":"Project Admin","tab":"User Management","flow":"User Management functional flow"}
+{"timestamp":"2026-08-24T12:19:13.667Z","event":"role-flow-finished","role":"Project Admin","tab":"User Management","flow":"User Management functional flow","status":"passed","durationMs":8620}
+{"timestamp":"2026-08-24T12:19:13.670Z","event":"role-flow-start","role":"Project Admin","tab":"Profile Menu","flow":"My Account profile flow"}
+{"timestamp":"2026-08-24T12:19:41.164Z","event":"role-flow-finished","role":"Project Admin","tab":"Profile Menu","flow":"My Account profile flow","status":"passed","durationMs":27494}
+{"timestamp":"2026-08-24T12:19:41.168Z","event":"role-flow-start","role":"Project Admin","tab":"Profile Menu","flow":"Notification Preferences flow"}
+{"timestamp":"2026-08-24T12:20:34.809Z","event":"role-flow-finished","role":"Project Admin","tab":"Profile Menu","flow":"Notification Preferences flow","status":"passed","durationMs":53641}
+{"timestamp":"2026-08-24T12:20:34.813Z","event":"role-flow-start","role":"Project Admin","tab":"Profile Menu","flow":"My Organization flow"}
+{"timestamp":"2026-08-24T12:20:42.290Z","event":"role-flow-finished","role":"Project Admin","tab":"Profile Menu","flow":"My Organization flow","status":"passed","durationMs":7477}
+{"timestamp":"2026-08-24T12:20:42.294Z","event":"role-finished","role":"Project Admin","status":"completed"}
+{"timestamp":"2026-08-24T12:20:42.301Z","event":"role-start","role":"Project User","username":"hari@yopmail.com"}
+{"timestamp":"2026-08-24T12:21:05.424Z","event":"role-tabs-collected","role":"Project User","tabs":["Booking List","Calendar","New Booking"]}
+{"timestamp":"2026-08-24T12:21:05.453Z","event":"role-flow-start","role":"Project User","tab":"New Booking","flow":"All available booking creation flows"}
+{"timestamp":"2026-08-24T12:23:48.553Z","event":"role-flow-finished","role":"Project User","tab":"New Booking","flow":"All available booking creation flows","status":"passed","durationMs":163100}
+{"timestamp":"2026-08-24T12:23:48.580Z","event":"role-flow-start","role":"Project User","tab":"Booking List","flow":"Booking List filters"}
+{"timestamp":"2026-08-24T12:25:57.179Z","event":"role-flow-finished","role":"Project User","tab":"Booking List","flow":"Booking List filters","status":"passed","durationMs":128599}
+{"timestamp":"2026-08-24T12:25:57.181Z","event":"role-flow-start","role":"Project User","tab":"Booking List","flow":"Booking List statuses and sorting"}
+{"timestamp":"2026-08-24T12:26:45.725Z","event":"role-flow-finished","role":"Project User","tab":"Booking List","flow":"Booking List statuses and sorting","status":"passed","durationMs":48544}
+{"timestamp":"2026-08-24T12:26:45.746Z","event":"role-flow-start","role":"Project User","tab":"Calendar","flow":"Calendar functional flow"}
+{"timestamp":"2026-08-24T12:26:51.869Z","event":"role-flow-finished","role":"Project User","tab":"Calendar","flow":"Calendar functional flow","status":"passed","durationMs":6123}
+{"timestamp":"2026-08-24T12:26:51.872Z","event":"role-flow-start","role":"Project User","tab":"Profile Menu","flow":"My Account profile flow"}
+{"timestamp":"2026-08-24T12:27:16.302Z","event":"role-flow-finished","role":"Project User","tab":"Profile Menu","flow":"My Account profile flow","status":"passed","durationMs":24430}
+{"timestamp":"2026-08-24T12:27:16.304Z","event":"role-flow-start","role":"Project User","tab":"Profile Menu","flow":"Notification Preferences flow"}
+{"timestamp":"2026-08-24T12:28:09.951Z","event":"role-flow-finished","role":"Project User","tab":"Profile Menu","flow":"Notification Preferences flow","status":"passed","durationMs":53647}
+{"timestamp":"2026-08-24T12:28:09.956Z","event":"role-flow-start","role":"Project User","tab":"Profile Menu","flow":"My Organization flow"}
+{"timestamp":"2026-08-24T12:28:14.773Z","event":"role-flow-finished","role":"Project User","tab":"Profile Menu","flow":"My Organization flow","status":"passed","durationMs":4817}
+{"timestamp":"2026-08-24T12:28:14.777Z","event":"role-finished","role":"Project User","status":"completed"}
+{"timestamp":"2026-08-24T12:28:14.781Z","event":"role-start","role":"View-Only User","username":"User17511059310@yopmail.com"}
+{"timestamp":"2026-08-24T12:30:23.943Z","event":"role-finished","role":"View-Only User","status":"failed","reason":"Booking List did not become ready. URL: https://stg-app.voyagecontrol.com/5ET10000010/booking; readyState: complete; textLength: 2638; loaderCount: 0; projectRef: 5ET10000010; projectSiteId: 10; projectData: Buckingham Palace IND (5ET10000010); buttons: VV, Filter, 1, 2, 3, 4; text: Buckingham Palace IND ​ VV Booking List Calendar Collapse Booking List All Project Bookings ​ TO ​ New_Layout_26 Filter All 89 Active 16 Scheduled 79 Checked In 0 Checked out 1 For Approval 0 Refused 0 Declined 0 Cancelled 9 Status Booking Ref Arrival Date Arrival Time Departure Time Access Point Vehicle type Contact Company Number Of Vehicles CANCELLED BK5ET10000004967 Mon, August 24th 2026 8:00 AM 10:00 AM Gate 709780 Car Voyage Control 1 CANCELLED BK5ET10000004968 Mon, August 24th 2026 8:00 A; recentHttpErrors: 404 GET https://stg-login.voyagecontrol.com/images/favicon.svg"}
+{"timestamp":"2026-08-24T12:30:23.973Z","event":"role-finished","role":"View-Only User","status":"failed"}
+{"timestamp":"2026-08-24T12:30:23.978Z","event":"role-functional-suite-finished","passed":21,"failed":1,"skipped":1,"roles":{"Project Admin":{"passed":13,"failed":0,"skipped":0},"Project User":{"passed":8,"failed":0,"skipped":1},"View-Only User":{"passed":0,"failed":1,"skipped":0}}}

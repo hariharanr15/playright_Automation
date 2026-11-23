@@ -1,14 +1,20 @@
 [
   {
-    "name": "Tab One",
-    "description": "Replace with the first SCP tab currently in automation scope.",
-    "route": "",
+    "name": "Procurement Log",
+    "description": "SCP procurement records.",
+    "route": "/procurement-log",
     "expectedText": ""
   },
   {
-    "name": "Tab Two",
-    "description": "Replace with the second SCP tab currently in automation scope.",
-    "route": "",
+    "name": "First Delivery Inspections",
+    "description": "SCP inspection records.",
+    "route": "/first-delivery-inspections",
+    "expectedText": ""
+  },
+  {
+    "name": "International Shipments",
+    "description": "SCP shipment records.",
+    "route": "/international-shipments",
     "expectedText": ""
   }
 ]

@@ -1,0 +1,760 @@
+ANA-REG-01	Analytics	Positive	Passed	2026-11-20T04:27	app-regression	runs=6	pass=4	fail=2	flips=1	retrysteps=2	[Positive] Search narrows SubContractor Issues	
+ANA-REG-02	Analytics	Positive	Known Defect	2026-11-20T04:27	app-regression	runs=7	pass=0	fail=1	flips=2	retrysteps=1	[Positive] Export works	Click "Export", choose the export option (today only "Download Template") → an API request :: Observed: Export menu: [Download Template]; clicked "Download Template"; API calls: none; file: none
+ANA-REG-03	Analytics	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Status Report Generate	
+ANA-REG-04	Analytics	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Totals equal the sum of rows	
+ANA-REG-05	Analytics	Positive	Passed	2026-11-20T04:27	app-regression	runs=7	pass=2	fail=5	flips=1	retrysteps=5	[Positive] TOV Analytics opens its own pages	
+ANA-SMK-01	Analytics	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Aggregate Stats loads	
+ANA-SMK-02	Analytics	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Lead Time Analysis loads	
+ANA-SMK-03	Analytics	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Supply Chain Intelligence loads	
+ANA-SMK-04	Analytics	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Emissions Report loads	
+ANA-SMK-05	Analytics	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Inventory Reports loads	
+ANA-SMK-06	Analytics	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Status Report loads	
+ANA-SMK-07	Analytics	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	SubContractor Issues loads	
+ANA-SMK-08	Analytics	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Supplier Issues loads	
+ANA-SMK-09	Analytics	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	TOV Analytics loads	
+APP-REG-SETUP	Setup	Setup	Passed	2026-11-20T14:07	app-regression	runs=13	pass=13	fail=0	flips=0	retrysteps=0	[Setup] Sign in on NRVC_Hall	
+APP-SMK-00	Login	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Sign in to NRVC_Hall	
+D-1	Discovery	Discovery	Passed	2026-11-10T07:14	discovery155	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Admin sign in	
+D-2	Discovery	Discovery	Passed	2026-11-10T07:12	discovery155	runs=5	pass=2	fail=3	flips=1	retrysteps=6	Admin: project users and suppliers	
+D-3	Discovery	Discovery	Failed	2026-11-10T07:14	discovery155	runs=2	pass=0	fail=2	flips=0	retrysteps=2	Subcontractor view	Enter the Project Admin email and password, click Sign in → the signed-in email heading is :: 
+DOC-REG-01	Document Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Search by filename/material	
+DOC-REG-02	Document Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Category filter	
+DOC-REG-03	Document Management	Integration	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Integration] Module files appear	
+DOC-REG-04	Document Management	Positive	Failed	2026-11-20T04:27	app-regression	runs=6	pass=0	fail=6	flips=0	retrysteps=6	[Positive] Uploaded By is the real user	All Documents: set Category "PO File" → first row's "Uploaded By" is a user email (contain :: Observed: PO File: Unknown · Observed: PO File: Unknown
+DOC-REG-05	Document Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] View / Download	
+DOC-REG-06	Document Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Spec document upload	
+DOC-REG-07	Document Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Spec Section No add	
+DOC-REG-08	Document Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Spec document delete (run file)	
+DOC-REG-09	Document Management	Boundary	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Boundary] Spec upload over 60 MB rejected	
+DOC-REG-10	Document Management	Negative	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Negative] PO validation without line items	
+DOC-REG-11	Document Management	Positive	Skipped	2026-11-20T04:27	app-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Positive] PO validation with a valid PO	
+DOC-REG-12	Document Management	Positive	Skipped	2026-11-20T04:27	app-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Positive] BOM validation	
+DOC-REG-13	Document Management	Integration	Passed	2026-11-20T04:27	app-regression	runs=6	pass=4	fail=2	flips=1	retrysteps=2	[Integration] EPD upload sets Procurement "EPD Exists" = Yes	
+DOC-REG-14	Document Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=6	pass=4	fail=2	flips=1	retrysteps=2	[Positive] Uploaded PDF listed with a status	
+DOC-REG-15	Document Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=6	pass=4	fail=2	flips=1	retrysteps=2	[Positive] EPD Records list and summary cards	
+DOC-REG-16	Document Management	Integration	Skipped	2026-11-20T04:27	app-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Integration] Scan Procore for EPDs	
+DOC-SMK-01	Document Management	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	All Documents loads	
+DOC-SMK-02	Document Management	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Spec Documents loads	
+DOC-SMK-03	Document Management	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	PO Validation loads	
+DOC-SMK-04	Document Management	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	BOM Validation loads	
+DOC-SMK-05	Document Management	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	EPD Report loads	
+DSH-REG-01	Management Dashboard	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Mark as read	
+DSH-REG-02	Management Dashboard	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Mark all as read on this page	
+DSH-REG-03	Management Dashboard	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Unread toggle	
+DSH-REG-04	Management Dashboard	Integration	Passed	2026-11-20T04:27	app-regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	[Integration] Delivery notification	
+DSH-REG-05	Management Dashboard	Integration	Passed	2026-11-20T04:27	app-regression	runs=7	pass=4	fail=3	flips=1	retrysteps=3	[Integration] Lead time notification	
+DSH-REG-06	Management Dashboard	Integration	Passed	2026-11-20T04:27	app-regression	runs=6	pass=5	fail=1	flips=2	retrysteps=1	[Integration] New submittal alert	
+DSH-REG-07	Management Dashboard	Integration	Passed	2026-11-20T04:27	app-regression	runs=7	pass=4	fail=3	flips=1	retrysteps=3	[Integration] Create PO task	
+DSH-REG-08	Management Dashboard	Integration	Passed	2026-11-20T04:27	app-regression	runs=6	pass=6	fail=0	flips=0	retrysteps=1	[Integration] Pre-shipping task	
+DSH-REG-09	Management Dashboard	Integration	Failed	2026-11-20T04:27	app-regression	runs=8	pass=0	fail=8	flips=0	retrysteps=8	[Integration] Trigger Alert reaches the user (PL-R14, OBS-DSH-1)	Management Dashboard › "Notifications" tab: look on the first page; if absent set the read :: Observed: Not found (filter "All" + search "Delivery for Item") · Observed: Not found (filter "All" + search "Delivery for Item")
+DSH-REG-10	Management Dashboard	Integration	Skipped	2026-11-20T04:27	app-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Integration] Daily alert batch	
+DSH-REG-11	Management Dashboard	Integration	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Integration] View in Procurement Log	
+DSH-SMK-01	Management Dashboard	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Dashboard loads	
+DSH-SMK-02	Management Dashboard	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Each tab lists rows	
+E2E-SMK-01	Landing Page	Landing Page	Passed	2026-11-11T10:34	e2e-smoke	runs=13	pass=13	fail=0	flips=0	retrysteps=0	Sign in as Project Admin, select project and site	
+E2E-SMK-02	Project Management	Project Management	Passed	2026-11-11T10:34	e2e-smoke	runs=13	pass=13	fail=0	flips=0	retrysteps=8	Material created by upload in an existing category	
+E2E-SMK-03	User Management	User Management	Passed	2026-11-11T10:34	e2e-smoke	runs=13	pass=8	fail=5	flips=1	retrysteps=7	Supplier created, material mapped, supplier user invited	
+E2E-SMK-03A	User Management	User Management	Passed	2026-11-11T10:34	e2e-smoke	runs=13	pass=8	fail=5	flips=1	retrysteps=6	Subcontractor created and subcontractor user invited	
+E2E-SMK-04	Procurement Log	Procurement Log	Passed	2026-11-11T10:34	e2e-smoke	runs=13	pass=8	fail=0	flips=1	retrysteps=0	Submittal created with the new supplier and material	
+E2E-SMK-05	Procurement Log	Procurement Log	Passed	2026-11-11T10:34	e2e-smoke	runs=13	pass=8	fail=0	flips=1	retrysteps=0	Component and delivery created; delivery awaits the checklist	
+E2E-SMK-06	Supplier Approval	Supplier Approval	Known Defect	2026-11-11T10:34	e2e-smoke	runs=13	pass=0	fail=4	flips=2	retrysteps=4	New supplier signs in and completes the pre-shipping checklist	Procurement Log: search E2E2611111034-SUB → the supplier user sees the submittal of its su :: Observed: Procurement Log shows 0 items for this user · Observed: Checklist steps not attempted: the submittal is not visible to this user
+E2E-SMK-06B	Supplier Approval	Supplier Approval	Passed	2026-11-11T10:34	e2e-smoke	runs=5	pass=3	fail=2	flips=1	retrysteps=2	[Deviation] Project Admin fills the checklist on the supplier's behalf	
+E2E-SMK-07	Subcontractor Approval	Subcontractor Approval	Passed	2026-11-11T10:34	e2e-smoke	runs=13	pass=3	fail=1	flips=2	retrysteps=1	New subcontractor signs in and approves the checklist	
+E2E-SMK-08	Procurement Log	Procurement Log	Known Defect	2026-11-11T10:34	e2e-smoke	runs=13	pass=0	fail=0	flips=1	retrysteps=0	Project Admin closes the delivery and generates the GRN	Procurement Log: search E2E2611111034-SUB → Status "Delivered" and Actual Delivery Date 11 :: Observed: Status "Delivered", Actual Delivery Date "-"
+E2E-SMK-09	Management Dashboard	Management Dashboard	Passed	2026-11-11T10:34	e2e-smoke	runs=13	pass=2	fail=1	flips=2	retrysteps=1	Dashboard counts and values reflect the delivered submittal	
+E2E-SMK-10	Management Dashboard	Management Dashboard	Failed	2026-11-11T10:34	e2e-smoke	runs=13	pass=0	fail=3	flips=1	retrysteps=4	Alerts, notifications and tasks for the run records	Alerts › click the new-submittal alert → a link, if offered, opens the Procurement Log at  :: Observed: Link opened /submittal-manager · Observed: Link opened /submittal-manager
+ENT-REG-01	Enterprise	Integration	Skipped	2026-11-20T04:27	app-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Integration] Enterprise counts match Procurement	
+ENT-REG-02	Enterprise	Integration	Skipped	2026-11-20T04:27	app-regression	runs=6	pass=0	fail=2	flips=1	retrysteps=2	[Integration] Supplier Inbox lists run items	
+ENT-REG-03	Enterprise	Positive	Skipped	2026-11-20T04:27	app-regression	runs=6	pass=0	fail=2	flips=1	retrysteps=2	[Positive] Download CSV rows = table rows	
+ENT-SMK-01	Enterprise	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Enterprise View loads	
+ENT-SMK-02	Enterprise	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Supplier Inbox loads	
+ENT-SMK-03	Enterprise	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Supplier Performance loads	
+ENT-SMK-04	Enterprise	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Lead Time Benchmarks loads	
+FDI-REG-01	First Delivery Inspections	Integration	Skipped	2026-11-20T04:27	app-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Integration] First delivery creates one inspection	
+FDI-REG-01a	First Delivery Inspections	Negative	Skipped	2026-11-20T04:27	app-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Negative] Second delivery creates none	
+FDI-REG-01b	First Delivery Inspections	Negative	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Negative] One inspection per material (FDI-R1)	
+FDI-REG-01c	First Delivery Inspections	Role	Skipped	2026-11-20T04:27	app-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Role] Access needed	
+FDI-REG-02	First Delivery Inspections	Dependent	Skipped	2026-11-20T04:27	app-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Dependent] Needs an unassigned run inspection	
+FDI-REG-03	First Delivery Inspections	Dependent	Skipped	2026-11-20T04:27	app-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Dependent] Needs an unassigned run inspection	
+FDI-REG-04	First Delivery Inspections	Positive	Passed	2026-11-20T04:27	app-regression	runs=6	pass=4	fail=2	flips=1	retrysteps=2	[Positive] Filters narrow rows	
+FDI-REG-05	First Delivery Inspections	Info	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Info] No FDI audit trail (PL-R10)	
+FDI-REG-06	First Delivery Inspections	Positive	Passed	2026-11-20T14:07	app-regression	runs=7	pass=3	fail=0	flips=3	retrysteps=0	[Positive] Self Assign	
+FDI-REG-07	First Delivery Inspections	Positive	Passed	2026-11-20T14:07	app-regression	runs=7	pass=3	fail=0	flips=3	retrysteps=0	[Positive] Unassign Self and reassign	
+FDI-REG-08	First Delivery Inspections	Negative	Passed	2026-11-20T14:07	app-regression	runs=7	pass=3	fail=0	flips=3	retrysteps=0	[Negative] Photo required	
+FDI-REG-09	First Delivery Inspections	Positive	Passed	2026-11-20T14:07	app-regression	runs=7	pass=3	fail=0	flips=3	retrysteps=0	[Positive] Save Progress keeps answers	
+FDI-REG-10	First Delivery Inspections	Positive	Passed	2026-11-20T14:07	app-regression	runs=7	pass=3	fail=0	flips=3	retrysteps=0	[Positive] Submit inspection (FAIL path, FDI-REG-11)	
+FDI-REG-11	First Delivery Inspections	Dependent	Skipped	2026-11-20T04:27	app-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Dependent] Needs an unassigned run inspection	
+FDI-REG-12	First Delivery Inspections	Integration	Skipped	2026-11-20T04:27	app-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Integration] Sync to Provider	
+FDI-SMK-01	First Delivery Inspections	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Page loads	
+INV-REG-01	Inventory Management	Integration	Passed	2026-11-20T08:26	inv-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Integration] GRN creates Incoming Load	
+INV-REG-02	Inventory Management	Positive	Passed	2026-11-20T08:26	inv-regression	runs=7	pass=3	fail=4	flips=3	retrysteps=4	[Positive] Issue To Construction	
+INV-REG-03	Inventory Management	Positive	Skipped	2026-11-20T08:26	inv-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Positive] Loss	
+INV-REG-04	Inventory Management	Integration	Passed	2026-11-20T08:26	inv-regression	runs=5	pass=4	fail=1	flips=2	retrysteps=1	[Integration] Return reduces stock and writes back to Procurement	
+INV-REG-05	Inventory Management	Integration	Passed	2026-11-20T08:26	inv-regression	runs=5	pass=4	fail=1	flips=2	retrysteps=1	[Integration] Manual Incoming on a partial schedule	
+INV-REG-06	Inventory Management	Negative	Passed	2026-11-20T08:26	inv-regression	runs=5	pass=4	fail=1	flips=2	retrysteps=1	[Negative] Incoming beyond the scheduled quantity rejected	
+INV-REG-07	Inventory Management	Negative	Passed	2026-11-20T08:26	inv-regression	runs=5	pass=4	fail=1	flips=2	retrysteps=1	[Negative] Overdraw rejected	
+INV-REG-08	Inventory Management	Negative	Passed	2026-11-20T08:26	inv-regression	runs=5	pass=4	fail=1	flips=2	retrysteps=1	[Negative] QTY 0 rejected	
+INV-REG-09	Inventory Management	Negative	Failed	2026-11-20T08:26	inv-regression	runs=7	pass=0	fail=7	flips=0	retrysteps=7	[Negative] QTY with 3 decimals	Ledger › "Add Activity": action "Loss", QTY 1.555, "ADD" → form stays open with a "2 decim :: Observed: Invalid data provided. Invalid data provided. · Observed: Invalid data provided. Invalid data provided.
+INV-REG-10	Inventory Management	Negative	Passed	2026-11-20T08:26	inv-regression	runs=5	pass=4	fail=1	flips=2	retrysteps=1	[Negative] Internal Movement to the same location	
+INV-REG-11	Inventory Management	Positive	Failed	2026-11-20T08:26	inv-regression	runs=5	pass=4	fail=1	flips=1	retrysteps=1	[Positive] Internal Movement between two locations	Row "⋮" › "Location": note QTY at source and destination; Ledger › "Add Activity": "Intern :: 
+INV-REG-12	Inventory Management	Positive	Failed	2026-11-20T08:26	inv-regression	runs=5	pass=3	fail=2	flips=3	retrysteps=2	[Positive] Available stock hint = location balance	Row "⋮" › "Location" → QTY of the From Location row equals the "Available at" hint :: 
+INV-REG-13	Inventory Management	Positive	Passed	2026-11-20T08:26	inv-regression	runs=5	pass=4	fail=1	flips=2	retrysteps=1	[Positive] Pickers filtered by material	
+INV-REG-14	Inventory Management	Negative	Known Defect	2026-11-20T08:26	inv-regression	runs=7	pass=2	fail=0	flips=4	retrysteps=0	[Negative] Schedule must match the submittal	Ledger › "Add Activity": "Loss" QTY 1, pick Submittal A + its Schedule, change Submittal t :: Observed: A PLD1102-SUB-07 (PLD1102-PO-07) → B PLR2611171520-SUB-A; new row: Loss PLR2611171520-SPEC-A 07/12/2026-PLD1102-PO-07 43 Inches Gate 5 20/11/2026 1 -1 / Incoming Load RCV-000188 PLD1102-SPEC-07 07/12/2026-PLD11
+INV-REG-15	Inventory Management	Positive	Failed	2026-11-20T08:26	inv-regression	runs=7	pass=0	fail=7	flips=0	retrysteps=7	[Positive] Grid refreshes after an activity	Ledger › "Add Activity": action "Loss", QTY 1, "ADD"; Escape, sidebar › "Inventory Managem :: Observed: Grid 605, expected 604 · Observed: Grid 604, expected 603
+INV-REG-16	Inventory Management	Negative	Passed	2026-11-20T08:26	inv-regression	runs=6	pass=3	fail=2	flips=4	retrysteps=2	[Negative] Upload is all-or-nothing	
+INV-REG-17	Inventory Management	Positive	Passed	2026-11-20T08:26	inv-regression	runs=6	pass=3	fail=2	flips=4	retrysteps=4	[Positive] Upload valid file applies rows top to bottom	
+INV-REG-18	Inventory Management	Positive	Failed	2026-11-20T08:26	inv-regression	runs=8	pass=1	fail=5	flips=5	retrysteps=5	[Positive] Upload available stock matches the ledger	Compare the "available" figure from the upload error file with the ledger "Closing Balance :: Observed: Upload says 89, ledger 599 (INV-R3: watch item) · Observed: Upload says 89, ledger 599 (INV-R3: watch item)
+INV-REG-19	Inventory Management	Positive	Passed	2026-11-20T08:26	inv-regression	runs=7	pass=6	fail=1	flips=2	retrysteps=2	[Positive] Upload with optional columns blank	
+INV-REG-20	Inventory Management	Positive	Failed	2026-11-20T08:26	inv-regression	runs=7	pass=0	fail=7	flips=0	retrysteps=7	[Positive] Ledger columns	Ledger → "Submittal" column of a run row (PL…-) → value contains "-SUB-", the Submittal No :: Observed: Submittal cell: PLD1102-SPEC-07 · Observed: Submittal cell: PLD1102-SPEC-07
+INV-REG-21	Inventory Management	Integration	Skipped	2026-11-20T08:26	inv-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Integration] Damaged units counted as received (PL-R16)	
+INV-REG-22	Inventory Management	Positive	Failed	2026-11-20T08:26	inv-regression	runs=7	pass=0	fail=7	flips=0	retrysteps=7	[Positive] Export is the balance list (INV-R2)	Inventory Management › "Export" → xlsx header contains Material ID, Material Name, Invento :: Observed: Inventory Activity ID | Material Name | Item Name | Action | Site Name | From Location | To Location | Action Quantity | Total Value | Supplier Name | Subcontractor ID | Comments | Added By | Created At · Obser
+INV-REG-23	Inventory Management	Positive	Failed	2026-11-20T08:26	inv-regression	runs=7	pass=0	fail=7	flips=0	retrysteps=7	[Positive] Site isolation	Reload the page → header still shows the second site (OBS-INV-12 if it reverts) :: Observed: After reload: Site T2 Pmr2-2611201108 · Observed: After reload: Site T2 Pmr2-2611201108
+INV-REG-24	Inventory Management	Positive	Skipped	2026-11-20T08:26	inv-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Positive] History date filter inclusive	
+INV-REG-25	Inventory Management	Known Defect	Skipped	2026-11-20T08:26	inv-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Known Defect] Activity date picker	
+INV-REG-SETUP	Inventory Management	Setup	Passed	2026-11-20T08:26	inv-regression	runs=10	pass=8	fail=2	flips=4	retrysteps=2	[Setup] Sign in on NRVC_Hall	
+INV-SMK-01	Inventory Management	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Page loads	
+INV-SMK-02	Inventory Management	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Search by name, ID, category; no match	
+INV-SMK-03	Inventory Management	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Location filter	
+INV-SMK-04	Inventory Management	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Row menu views	
+INV-SMK-05	Inventory Management	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Add Activity validation	
+INV-SMK-06	Inventory Management	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Upload dialog and template	
+INV-SMK-07	Inventory Management	Smoke	Known Defect	2026-11-10T07:14	app-smoke	runs=2	pass=1	fail=0	flips=1	retrysteps=0	Export	Inventory Management › "Export" → file Inventory_Report_<yyyymmdd>.xlsx downloads :: 
+INV-SMK-08	Inventory Management	Smoke	Failed	2026-11-10T07:14	app-smoke	runs=2	pass=0	fail=2	flips=0	retrysteps=2	Receive booking dialog	Receive booking dialog: wait 1.5 s, click "Cancel" → no "Invalid project_id, not found in  :: 
+PL-FLOW-01	Procurement Log	Positive	Passed	2026-11-10T08:11	procurement	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Sign in, select NRVC_Hall and site Warehoust _NR	
+PL-FLOW-02	Procurement Log	Positive	Passed	2026-11-10T08:11	procurement	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Procurement Log opens from the menu with submittals and its toolbar	
+PL-FLOW-03	Procurement Log	Positive	Passed	2026-11-10T08:11	procurement	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Exact search returns the one matching submittal; clearing restores the list	
+PL-FLOW-04	Procurement Log	Negative	Passed	2026-11-10T08:11	procurement	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Negative] Search for a value that does not exist shows no submittals; clearing restores the list	
+PL-FLOW-05	Procurement Log	Positive	Passed	2026-11-10T08:11	procurement	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Filters panel opens and closes without changing the list	
+PL-FLOW-06	Procurement Log	Positive	Passed	2026-11-10T08:11	procurement	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] "Only my watched" narrows the list and unticking restores it	
+PL-FLOW-07	Procurement Log	Negative	Passed	2026-11-10T08:11	procurement	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Negative] Add Submittal with empty required fields is rejected and closed without saving	
+PL-FLOW-08	Procurement Log	Positive	Passed	2026-11-10T08:11	procurement	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Columns menu opens and closes; the table keeps its columns	
+PL-REG-ADD-01	Procurement Log	Positive	Passed	2026-11-20T08:22	pl-regression	runs=10	pass=10	fail=0	flips=0	retrysteps=0	[Positive] Create a submittal (supplier + material)	
+PL-REG-ADD-02	Procurement Log	Negative	Passed	2026-11-20T13:20	pl-regression3	runs=15	pass=15	fail=0	flips=0	retrysteps=0	[Negative] Add Submittal required fields	
+PL-REG-ADD-03	Procurement Log	Negative	Passed	2026-11-20T08:22	pl-regression	runs=10	pass=9	fail=1	flips=2	retrysteps=1	[Negative] Schedule Id accepts digits only	
+PL-REG-ADD-04	Procurement Log	Negative	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=4	fail=1	flips=1	retrysteps=1	[Negative] Materials need a supplier first	
+PL-REG-ADD-05	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=4	fail=1	flips=1	retrysteps=1	[Positive] Supplier filters materials (searchable)	
+PL-REG-ADD-06	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Multiple materials, first picked is primary	
+PL-REG-ADD-07	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Skip for Now stores "Pending"	
+PL-REG-ADD-08	Procurement Log	Negative	Passed	2026-11-20T08:22	pl-regression	runs=10	pass=10	fail=0	flips=0	retrysteps=0	[Negative] Duplicate Submittal No + Material rejected (case and spaces ignored)	
+PL-REG-ADD-09	Procurement Log	Positive	Passed	2026-11-20T08:22	pl-regression	runs=10	pass=10	fail=0	flips=0	retrysteps=0	[Positive] Same Submittal No with a different material is allowed (PL-R3)	
+PL-REG-ADD-10	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=15	pass=15	fail=0	flips=0	retrysteps=5	[Positive] Custom number field is saved	
+PL-REG-ADD-11	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=15	pass=15	fail=0	flips=0	retrysteps=0	[Positive] Spec value fills every Spec Section No column	
+PL-REG-ADD-12	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=15	pass=14	fail=1	flips=2	retrysteps=1	[Positive] Create a new material and attach it	
+PL-REG-ALR-01	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Create an alert rule	
+PL-REG-ALR-02	Procurement Log	Negative	Failed	2026-11-20T13:20	pl-regression3	runs=14	pass=0	fail=14	flips=0	retrysteps=14	[Negative] Create Alert validates required fields	Search PLT2611201320-SUB-P, row menu › "Alert", "Add Alert", click "Submit" empty → no "Fa :: 
+PL-REG-ALR-03	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=14	fail=0	flips=0	retrysteps=0	[Positive] Edit an alert rule	
+PL-REG-ALR-04	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=14	fail=0	flips=0	retrysteps=0	[Positive] Delete an alert rule	
+PL-REG-ALR-05	Procurement Log	Integration	Skipped	2026-11-20T13:20	pl-regression3	runs=14	pass=0	fail=0	flips=0	retrysteps=0	[Integration] Alert fires (daily batch, two-phase)	
+PL-REG-CMP-01	Procurement Log	Negative	Passed	2026-11-20T08:22	pl-regression	runs=10	pass=9	fail=1	flips=2	retrysteps=1	[Negative] Add Component requires date and quantity	
+PL-REG-CMP-02	Procurement Log	Positive	Passed	2026-11-20T08:22	pl-regression	runs=10	pass=9	fail=1	flips=2	retrysteps=1	[Positive] Component with PO is Ordered; Expected = PO date + lead time	
+PL-REG-CMP-03	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Positive] Component without PO is Not Ordered	
+PL-REG-CMP-04	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=15	pass=14	fail=1	flips=2	retrysteps=2	[Positive] Add Component defaults: primary material, UoM read-only	
+PL-REG-CMP-05	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=15	pass=14	fail=1	flips=2	retrysteps=1	[Positive] Currency defaults to the project currency	
+PL-REG-CMP-06	Procurement Log	Positive	Passed	2026-11-20T08:22	pl-regression	runs=10	pass=9	fail=1	flips=2	retrysteps=1	[Positive] Lead Time update moves Expected Delivery	
+PL-REG-CMP-07	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=14	fail=0	flips=0	retrysteps=0	[Positive] Order (Edit Component) changes the quantity	
+PL-REG-CMP-08	Procurement Log	Positive	Known Defect	2026-11-20T08:22	pl-regression	runs=10	pass=0	fail=1	flips=2	retrysteps=1	[Positive] Update Status to Delivered shows on component and submittal (PL-R13)	Component row › "Other Actions ▾" › "Update Status": choose status "Delivered", note PLR26 :: 
+PL-REG-CMP-09	Procurement Log	Positive	Failed	2026-11-20T13:20	pl-regression3	runs=14	pass=0	fail=14	flips=0	retrysteps=14	[Positive] Update Status to Ordered At Risk	Component row › "Other Actions ▾" › "Update Status": status "Ordered At Risk", comment "PL :: 
+PL-REG-CMP-10	Procurement Log	Positive	Passed	2026-11-20T08:22	pl-regression	runs=10	pass=9	fail=1	flips=2	retrysteps=1	[Positive] Trigger Alert sends the notification (PL-R1/PL-R14)	
+PL-REG-CMP-11	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=14	fail=0	flips=0	retrysteps=0	[Positive] Audit Trail records the change	
+PL-REG-CMP-12	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=4	fail=1	flips=1	retrysteps=1	[Positive] Bulk Set Lead Time with confirmation	
+PL-REG-CMP-13	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=4	fail=1	flips=1	retrysteps=1	[Positive] Shift ROJ +7 calendar days with preview	
+PL-REG-CMP-14	Procurement Log	Boundary	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=14	fail=0	flips=0	retrysteps=0	[Boundary] Shift ROJ skips committed (ordered) lines	
+PL-REG-CMP-15	Procurement Log	Negative	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=4	fail=1	flips=1	retrysteps=1	[Negative] Shift ROJ: Apply disabled until Preview	
+PL-REG-CMP-16	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=4	fail=1	flips=1	retrysteps=1	[Positive] Upload PO File (PDF)	
+PL-REG-CMP-17	Procurement Log	Negative	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=4	fail=1	flips=1	retrysteps=1	[Negative] Upload PO File without a file	
+PL-REG-CMP-18	Procurement Log	Positive	Failed	2026-11-20T05:31	pl-regression2	runs=7	pass=2	fail=5	flips=3	retrysteps=5	[Positive] Delete component	Reload the submittal page, component row "Other Actions ▾" › "Delete", confirm "Delete" →  :: 
+PL-REG-CMP-19	Procurement Log	Positive	Failed	2026-11-20T13:20	pl-regression3	runs=14	pass=0	fail=14	flips=0	retrysteps=14	[Positive] Values use the project currency symbol	Reopen submittal, expand the component row → "Value" starts with ₹ (project currency INR) :: Observed: Expanded value: $1,000.00 · Observed: Expanded value: $1,000.00
+PL-REG-DLV-01	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=11	fail=3	flips=4	retrysteps=3	[Positive] Log a full delivery	
+PL-REG-DLV-02	Procurement Log	Negative	Passed	2026-11-20T05:31	pl-regression2	runs=6	pass=5	fail=1	flips=2	retrysteps=1	[Negative] Over-delivery is blocked	
+PL-REG-DLV-03	Procurement Log	Negative	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=11	fail=3	flips=4	retrysteps=6	[Negative] Checklist needs every answer and comment	
+PL-REG-DLV-04	Procurement Log	Negative	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=11	fail=3	flips=4	retrysteps=3	[Negative] A NO answer blocks Confirm Checklist (PL-R16)	
+PL-REG-DLV-05	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=11	fail=3	flips=4	retrysteps=3	[Positive] Confirm the checklist	
+PL-REG-DLV-06	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=7	fail=7	flips=6	retrysteps=7	[Positive] Approve the checklist	
+PL-REG-DLV-07	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=8	fail=6	flips=4	retrysteps=9	[Positive] Reject and resubmit the checklist	
+PL-REG-DLV-08	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=8	fail=6	flips=4	retrysteps=6	[Positive] Set the actual delivery date	
+PL-REG-DLV-09	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=8	fail=6	flips=4	retrysteps=6	[Positive] Shipping info	
+PL-REG-DLV-10	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=8	fail=6	flips=4	retrysteps=6	[Positive] Delivery conditions (all good)	
+PL-REG-DLV-11	Procurement Log	Positive	Skipped	2026-11-20T08:22	pl-regression	runs=9	pass=6	fail=2	flips=3	retrysteps=3	[Positive] Remaining 6 delivered → Delivered	
+PL-REG-DLV-11b	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=8	fail=6	flips=4	retrysteps=6	[Positive] Generate GRN → Partial Delivery (4 of 12)	
+PL-REG-DLV-12	Procurement Log	Positive	Skipped	2026-11-20T08:22	pl-regression	runs=9	pass=0	fail=0	flips=3	retrysteps=0	[Positive] Delivered row shows its Actual Delivery Date (PL-R6)	
+PL-REG-DLV-13	Procurement Log	Positive	Failed	2026-11-20T08:22	pl-regression	runs=9	pass=0	fail=1	flips=1	retrysteps=1	[Positive] Partial delivery 4 of 10 → Partial Delivery	Component view › "+ Log Delivery": QTY 4 (today, first location, item name); complete pre- :: 
+PL-REG-DLV-16	Procurement Log	Positive	Failed	2026-11-20T13:20	pl-regression3	runs=14	pass=7	fail=7	flips=7	retrysteps=8	[Positive] Component header shows the unit of measure	Reload component view, read "Required QTY" in the header → value shown with its unit (no " :: Observed: Required QTY: 12 undefined · Observed: Required QTY: 12 undefined
+PL-REG-DLV-17	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=10	fail=4	flips=6	retrysteps=4	[Positive] QR label downloads (PNG and PDF)	
+PL-REG-DLV-18	Procurement Log	Positive	Failed	2026-11-20T13:20	pl-regression3	runs=14	pass=0	fail=14	flips=0	retrysteps=14	[Positive] Files tab lists the component files	Click the "Files" tab → delivery table (Location column) is replaced by the files list :: 
+PL-REG-DLV-19	Procurement Log	Boundary	Failed	2026-11-20T13:20	pl-regression3	runs=14	pass=0	fail=14	flips=0	retrysteps=14	[Boundary] Required Remaining Qty subtracts logged deliveries (PL-R15)	Click "+ Log Delivery", read "Required Remaining Qty", close → value starts with 8 (12 ord :: Observed: Required Remaining Qty: 12 Pieces · Observed: Required Remaining Qty: 12 Pieces
+PL-REG-EDT-01	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Edit submittal description	
+PL-REG-EDT-02	Procurement Log	Negative	Known Defect	2026-11-20T08:22	pl-regression	runs=10	pass=0	fail=0	flips=0	retrysteps=0	[Negative] Edit cannot create a duplicate Submittal No + Material	Search submittal C, row actions › "Edit": replace its material with A's material, click "U :: 
+PL-REG-EDT-03	Procurement Log	Positive	Passed	2026-11-20T08:22	pl-regression	runs=9	pass=5	fail=4	flips=2	retrysteps=4	[Positive] Assign Responsible on a row	
+PL-REG-EDT-04	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=15	pass=11	fail=4	flips=2	retrysteps=4	[Positive] Bulk Assign Responsible on two run rows	
+PL-REG-EDT-05	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Flag International	
+PL-REG-EDT-06	Procurement Log	Negative	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Negative] Flag International requires a country	
+PL-REG-EDT-07	Procurement Log	Integration	Failed	2026-11-20T13:20	pl-regression3	runs=14	pass=0	fail=14	flips=0	retrysteps=20	[Integration] International Shipments shows the procurement date and status	Check the International Shipments row → it contains the component Required Date (today+28  :: 
+PL-REG-EDT-08	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Row Delete removes a run-created submittal	
+PL-REG-EDT-09	Procurement Log	Negative	Passed	2026-11-20T13:20	pl-regression3	runs=15	pass=15	fail=0	flips=0	retrysteps=0	[Negative] Delete → Cancel keeps the record	
+PL-REG-EDT-10	Procurement Log	Positive	Passed	2026-11-20T08:22	pl-regression	runs=9	pass=9	fail=0	flips=0	retrysteps=0	[Positive] Bulk Delete removes two run-created submittals	
+PL-REG-EDT-11	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=15	pass=15	fail=0	flips=0	retrysteps=0	[Positive] Submittal No can be updated (PL-R12)	
+PL-REG-IMP-01	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	[Positive] Import a submittal (Source = Manual)	
+PL-REG-IMP-02	Procurement Log	Negative	Passed	2026-11-20T05:31	pl-regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	[Negative] Import with Source empty fails as a whole	
+PL-REG-IMP-03	Procurement Log	Negative	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=14	fail=0	flips=0	retrysteps=0	[Negative] Import a duplicate Submittal No + Material is rejected	
+PL-REG-IMP-04	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=14	fail=0	flips=0	retrysteps=0	[Positive] Import two rows	
+PL-REG-IMP-05	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=14	fail=0	flips=0	retrysteps=0	[Positive] Import a component	
+PL-REG-IMP-06	Procurement Log	Negative	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=14	fail=0	flips=0	retrysteps=0	[Negative] Import a component for an unknown submittal fails	
+PL-REG-IMP-07	Procurement Log	Integration	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=14	fail=0	flips=0	retrysteps=0	[Integration] Template columns follow the log configuration	
+PL-REG-IMP-08	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Export follows the current filter	
+PL-REG-IMP-09	Procurement Log	Positive	Known Defect	2026-11-20T13:20	pl-regression3	runs=14	pass=0	fail=0	flips=0	retrysteps=0	[Positive] Export has the grid columns	Reload, search PLT2611201320, click "Export" and open the xlsx → every grid column header  :: Observed: Missing in export: Schedule Id, Source, Total Count 1386, Total Count 1574, Total Count 15, Total Count 87, Responsible
+PL-REG-IMP-10	Procurement Log	Integration	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=14	fail=0	flips=0	retrysteps=0	[Integration] Upload history lists the run uploads	
+PL-REG-INT-01	Procurement Log	Integration	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=8	fail=0	flips=4	retrysteps=0	[Integration] First delivery of a new material creates one FDI record (FDI-R1)	
+PL-REG-INT-03	Procurement Log	Integration	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=8	fail=0	flips=4	retrysteps=0	[Integration] Received quantity reaches Inventory	
+PL-REG-INT-04	Procurement Log	Integration	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=14	fail=0	flips=0	retrysteps=0	[Integration] Log Configuration fields appear as grid columns	
+PL-REG-LST-01	Procurement Log	Positive	Passed	2026-11-20T08:22	pl-regression	runs=10	pass=10	fail=0	flips=0	retrysteps=0	[Positive] Default date range is today − 1 month → today (PL-R11)	
+PL-REG-LST-02	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=15	pass=15	fail=0	flips=0	retrysteps=15	[Positive] Date range filters on Created At	
+PL-REG-LST-03	Procurement Log	Negative	Passed	2026-11-20T13:20	pl-regression3	runs=15	pass=15	fail=0	flips=0	retrysteps=0	[Negative] Date inputs are read-only	
+PL-REG-LST-04	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Search runs on Enter and ignores case	
+PL-REG-LST-05	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Clearing the search restores the list	
+PL-REG-LST-06	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=5	fail=0	flips=0	retrysteps=5	[Positive] Status filter shows only the ticked status	
+PL-REG-LST-07	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Advanced Filter Contains ignores case	
+PL-REG-LST-08	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Clear Filter closes the panel and restores the list	
+PL-REG-LST-09	Procurement Log	Positive	Failed	2026-11-20T13:20	pl-regression3	runs=15	pass=0	fail=15	flips=0	retrysteps=15	[Positive] Advanced Filter numeric operator	Reload, "Filters" › "Add Condition": custom number field, operator ">=", value 7, "Apply F :: Observed: 0 rows with Total Count 1386 >= 7 · Observed: 0 rows with Total Count 1386 >= 7
+PL-REG-LST-10	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=15	pass=15	fail=0	flips=0	retrysteps=1	[Positive] Two conditions combine	
+PL-REG-LST-11	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=15	pass=15	fail=0	flips=0	retrysteps=0	[Positive] Only my watched sends the watch filter (PL-R8)	
+PL-REG-LST-12	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Hide and show a column	
+PL-REG-LST-13	Procurement Log	Positive	Passed	2026-11-20T08:22	pl-regression	runs=10	pass=10	fail=0	flips=0	retrysteps=0	[Positive] Sorting by Submittal No is ascending on first click	
+PL-REG-LST-14	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=15	pass=12	fail=3	flips=2	retrysteps=3	[Positive] Second click sorts descending	
+PL-REG-LST-15	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Rows per page 100 shows all rows on one page	
+PL-REG-LST-16	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Filters reset on reload; project kept	
+PL-REG-LST-17	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=14	fail=0	flips=0	retrysteps=0	[Positive] Deep link opens the submittal	
+PL-REG-LST-18	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=14	fail=0	flips=0	retrysteps=0	[Positive] Deep link opens the component view	
+PL-REG-LST-19	Procurement Log	Integration	Passed	2026-11-20T13:20	pl-regression3	runs=14	pass=14	fail=0	flips=0	retrysteps=2	[Integration] Grid rolls up the component date and status	
+PL-REG-LST-20	Procurement Log	Role	Passed	2026-11-20T13:20	pl-regression3	runs=15	pass=15	fail=0	flips=0	retrysteps=0	[Role] bulk_edit_log is accessible to Project Admin (PL-R7)	
+PL-REG-MAT-01	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Create a new material from the drawer	
+PL-REG-MAT-02	Procurement Log	Negative	Passed	2026-11-20T13:20	pl-regression3	runs=15	pass=15	fail=0	flips=0	retrysteps=0	[Negative] New material form validation	
+PL-REG-MAT-03	Procurement Log	Positive	Passed	2026-11-20T13:20	pl-regression3	runs=15	pass=14	fail=1	flips=2	retrysteps=1	[Positive] Add an existing material from the list	
+PL-REG-MAT-04	Procurement Log	Positive	Passed	2026-11-20T05:31	pl-regression2	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Remove a non-primary material	
+PL-REG-SETUP	Procurement Log	Setup	Passed	2026-11-20T08:22	pl-regression	runs=10	pass=10	fail=0	flips=0	retrysteps=0	[Setup] Sign in on NRVC_Hall	
+PL-REG2-SETUP	Procurement Log	Setup	Passed	2026-11-20T05:31	pl-regression2	runs=8	pass=8	fail=0	flips=0	retrysteps=0	[Setup] Sign in on NRVC_Hall	
+PL-REG3-SETUP	Procurement Log	Setup	Passed	2026-11-20T13:20	pl-regression3	runs=15	pass=15	fail=0	flips=0	retrysteps=0	[Setup] Sign in on NRVC_Hall	
+PL-SMK-001	Procurement Log	Smoke	Passed	2026-11-10T06:50	pl-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Open Procurement Log on NRVC_Hall	
+PL-SMK-002	Procurement Log	Smoke	Passed	2026-11-10T06:50	pl-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Toolbar controls render	
+PL-SMK-003	Procurement Log	Smoke	Passed	2026-11-10T06:50	pl-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Grid columns and pagination render	
+PL-SMK-004	Procurement Log	Smoke	Passed	2026-11-10T06:50	pl-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Status filter options	
+PL-SMK-005	Procurement Log	Smoke	Passed	2026-11-10T06:50	pl-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Advanced Filter panel opens and clears	
+PL-SMK-006	Procurement Log	Smoke	Passed	2026-11-10T06:50	pl-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Columns panel opens and closes	
+PL-SMK-007	Procurement Log	Smoke	Passed	2026-11-10T06:50	pl-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Add Submittal form and validation	
+PL-SMK-008	Procurement Log	Smoke	Passed	2026-11-10T06:50	pl-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Bulk actions need a selection	
+PL-SMK-009	Procurement Log	Smoke	Passed	2026-11-10T06:50	pl-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Row menu actions	
+PL-SMK-010	Procurement Log	Smoke	Passed	2026-11-10T06:50	pl-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Submittal detail drawer	
+PL-SMK-011	Procurement Log	Smoke	Passed	2026-11-10T06:50	pl-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Component actions and Audit Trail	
+PL-SMK-012	Procurement Log	Smoke	Passed	2026-11-10T06:50	pl-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Component view (deliveries)	
+PL-SMK-013	Procurement Log	Smoke	Passed	2026-11-10T06:50	pl-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Add Delivery form opens	
+PL-SMK-014	Procurement Log	Smoke	Passed	2026-11-10T06:50	pl-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	QR Label dialog	
+PL-SMK-015	Procurement Log	Smoke	Passed	2026-11-10T06:50	pl-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Import menu and template downloads	
+PL-SMK-016	Procurement Log	Smoke	Passed	2026-11-10T06:50	pl-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Export downloads the report	
+PL-SMK-017	Procurement Log	Smoke	Passed	2026-11-10T06:50	pl-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Row Alert panel opens	
+PL-SMK-018	Procurement Log	Smoke	Passed	2026-11-10T06:50	pl-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Flag International dialog opens	
+PM-REG-000	Project Management	Login and project	Passed	2026-11-20T05:38	regression2	runs=17	pass=17	fail=0	flips=0	retrysteps=0	Sign in as Project Admin and select NRVC_Hall	
+PM-REG-BUS-01	Project Management	Bulk Upload Status	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Default date range	
+PM-REG-BUS-02	Project Management	Bulk Upload Status	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Type filter	
+PM-REG-BUS-03	Project Management	Bulk Upload Status	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Uploader search	
+PM-REG-BUS-04	Project Management	Bulk Upload Status	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=5	Date range filtering	
+PM-REG-BUS-05	Project Management	Bulk Upload Status	Known Defect	2026-11-20T05:04	regression	runs=9	pass=4	fail=1	flips=6	retrysteps=1	Status matches outcome	Bulk Upload Status: compare Status with the success/failure file columns → no Success with :: 
+PM-REG-BUS-06	Project Management	Bulk Upload Status	Passed	2026-11-20T05:04	regression	runs=6	pass=5	fail=1	flips=2	retrysteps=1	Success/Failure file links	
+PM-REG-BUS-07	Project Management	Bulk Upload Status	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Download result reports	
+PM-REG-BUS-08	Project Management	Bulk Upload Status	Known Defect	2026-11-20T05:38	regression2	runs=7	pass=0	fail=1	flips=2	retrysteps=2	Every upload screen is tracked	Uploads table → UPL-SITE-02 row: dated today, uploader = signed-in account, type "Sites",  :: Observed: 20/11/2026 | hariharan.r@neuralrays.ai | Sites | - | upl-site-02-PMR2-2611201108.xlsx | UploadSuccess_20261120_062015_hariharan.r@neuralrays.ai.xlsx | -
+PM-REG-BUS-09	Project Management	Bulk Upload Status	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Failed upload is tracked	
+PM-REG-BUS-10	Project Management	Other project › SCP_Testing_Ram	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	History is project-specific	
+PM-REG-BUS-11	Project Management	Bulk Upload Status	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Uploader is captured	
+PM-REG-BUS-12	Project Management	Bulk Upload Status	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Partial-success upload	
+PM-REG-CFG-01	Project Management	Configuration Options	Passed	2026-11-20T05:04	regression	runs=9	pass=9	fail=0	flips=0	retrysteps=0	Current values render	
+PM-REG-CFG-02	Project Management	Configuration Options	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Dropdown option sets	
+PM-REG-CFG-03	Project Management	Configuration Options	Known Defect	2026-11-20T05:04	regression	runs=9	pass=0	fail=0	flips=0	retrysteps=0	Cancel discards changes	Configuration Options: click "Cancel" → first week field returns to the saved value :: 
+PM-REG-CFG-04	Project Management	Configuration Options	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Save and persist alert weeks	
+PM-REG-CFG-05	Project Management	Configuration Options	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Save and persist currency	
+PM-REG-CFG-06	Project Management	Configuration Options	Known Defect	2026-11-20T05:38	regression2	runs=7	pass=0	fail=0	flips=0	retrysteps=0	Week field – non-numeric and negative	First week field: enter "-1", click "Save", reload → value is not saved, original weeks re :: Observed: field shows "-1"; message: (none)
+PM-REG-CFG-07	Project Management	Configuration Options	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Week field – boundaries	
+PM-REG-CFG-08	Project Management	Configuration Options	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Toggle persistence	
+PM-REG-CFG-09	Project Management	Configuration Options	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Pre-Shipping toggle gates checklist	
+PM-REG-CFG-10	Project Management	Configuration Options	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	GRN toggle effect	
+PM-REG-CFG-11	Project Management	Configuration Options	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Archive period effect	
+PM-REG-CFG-12	Project Management	Configuration Options	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Help icons	
+PM-REG-CFG-13	Project Management	Configuration Options	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Not-ordered alert triggers	
+PM-REG-CFG-14	Project Management	Configuration Options	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Not-booked alert triggers	
+PM-REG-CFG-15	Project Management	Configuration Options	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Lead time not confirmed alert	
+PM-REG-CFG-16	Project Management	Configuration Options	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	No alert before threshold	
+PM-REG-CFG-17	Project Management	Configuration Options	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Unconfigured settings: in-app only	
+PM-REG-CFG-18	Project Management	Other project › SCP_Testing_Ram	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Currency is set per project	
+PM-REG-FDI-01	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Section title and labels	
+PM-REG-FDI-02	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Mandatory photo depends on uploads	
+PM-REG-FDI-02a	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	No contradictory state is saved	
+PM-REG-FDI-02b	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Re-enabling uploads re-enables the mandatory box	
+PM-REG-FDI-03	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Unsaved change discarded on reload	
+PM-REG-FDI-04	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=2	Save persists each setting (Yes and No)	
+PM-REG-FDI-05a	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Setting effect on the inspection form	
+PM-REG-FDI-05b	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Setting effect on the inspection form	
+PM-REG-FDI-05c	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Setting effect on the inspection form	
+PM-REG-FDI-05d	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Setting effect on the inspection form	
+PM-REG-FDI-05e	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Setting effect on the inspection form	
+PM-REG-FDI-05f	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Setting effect on the inspection form	
+PM-REG-FDI-05g	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Setting effect on the inspection form	
+PM-REG-FDI-05h	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Setting effect on the inspection form	
+PM-REG-FDI-05i	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Setting effect on the inspection form	
+PM-REG-FDI-05j	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Setting effect on the inspection form	
+PM-REG-FDI-05k	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Setting effect on the inspection form	
+PM-REG-FDI-05l	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Setting effect on the inspection form	
+PM-REG-FDI-05m	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Setting effect on the inspection form	
+PM-REG-FDI-05n	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Setting effect on the inspection form	
+PM-REG-FDI-06	Project Management	Other project › SCP_Testing_Ram	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Settings are per project	
+PM-REG-FDI-06b	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	NRVC_Hall unchanged while SCP_Testing_Ram differs	
+PM-REG-FDI-06c	Project Management	Other project › SCP_Testing_Ram	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Restore SCP_Testing_Ram	
+PM-REG-FDI-07	Project Management	Other project › SCP_Testing_Ram	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Defaults on an unconfigured project	
+PM-REG-FDI-10	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Inspector table content	
+PM-REG-FDI-11	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Invite opens the invite screen; Send disabled when empty	
+PM-REG-FDI-12	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Invite – malformed email	
+PM-REG-FDI-13	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Invite – role required	
+PM-REG-FDI-14	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Invite – valid email + role enables Send	
+PM-REG-FDI-15	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Invite – additional empty row blocks Send	
+PM-REG-FDI-16	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Invite – role options	
+PM-REG-FDI-16a	Project Management	First Delivery Inspection Config	Known Defect	2026-11-20T05:04	regression	runs=10	pass=0	fail=3	flips=2	retrysteps=3	Invite – Organization list is unique	Invite Users form: open the "Choose Organization" dropdown → each organization name appear :: 
+PM-REG-FDI-17	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Invite – Procore tab	
+PM-REG-FDI-18	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Invite → accept → activate → disable	
+PM-REG-FDI-19	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Invite duplicate / existing user email	
+PM-REG-FDI-20	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add Inspector – scope options	
+PM-REG-FDI-21	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add Inspector – Person and Role required	
+PM-REG-FDI-22	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add Inspector – By Category scope	
+PM-REG-FDI-23	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Enable/Disable inspector	
+PM-REG-FDI-24	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Edit materials scope	
+PM-REG-FDI-25	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Several inspectors can be added	
+PM-REG-FDI-25a	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=12	pass=6	fail=0	flips=11	retrysteps=0	Inspector list kept after navigating away	
+PM-REG-FDI-25c	Project Management	Other project › SCP_Testing_Ram	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	One and many inspectors display	
+PM-REG-FDI-26	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Invite several people at once	
+PM-REG-FDI-26a	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Invite from User Management is unaffected	
+PM-REG-FDI-27	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Material mapping: one, several, All Materials	
+PM-REG-FDI-28	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Disabled and pending inspectors cannot self-assign	
+PM-REG-FDI-28a	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Already-assigned records keep a since-disabled inspector	
+PM-REG-FDI-29a	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Pending invite stays disabled	
+PM-REG-FDI-30	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Catch-all warning	
+PM-REG-FDI-31	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=5	fail=1	flips=2	retrysteps=1	New Question Set – form	
+PM-REG-FDI-32	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=5	fail=1	flips=2	retrysteps=1	New Question Set – required	
+PM-REG-FDI-33	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=5	fail=1	flips=2	retrysteps=1	Set Name boundary	
+PM-REG-FDI-34	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=7	pass=6	fail=1	flips=2	retrysteps=2	Create set for a free category	
+PM-REG-FDI-35	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Manage Groups expand/collapse	
+PM-REG-FDI-36	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=5	fail=1	flips=2	retrysteps=4	Add/edit/reorder/delete group	
+PM-REG-FDI-37	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add Question – answer types	
+PM-REG-FDI-38	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=5	fail=1	flips=2	retrysteps=2	Add Question – text and Data Type required	
+PM-REG-FDI-39	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=5	fail=1	flips=2	retrysteps=2	Add Question – enabled at once in the current project	
+PM-REG-FDI-40	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=5	fail=1	flips=2	retrysteps=1	Add from Organization Bank	
+PM-REG-FDI-41	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=5	fail=1	flips=2	retrysteps=2	Reorder and regroup questions	
+PM-REG-FDI-42	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=5	fail=1	flips=2	retrysteps=1	Delete a question	
+PM-REG-FDI-42a	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=5	fail=1	flips=2	retrysteps=1	Show deleted questions lists deleted ones	
+PM-REG-FDI-42b	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Show and hide deleted questions	
+PM-REG-FDI-42c	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=12	pass=5	fail=1	flips=11	retrysteps=1	Empty Questions list	
+PM-REG-FDI-43	Project Management	First Delivery Inspection Config	Known Defect	2026-11-20T05:38	regression2	runs=7	pass=1	fail=1	flips=4	retrysteps=1	Duplicate question set name	"New Question Set": name "SET PMR2-2611201108", category "Cat B PMR2-2611201108", "Create  :: Observed: form closed; message: (none)
+PM-REG-FDI-44	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=5	fail=1	flips=2	retrysteps=1	Duplicate question text	
+PM-REG-FDI-45	Project Management	First Delivery Inspection Config	Passed	2026-11-20T05:38	regression2	runs=6	pass=5	fail=1	flips=2	retrysteps=1	Duplicate group name	
+PM-REG-FDI-46	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	New question offered to the organization's other projects	
+PM-REG-FDI-47	Project Management	Other project › SCP_Testing_Ram	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	New question hidden from other organizations	
+PM-REG-FDI-48	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Enable a shared question on another project	
+PM-REG-FDI-49	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Enabling on one project doesn't spread	
+PM-REG-FDI-50	Project Management	First Delivery Inspection Config	Skipped	2026-11-20T05:04	regression	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Question list requests are organization-scoped	
+PM-REG-INT-01	Project Management	Integrations › Booking Integration	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Booking: SCP Project ID pre-filled	
+PM-REG-INT-02	Project Management	Integrations › Booking Integration	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Booking: submit with empty Booking ID	
+PM-REG-INT-07	Project Management	Integrations › XER Import	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	XER: existing plan listed	
+PM-REG-INT-08	Project Management	Integrations › XER Import	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	XER: reject unsupported file type	
+PM-REG-INT-09	Project Management	Integrations › XER Import	Failed	2026-11-20T05:38	regression2	runs=7	pass=5	fail=2	flips=3	retrysteps=4	XER: import → select two tasks → Save	Plan view › "Manage tasks": tick two tasks that are not visible, click "Save (2 tasks)" →  :: 
+PM-REG-INT-10	Project Management	Integrations › XER Import	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	XER: duplicate file detected by content	
+PM-REG-INT-11	Project Management	Integrations › XER Import	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	XER: Open existing plan creates no copy	
+PM-REG-INT-12	Project Management	Integrations › XER Import	Passed	2026-11-20T05:04	regression	runs=6	pass=5	fail=1	flips=2	retrysteps=3	XER: Manage tasks filters	
+PM-REG-INT-13	Project Management	Integrations › XER Import	Passed	2026-11-20T05:04	regression	runs=6	pass=5	fail=1	flips=2	retrysteps=2	XER: Save with 0 selected (not clicked)	
+PM-REG-INT-14	Project Management	Integrations › XER Import	Passed	2026-11-20T05:04	regression	runs=6	pass=5	fail=1	flips=2	retrysteps=2	XER: selection persists across search	
+PM-REG-INT-15	Project Management	Integrations › XER Import	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	XER: Save sets the visible set to the selection	
+PM-REG-INT-16	Project Management	Integrations › XER Import	Known Defect	2026-11-20T05:04	regression	runs=9	pass=0	fail=3	flips=4	retrysteps=9	XER: row click selects a task	Manage tasks dialog: search DC1-CS-BUE-1180 and click its row checkbox → checkbox becomes  :: 
+PM-REG-INT-19	Project Management	Integrations › XER Import	Passed	2026-11-20T05:04	regression	runs=6	pass=5	fail=1	flips=2	retrysteps=1	XER: Task Selection columns	
+PM-REG-INT-20	Project Management	Integrations › XER Import	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	XER: visibility survives refresh	
+PM-REG-INT-21	Project Management	Integrations › XER Import	Passed	2026-11-20T05:04	regression	runs=6	pass=5	fail=1	flips=2	retrysteps=1	XER: Manage tasks opens with nothing ticked	
+PM-REG-INT-25	Project Management	Integrations › XER Import	Passed	2026-11-20T05:04	regression	runs=6	pass=5	fail=1	flips=2	retrysteps=1	XER: available filters	
+PM-REG-INV-01	Project Management	Inventory Control	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Empty state	
+PM-REG-INV-02	Project Management	Inventory Control	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add Rule – required	
+PM-REG-INV-03	Project Management	Inventory Control	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add Rule – happy path	
+PM-REG-INV-04	Project Management	Inventory Control	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Min greater than Max	
+PM-REG-INV-05	Project Management	Inventory Control	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Negative / zero / decimal	
+PM-REG-INV-06	Project Management	Inventory Control	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Breach notification	
+PM-REG-INV-07	Project Management	Inventory Control	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Rule is site-specific	
+PM-REG-MM-01	Project Management	Material Master	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Paging	
+PM-REG-MM-02	Project Management	Material Master	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Search	
+PM-REG-MM-03	Project Management	Material Master	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Row menu actions	
+PM-REG-MM-04	Project Management	Material Master	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Expand row shows items	
+PM-REG-MM-05	Project Management	Material Master	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add Material – required	
+PM-REG-MM-06	Project Management	Material Master	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add Material – happy path	
+PM-REG-MM-07	Project Management	Material Master	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add Material with Parent + Supplier	
+PM-REG-MM-08	Project Management	Material Master	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add Item – required/boundary	
+PM-REG-MM-09	Project Management	Material Master	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add Item – happy path	
+PM-REG-MM-10	Project Management	Material Master	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Edit material	
+PM-REG-MM-11	Project Management	Material Master	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Delete material in use	
+PM-REG-MM-14	Project Management	Material Master	Passed	2026-11-20T05:04	regression	runs=6	pass=5	fail=0	flips=2	retrysteps=0	Export	
+PM-REG-MM-15	Project Management	Material Master	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Map Supplier / Statistics	
+PM-REG-MM-16	Project Management	Material Master	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Duplicate material name	
+PM-REG-MM-17	Project Management	Material Master	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Duplicate item name	
+PM-REG-NAV-01	Project Management	Navigation	Failed	2026-11-20T05:04	regression	runs=9	pass=0	fail=1	flips=1	retrysteps=2	Every PM leaf opens its route	Left menu: open "PreShipping Checklist" → page opens :: 
+PM-REG-NAV-02	Project Management	Navigation	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Group buttons expand without navigating	
+PM-REG-NAV-03	Project Management	Navigation	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Direct URL access with an active session	
+PM-REG-NAV-04	Project Management	Navigation	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Setup Wizard hidden once setup is complete	
+PM-REG-NAV-05	Project Management	Other project › SCP_Testing_Ram	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	PM data is project-scoped	
+PM-REG-NAV-06	Project Management	Navigation	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Unauthenticated access is redirected	
+PM-REG-NAV-07	Project Management	Other project › SCP_Testing_Ram	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Setup Wizard shown while setup is incomplete	
+PM-REG-NAV-08	Project Management	Navigation	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Setup Wizard disappears after completion	
+PM-REG-NAV-09	Project Management	Navigation	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Wizard data matches module pages	
+PM-REG-PLC-01	Project Management	Procurement Log Configuration	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Locked fields cannot be disabled	
+PM-REG-PLC-02	Project Management	Procurement Log Configuration	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Field Type options	
+PM-REG-PLC-03	Project Management	Procurement Log Configuration	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add field – required	
+PM-REG-PLC-04	Project Management	Procurement Log Configuration	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add custom field	
+PM-REG-PLC-05	Project Management	Procurement Log Configuration	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Enable/disable + Save Changes	
+PM-REG-PLC-06	Project Management	Procurement Log Configuration	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Drag reorder	
+PM-REG-PLC-07	Project Management	Procurement Log Configuration	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Custom field in Add Submittal	
+PM-REG-PLC-08	Project Management	Procurement Log Configuration	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Duplicate field name	
+PM-REG-PLC-09	Project Management	Procurement Log Configuration	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Unsaved changes on navigation	
+PM-REG-PSC-01	Project Management	PreShipping Checklist	Failed	2026-11-20T05:04	regression	runs=6	pass=4	fail=2	flips=3	retrysteps=2	List renders	Project Management › "PreShipping Checklist": open the page → page opens :: 
+PM-REG-PSC-02	Project Management	PreShipping Checklist	Failed	2026-11-20T05:38	regression2	runs=6	pass=5	fail=1	flips=1	retrysteps=3	Enabled tick saves automatically	Sidebar › Project Management › "PreShipping Checklist" → page opens (skipped when it is al :: 
+PM-REG-PSC-03	Project Management	PreShipping Checklist	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Enabled question appears in delivery checklist	
+PM-REG-PSC-04	Project Management	PreShipping Checklist	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Disabled question hidden downstream	
+PM-REG-PSC-05	Project Management	Other project › SCP_Testing_Ram	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Menu item follows the Pre-Shipping toggle	
+PM-REG-REF-01	Project Management	Reference Data › Common Utilities	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Utilities search by name	
+PM-REG-REF-02	Project Management	Reference Data › Common Utilities	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Utilities search by type	
+PM-REG-REF-03	Project Management	Reference Data › Common Utilities	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Utilities no-match search	
+PM-REG-REF-04	Project Management	Reference Data › Common Utilities	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Utility Type dropdown options	
+PM-REG-REF-05	Project Management	Reference Data › Common Utilities	Passed	2026-11-20T05:38	regression2	runs=7	pass=7	fail=0	flips=0	retrysteps=0	Add utility – required fields	
+PM-REG-REF-06	Project Management	Reference Data › Common Utilities	Passed	2026-11-20T05:38	regression2	runs=7	pass=7	fail=0	flips=0	retrysteps=0	Add utility – happy path	
+PM-REG-REF-07	Project Management	Configuration Options	Passed	2026-11-20T05:38	regression2	runs=7	pass=7	fail=0	flips=0	retrysteps=0	New currency utility appears in Configuration Options	
+PM-REG-REF-08	Project Management	Reference Data › Common Utilities	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Edit utility name	
+PM-REG-REF-09	Project Management	Reference Data › Common Utilities	Known Defect	2026-11-20T05:38	regression2	runs=7	pass=0	fail=0	flips=0	retrysteps=0	Duplicate utility name	Common Utilities: search the name again → no duplicate row was created and the item count  :: 
+PM-REG-REF-10	Project Management	Reference Data › Common Utilities	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Utility name boundary	
+PM-REG-REF-11	Project Management	Reference Data › Common Utilities	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Modal close behavior	
+PM-REG-REF-12	Project Management	Reference Data › Common UoM	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add UoM – required	
+PM-REG-REF-13	Project Management	Reference Data › Common UoM	Passed	2026-11-20T05:38	regression2	runs=7	pass=7	fail=0	flips=0	retrysteps=0	Add + edit UoM	
+PM-REG-REF-14	Project Management	Material Master	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	New UoM available in Add Material	
+PM-REG-REF-15	Project Management	Reference Data › Material Category	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add Material Category – required	
+PM-REG-REF-16	Project Management	Reference Data › Material Category	Passed	2026-11-20T05:38	regression2	runs=7	pass=7	fail=0	flips=0	retrysteps=0	Add + edit Material Category	
+PM-REG-REF-17	Project Management	Watched Materials	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	New category flows downstream	
+PM-REG-REF-18	Project Management	Reference Data › Material Category	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Load Defaults	
+PM-REG-REF-19	Project Management	Reference Data › Common UoM / Material Category	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Search on UoM and Category lists	
+PM-REG-REF-20	Project Management	Reference Data › Common UoM	Known Defect	2026-11-20T05:38	regression2	runs=7	pass=0	fail=0	flips=0	retrysteps=0	Duplicate UoM name	Common UoM: search the name again → no duplicate row was created and the item count equals :: 
+PM-REG-REF-21	Project Management	Reference Data › Material Category	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Duplicate Material Category name	
+PM-REG-REF-22	Project Management	Reference Data › Common UoM	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Edit to an existing name (UoM)	
+PM-REG-REF-22b	Project Management	Reference Data › Material Category	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Edit to an existing name (category)	
+PM-REG-REF-23	Project Management	Reference Data › Material Category	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Delete from the row actions (run-created records only)	
+PM-REG-REF-24	Project Management	Other project › SCP_Testing_Ram	Known Defect	2026-11-20T05:38	regression2	runs=7	pass=0	fail=0	flips=0	retrysteps=0	Common UoM belongs to the project	Search "UoM PMR2-2611201108 E" → not listed on this project (UoM belongs to the project, R :: 
+PM-REG-REF-25	Project Management	Other project › SCP_Testing_Ram	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Material Category belongs to the project	
+PM-REG-ROLE-01	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-02	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-03	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-04	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-05	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-06	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-07	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-08	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-09	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-10	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-11	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-12	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-13	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-14	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-15	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-16	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-17	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-18	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-19	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-20	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-21	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-22	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-23	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-ROLE-24	Project Management	Role-based access	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Role-based access	
+PM-REG-SITE-01	Project Management	Site Details	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Dropdown options	
+PM-REG-SITE-02	Project Management	Site Details	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Row menu	
+PM-REG-SITE-03	Project Management	Site Details	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add Site – required	
+PM-REG-SITE-04	Project Management	Site Details	Passed	2026-11-20T05:38	regression2	runs=7	pass=7	fail=0	flips=0	retrysteps=0	Add Site – happy path	
+PM-REG-SITE-05	Project Management	Site Details	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add Location	
+PM-REG-SITE-06	Project Management	Site Details	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Address entry on Add Site	
+PM-REG-SITE-07	Project Management	Site Details	Skipped	2026-11-20T05:38	regression2	runs=6	pass=0	fail=0	flips=0	retrysteps=0	Delete site in use	
+PM-REG-SITE-09	Project Management	Site Details	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Duplicate site name	
+PM-REG-SITE-10	Project Management	Site Details	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Duplicate location name	
+PM-REG-SITE-11	Project Management	Site Details	Failed	2026-11-20T05:04	regression	runs=9	pass=0	fail=7	flips=1	retrysteps=7	Export sites	Site Details: click "Export" → .xlsx downloaded listing as many distinct site names as the :: Observed: page 85 site(s); export 95 row(s), 72 distinct site(s); other projects: Location 1 (PRJSUPCHAPLA0000000063); Location Type shown as an ID in 95 row(s) · Observed: page 85 site(s); export 95 row(s), 72 distinct 
+PM-REG-SUB-01	Project Management	Submittal Manager	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Repurposed notice only	
+PM-REG-SYS-00	Project Management	System Messages	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	No active banner left by earlier automation runs	
+PM-REG-SYS-01	Project Management	System Messages	Passed	2026-11-20T05:04	regression	runs=6	pass=5	fail=1	flips=2	retrysteps=1	Form fields and limits	
+PM-REG-SYS-02	Project Management	System Messages	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Markdown preview	
+PM-REG-SYS-03	Project Management	System Messages	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Body required	
+PM-REG-SYS-04	Project Management	System Messages	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Body 2000 / Title 120 boundary	
+PM-REG-SYS-05	Project Management	System Messages	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Ends before Starts	
+PM-REG-SYS-06	Project Management	System Messages	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Edit pre-fills	
+PM-REG-SYS-07	Project Management	System Messages	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Create scheduled message	
+PM-REG-SYS-08	Project Management	System Messages	Passed	2026-11-20T05:38	regression2	runs=6	pass=4	fail=2	flips=2	retrysteps=2	Active message shows banner	
+PM-REG-SYS-09	Project Management	System Messages	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Inactive / expired not shown	
+PM-REG-SYS-10	Project Management	System Messages	Passed	2026-11-20T05:38	regression2	runs=6	pass=5	fail=0	flips=1	retrysteps=0	Delete message	
+PM-REG-SYS-11	Project Management	System Messages	Skipped	2026-11-20T05:04	regression	runs=6	pass=1	fail=0	flips=1	retrysteps=0	Banner dismiss	
+PM-REG-SYS-12	Project Management	System Messages	Passed	2026-11-20T05:38	regression2	runs=6	pass=3	fail=3	flips=1	retrysteps=3	Warning vs Info styling	
+PM-REG-WM-01	Project Management	Watched Materials	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	No user selected	
+PM-REG-WM-02	Project Management	Watched Materials	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=1	View own watches	
+PM-REG-WM-03	Project Management	Watched Materials	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add watch – type/value lists	
+PM-REG-WM-04	Project Management	Watched Materials	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add category watch	
+PM-REG-WM-05	Project Management	Watched Materials	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Watch appears on Dashboard	
+PM-REG-WM-06	Project Management	Watched Materials	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Duplicate watch	
+PM-REG-WM-07	Project Management	Watched Materials	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Notifications toggle	
+PM-REG-WM-08	Project Management	Watched Materials	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Remove watch	
+PM-REG-WM-09	Project Management	Watched Materials	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Trade watch	
+PM-REG-WM-10	Project Management	Watched Materials	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=1	One user can watch every category	
+PM-SMK-001	Project Management	Login and project	Passed	2026-11-10T09:22	smoke	runs=3	pass=3	fail=0	flips=0	retrysteps=0	Login and open Supply Chain Planner on NRVC_Hall	
+PM-SMK-002	Project Management	Menu	Passed	2026-11-10T09:22	smoke	runs=3	pass=2	fail=1	flips=2	retrysteps=1	Project Management menu structure	
+PM-SMK-003	Project Management	Integrations › Booking Integration	Passed	2026-11-10T09:22	smoke	runs=3	pass=2	fail=1	flips=2	retrysteps=1	Booking Integration page loads	
+PM-SMK-004	Project Management	Integrations › TheLink Integration	Skipped	2026-11-10T09:22	smoke	runs=3	pass=0	fail=0	flips=0	retrysteps=0	TheLink Integration page loads	
+PM-SMK-005	Project Management	Integrations › XER Import	Passed	2026-11-10T09:22	smoke	runs=3	pass=3	fail=0	flips=0	retrysteps=0	XER Import page loads	
+PM-SMK-006	Project Management	Reference Data › Common Utilities	Passed	2026-11-10T09:22	smoke	runs=3	pass=3	fail=0	flips=0	retrysteps=0	Common Utilities list, search and Add form	
+PM-SMK-007	Project Management	Reference Data › Common UoM	Passed	2026-11-10T09:22	smoke	runs=3	pass=3	fail=0	flips=0	retrysteps=0	Common UoM list and Add form	
+PM-SMK-008	Project Management	Reference Data › Material Category	Passed	2026-11-10T09:22	smoke	runs=3	pass=3	fail=0	flips=0	retrysteps=0	Material Category list and Add form	
+PM-SMK-009	Project Management	Configuration Options	Passed	2026-11-10T09:22	smoke	runs=3	pass=3	fail=0	flips=0	retrysteps=0	Configuration Options renders current settings	
+PM-SMK-010	Project Management	First Delivery Inspection Config	Passed	2026-11-10T09:22	smoke	runs=3	pass=3	fail=0	flips=0	retrysteps=0	FDI Config sections render	
+PM-SMK-011	Project Management	First Delivery Inspection Config	Passed	2026-11-10T09:22	smoke	runs=3	pass=3	fail=0	flips=0	retrysteps=0	FDI Invite form gating (no send)	
+PM-SMK-012	Project Management	Inventory Control	Passed	2026-11-10T09:22	smoke	runs=3	pass=3	fail=0	flips=0	retrysteps=0	Inventory Control page loads	
+PM-SMK-013	Project Management	Material Master	Passed	2026-11-10T09:22	smoke	runs=3	pass=3	fail=0	flips=0	retrysteps=0	Material Master list, paging and Add form	
+PM-SMK-014	Project Management	PreShipping Checklist	Passed	2026-11-10T09:22	smoke	runs=3	pass=2	fail=1	flips=2	retrysteps=1	PreShipping Checklist page loads	
+PM-SMK-015	Project Management	Bulk Upload Status	Passed	2026-11-10T09:22	smoke	runs=3	pass=3	fail=0	flips=0	retrysteps=0	Bulk Upload Status filters render	
+PM-SMK-016	Project Management	Procurement Log Configuration	Passed	2026-11-10T09:22	smoke	runs=3	pass=3	fail=0	flips=0	retrysteps=0	Procurement Log Configuration page loads	
+PM-SMK-017	Project Management	Site Details	Passed	2026-11-10T09:22	smoke	runs=3	pass=3	fail=0	flips=0	retrysteps=0	Site Details list and Add form	
+PM-SMK-018	Project Management	Submittal Manager	Passed	2026-11-10T09:22	smoke	runs=3	pass=3	fail=0	flips=0	retrysteps=0	Submittal Manager notice	
+PM-SMK-019	Project Management	System Messages	Passed	2026-11-10T09:22	smoke	runs=3	pass=3	fail=0	flips=0	retrysteps=0	System Messages list and New form (no create)	
+PM-SMK-020	Project Management	Watched Materials	Passed	2026-11-10T09:22	smoke	runs=3	pass=3	fail=0	flips=0	retrysteps=0	Watched Materials user view	
+SCP-DEMO-001	Session	Login	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Sign in, select NRVC_Hall and site Warehoust _NR	
+SCP-DEMO-002	Management Dashboard	Dashboard	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Dashboard, Alerts, Notifications and Tasks tabs open	
+SCP-DEMO-003	Enterprise	Enterprise View	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Enterprise View opens with data	
+SCP-DEMO-004	Enterprise	Supplier Inbox	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Supplier Inbox opens with data	
+SCP-DEMO-005	Enterprise	Supplier Performance	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Supplier Performance opens with data	
+SCP-DEMO-006	Enterprise	Lead Time Benchmarks	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Lead Time Benchmarks opens with data	
+SCP-DEMO-007	Enterprise	Enterprise Shipments	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Enterprise Shipments opens with data	
+SCP-DEMO-008	Procurement Log	Procurement Log	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Submittals are listed	
+SCP-DEMO-009	Procurement Log	Procurement Log	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Negative] No-match search returns nothing; reset restores the list	
+SCP-DEMO-010	Procurement Log	Procurement Log	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Negative] Add Submittal with empty fields is rejected	
+SCP-DEMO-011	First Delivery Inspections	First Delivery Inspections	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Inspections are listed	
+SCP-DEMO-012	First Delivery Inspections	First Delivery Inspections	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] A completed inspection opens read-only and Back returns to the list	
+SCP-DEMO-013	International Shipments	International Shipments	Failed	2026-11-10T08:06	flow	runs=2	pass=1	fail=1	flips=1	retrysteps=2	[Positive] Shipments are listed	The page loads its data :: 
+SCP-DEMO-014	User Management	User Management	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Users are listed	
+SCP-DEMO-015	User Management	User Management	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Negative] Invite Users with empty required fields cannot be sent	
+SCP-DEMO-016	User Management	Supplier List	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Suppliers are listed	
+SCP-DEMO-017	User Management	Supplier List	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Negative] No-match search returns nothing; reset restores the list	
+SCP-DEMO-018	User Management	Supplier List	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Negative] Add Supplier with empty fields is rejected	
+SCP-DEMO-019	Inventory Management	Inventory Management	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Stock for site Warehoust _NR is listed	
+SCP-DEMO-020	Inventory Management	Inventory Management	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Negative] No-match search returns nothing; reset restores the list	
+SCP-DEMO-021	Document Management	All Documents	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] All Documents opens	
+SCP-DEMO-022	Document Management	Spec Documents	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Spec Documents opens	
+SCP-DEMO-023	Document Management	PO Validation	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] PO Validation opens	
+SCP-DEMO-024	Document Management	BOM Validation	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] BOM Validation opens	
+SCP-DEMO-025	Document Management	EPD Report	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] EPD Report opens	
+SCP-DEMO-026	Analytics	Aggregate Stats	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Aggregate Stats opens with data	
+SCP-DEMO-027	Analytics	Lead Time Analysis	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Lead Time Analysis opens with data	
+SCP-DEMO-028	Analytics	Supply Chain Intelligence	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Supply Chain Intelligence opens with data	
+SCP-DEMO-029	Analytics	Emissions Report	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Emissions Report opens with data	
+SCP-DEMO-030	Analytics	Inventory Reports	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Inventory Reports opens with data	
+SCP-DEMO-031	Analytics	Status Report	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Status Report opens with data	
+SCP-DEMO-032	Analytics	SubContractor Issues	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] SubContractor Issues opens with data	
+SCP-DEMO-033	Analytics	Supplier Issues	Passed	2026-11-10T08:06	flow	runs=2	pass=2	fail=0	flips=0	retrysteps=0	[Positive] Supplier Issues opens with data	
+SCP-DEMO-034	Analytics	SubContractor Issues	Failed	2026-11-10T08:06	flow	runs=2	pass=1	fail=1	flips=1	retrysteps=1	[Negative] No-match search returns nothing; reset restores the list	Search for a value that does not exist :: 
+SHP-REG-01	International Shipments	Negative	Passed	2026-11-20T04:27	app-regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	[Negative] Log shipment validation	
+SHP-REG-02	International Shipments	Positive	Passed	2026-11-20T04:27	app-regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	[Positive] Log shipment for a run submittal	
+SHP-REG-03	International Shipments	Integration	Skipped	2026-11-20T04:27	app-regression	runs=6	pass=0	fail=2	flips=1	retrysteps=2	[Integration] Initial status follows procurement (Q-SHP-1)	
+SHP-REG-04	International Shipments	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Edit shipping details	
+SHP-REG-05	International Shipments	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Status change persists	
+SHP-REG-06	International Shipments	Positive	Skipped	2026-11-20T04:27	app-regression	runs=6	pass=0	fail=2	flips=1	retrysteps=2	[Positive] Status change confirmation	
+SHP-REG-07	International Shipments	Integration	Skipped	2026-11-20T04:27	app-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Integration] Flag from Procurement listed once	
+SHP-REG-08	International Shipments	Integration	Skipped	2026-11-20T04:27	app-regression	runs=6	pass=0	fail=2	flips=1	retrysteps=2	[Integration] Required Date from procurement	
+SHP-REG-09	International Shipments	Positive	Skipped	2026-11-20T04:27	app-regression	runs=6	pass=0	fail=2	flips=1	retrysteps=2	[Positive] Open shows the shipment	
+SHP-REG-10	International Shipments	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Search / filters	
+SHP-REG-11	International Shipments	Positive	Failed	2026-11-20T04:27	app-regression	runs=5	pass=3	fail=2	flips=2	retrysteps=5	[Positive] Tabs render	International Shipments (opened first): click tab "Delay Alerts" → no "error" / "something :: 
+SHP-SMK-01	International Shipments	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	International Shipments loads	
+SHP-SMK-02	International Shipments	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Enterprise Shipments loads	
+SHP-SMK-03	International Shipments	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Log shipment form	
+SL-REG-01	User Management	Negative	Passed	2026-11-20T04:27	app-regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	[Negative] Required fields	
+SL-REG-02	User Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=8	pass=5	fail=3	flips=3	retrysteps=2	[Positive] Add supplier	
+SL-REG-03	User Management	Negative	Passed	2026-11-20T04:27	app-regression	runs=7	pass=5	fail=2	flips=4	retrysteps=1	[Negative] Duplicate name (case/space) rejected	
+SL-REG-04	User Management	Negative	Skipped	2026-11-20T04:27	app-regression	runs=6	pass=1	fail=1	flips=2	retrysteps=1	[Negative] Invalid email gets an app message	
+SL-REG-05	User Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=9	pass=5	fail=4	flips=1	retrysteps=7	[Positive] Add as subcontractor	
+SL-REG-06	User Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=6	pass=3	fail=0	flips=3	retrysteps=0	[Positive] Map material 43 Inches	
+SL-REG-07	User Management	Negative	Passed	2026-11-20T04:27	app-regression	runs=6	pass=3	fail=0	flips=3	retrysteps=0	[Negative] Map material validation	
+SL-REG-08	User Management	Integration	Passed	2026-11-20T04:27	app-regression	runs=6	pass=3	fail=0	flips=3	retrysteps=0	[Integration] Mapping drives Procurement material list	
+SL-REG-09	User Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=9	pass=4	fail=5	flips=1	retrysteps=9	[Positive] Bulk map page	
+SL-REG-10	User Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Supplier List Upload – template round trip	
+SL-REG-11	User Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Supplier Map Upload – template round trip	
+SL-REG-12	User Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=6	pass=3	fail=0	flips=3	retrysteps=0	[Positive] Edit supplier	
+SL-REG-13	User Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=9	pass=6	fail=3	flips=1	retrysteps=3	[Positive] Delete supplier (run-owned)	
+SL-REG-14	User Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Export rows = list count	
+SL-REG-15	User Management	Positive	Skipped	2026-11-20T04:27	app-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Positive] Promote to SSO Organisation	
+SL-SMK-01	User Management	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Supplier List loads	
+SL-SMK-02	User Management	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Add Supplier form	
+SL-SMK-03	User Management	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Upload menu	
+SL-SMK-04	User Management	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Row menu	
+SMK-01	Authentication	Authentication	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Login as Project Admin; project and site selected	
+SMK-02	Dashboard	Dashboard	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Baseline KPI, Alert, Notification and Task values	
+SMK-03	Project Management	Project Management	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Create one new material category	
+SMK-04	Project Management	Project Management	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Upload one new material using the new category	
+SMK-05	User Management	User Management	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Create one normal organisation user (Subcontractor, Voyage Control)	
+SMK-06	Supplier Management	Supplier Management	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Create the supplier and map both materials	
+SMK-07	Procurement Log	Procurement Log	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Create one new submittal with only the new material	
+SMK-08	Procurement Log	Procurement Log	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Add the secondary material through Edit Mode	
+SMK-09	Procurement Log	Procurement Log	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Components for the materials of the submittal	
+SMK-10	Procurement Log	Procurement Log	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Verify and confirm lead time	
+SMK-11	Procurement Log	Procurement Log	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Delivery booking for each component	
+SMK-12	Authentication	Authentication	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Logout Project Admin, login Supplier	
+SMK-13	Supplier	Supplier	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Supplier verifies and approves (pre-shipping checklist)	
+SMK-14	Authentication	Authentication	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Logout Supplier, login Subcontractor	
+SMK-15	Subcontractor	Subcontractor	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Subcontractor approves the bookings	
+SMK-16	Authentication	Authentication	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Logout Subcontractor, login Project Admin	
+SMK-17	Procurement Log	Procurement Log	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Actual Delivery Date and shipping details	
+SMK-18	Procurement Log	Procurement Log	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Complete delivery for all components	
+SMK-19	Procurement Log	Procurement Log	Known Defect	2026-11-11T14:38	e2e-smoke	runs=6	pass=0	fail=1	flips=1	retrysteps=2	Generate and verify GRN	Procurement Log: E2E2611111438-SUB → Status "Delivered" (all components) and Actual Delive :: Observed: Status "Delivered", Actual Delivery Date "-"
+SMK-20	Management Dashboard	Management Dashboard	Known Defect	2026-11-11T14:38	e2e-smoke	runs=6	pass=0	fail=1	flips=2	retrysteps=3	Compare previous and current KPI values	Procurement value "E2E Cat 2611111438" → Spend rises by the submittal's total Procurement  :: Observed: Dashboard change 12500 $; Procurement Log 1500 ₹
+SMK-21	Alerts / Notifications / Tasks	Alerts / Notifications / Tasks	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=3	fail=2	flips=2	retrysteps=4	Validate new or updated records	
+SMK-22	Reporting	Reporting	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Detailed execution report generated	
+SMK-23	Authentication	Authentication	Passed	2026-11-11T14:38	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Logout Project Admin	
+T155-01	BUGS-155 Subcontractor pre-shipping checklist	Negative	Skipped	2026-11-20T04:51	tickets	runs=8	pass=2	fail=0	flips=2	retrysteps=0	[Negative] Subcontractor from another organisation cannot fill the checklist	
+T155-02	BUGS-155 Subcontractor pre-shipping checklist	Positive	Skipped	2026-11-20T04:51	tickets	runs=8	pass=2	fail=0	flips=2	retrysteps=0	[Positive] Subcontractor can approve a checklist the supplier filled	
+T155-03	BUGS-155 Subcontractor pre-shipping checklist	Positive	Skipped	2026-11-20T04:51	tickets	runs=8	pass=0	fail=0	flips=0	retrysteps=0	[Positive] Subcontractor in the supplier's organisation can fill the checklist	
+T155-SETUP	BUGS-155 Subcontractor pre-shipping checklist	Setup	Failed	2026-11-20T04:51	tickets	runs=12	pass=7	fail=5	flips=3	retrysteps=5	[Setup] Run submittal(s) with a component and a delivery awaiting the checklist	Submittal F (LG): add, add a component, log a delivery :: 
+T155-SIGNIN	BUGS-155 Subcontractor pre-shipping checklist	Setup	Skipped	2026-11-20T04:51	tickets	runs=8	pass=2	fail=4	flips=2	retrysteps=4	[Setup] Subcontractor sign-in	
+T507-01	BUGS-508/507 Material bulk upload	Positive	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Positive] Comma kept in the material name (BUGS-507)	
+T507-02	BUGS-508/507 Material bulk upload	Positive	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Positive] Other characters kept: ( ) # / -	
+T508-01	BUGS-508/507 Material bulk upload	Positive	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Positive] Template UOM dropdown lists the new units	
+T508-02	BUGS-508/507 Material bulk upload	Positive	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Positive] UOM matched ignoring case; category matched ignoring case/punctuation	
+T508-05	BUGS-508/507 Material bulk upload	Integration	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Integration] One upload: decision step, choices, summary	
+T508-06	BUGS-508/507 Material bulk upload	Positive	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Positive] New category created once and used	
+T508-08	BUGS-508/507 Material bulk upload	Negative	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Negative] Rejected UOM rows are not imported	
+T508-10	BUGS-508/507 Material bulk upload	Positive	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Positive] SKU both blank → default SKU	
+T508-11	BUGS-508/507 Material bulk upload	Negative	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Negative] item_name without conversion is rejected	
+T508-12	BUGS-508/507 Material bulk upload	Boundary	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Boundary] Conversion 0 is rejected	
+T508-13	BUGS-508/507 Material bulk upload	Positive	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Positive] Conversion without item_name → default SKU	
+T508-14	BUGS-508/507 Material bulk upload	Deferred	Skipped	2026-11-20T04:51	tickets	runs=7	pass=0	fail=0	flips=0	retrysteps=0	[Deferred] Cancel upload rolls back	
+T508-17	BUGS-508/507 Material bulk upload	Deferred	Skipped	2026-11-20T04:51	tickets	runs=7	pass=0	fail=0	flips=0	retrysteps=0	[Deferred] Bulk Upload Status matches the outcome	
+T508-18	BUGS-508/507 Material bulk upload	Deferred	Skipped	2026-11-20T04:51	tickets	runs=7	pass=0	fail=0	flips=0	retrysteps=0	[Deferred] Non-Project-Admin has no upload	
+T508-19	BUGS-508/507 Material bulk upload	Deferred	Skipped	2026-11-20T04:51	tickets	runs=7	pass=0	fail=0	flips=0	retrysteps=0	[Deferred] Resume at the decision step	
+T517-01	BUGS-517 Submittal edit rules	Positive	Passed	2026-11-20T04:51	tickets	runs=7	pass=6	fail=0	flips=2	retrysteps=0	[Positive] No components: supplier change saves without a dialog	
+T517-02	BUGS-517 Submittal edit rules	Positive	Passed	2026-11-20T04:51	tickets	runs=7	pass=6	fail=0	flips=2	retrysteps=0	[Positive] No components: primary material change saves	
+T517-03	BUGS-517 Submittal edit rules	Negative	Passed	2026-11-20T04:51	tickets	runs=7	pass=6	fail=0	flips=2	retrysteps=0	[Negative] New supplier does not supply a component material (message 3, server-side)	
+T517-04	BUGS-517 Submittal edit rules	Negative	Passed	2026-11-20T04:51	tickets	runs=8	pass=7	fail=0	flips=2	retrysteps=0	[Negative] Locked by PO: message 4, supplier read-only	
+T517-05	BUGS-517 Submittal edit rules	Negative	Passed	2026-11-20T04:51	tickets	runs=8	pass=7	fail=0	flips=2	retrysteps=0	[Negative] Locked by delivery only: message 4, supplier read-only	
+T517-06	BUGS-517 Submittal edit rules	Negative	Passed	2026-11-20T04:51	tickets	runs=7	pass=6	fail=0	flips=2	retrysteps=0	[Negative] Confirmation dialog wording, Cancel saves nothing	
+T517-08	BUGS-517 Submittal edit rules	Positive	Passed	2026-11-20T04:51	tickets	runs=7	pass=6	fail=0	flips=2	retrysteps=0	[Positive] Confirm resets lead times and Lead Time Confirmed; audit entry written	
+T517-11	BUGS-517 Submittal edit rules	Negative	Passed	2026-11-20T04:51	tickets	runs=7	pass=6	fail=0	flips=2	retrysteps=0	[Negative] Primary material used by a component cannot change (message 9)	
+T517-12	BUGS-517 Submittal edit rules	Positive	Passed	2026-11-20T04:51	tickets	runs=7	pass=6	fail=0	flips=2	retrysteps=0	[Positive] Primary material not used by any component can change	
+T517-13	BUGS-517 Submittal edit rules	Bulk Edit	Skipped	2026-11-20T04:51	tickets	runs=7	pass=0	fail=0	flips=0	retrysteps=0	[Bulk Edit] Bulk Edit: one batch confirmation	
+T517-14	BUGS-517 Submittal edit rules	Bulk Edit	Skipped	2026-11-20T04:51	tickets	runs=7	pass=0	fail=0	flips=0	retrysteps=0	[Bulk Edit] Bulk Edit: locked row skipped	
+T517-15	BUGS-517 Submittal edit rules	Bulk Edit	Skipped	2026-11-20T04:51	tickets	runs=7	pass=0	fail=0	flips=0	retrysteps=0	[Bulk Edit] Bulk Edit Roll Back restores lead times	
+T517-16	BUGS-517 Submittal edit rules	Bulk Edit	Skipped	2026-11-20T04:51	tickets	runs=7	pass=0	fail=0	flips=0	retrysteps=0	[Bulk Edit] Bulk Edit: primary material change	
+T517-17	BUGS-517 Submittal edit rules	Negative	Passed	2026-11-20T04:51	tickets	runs=7	pass=6	fail=0	flips=2	retrysteps=0	[Negative] Backend enforces the lock: direct API supplier change on a PO-locked submittal	
+T517-SETUP	BUGS-517 Submittal edit rules	Setup	Passed	2026-11-20T04:51	tickets	runs=12	pass=8	fail=4	flips=2	retrysteps=4	[Setup] Create run submittals A–E	
+T543-02	BUGS-543 FDI question set categories	Positive	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Positive] Category list is sorted alphabetically	
+T543-03	BUGS-543 FDI question set categories	Negative	Passed	2026-11-20T04:51	tickets	runs=8	pass=8	fail=0	flips=0	retrysteps=0	[Negative] Category owned by another set is visible but not selectable	
+T543-04	BUGS-543 FDI question set categories	Positive	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Positive] Edit shows the linked categories selected	
+T543-06	BUGS-543 FDI question set categories	Deferred	Skipped	2026-11-20T04:51	tickets	runs=7	pass=0	fail=0	flips=0	retrysteps=0	[Deferred] Inspector mapping uses the master list	
+T543-07	BUGS-543 FDI question set categories	Positive	Passed	2026-11-20T04:51	tickets	runs=8	pass=8	fail=0	flips=0	retrysteps=0	[Positive] Add a new Material Category from the question set dialog	
+T543-08	BUGS-543 FDI question set categories	Boundary	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Boundary] Name rules: blank and over 200 characters	
+T543-09	BUGS-543 FDI question set categories	Negative	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Negative] Existing name in another case is selected, not duplicated	
+T543-10	BUGS-543 FDI question set categories	Integration	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Integration] Category added from the dialog appears on the Material Category screen	
+T543-11	BUGS-543 FDI question set categories	Integration	Passed	2026-11-20T04:51	tickets	runs=8	pass=7	fail=0	flips=1	retrysteps=0	[Integration] Category added outside the dialog (no materials) is listed and selectable	
+T543-12	BUGS-543 FDI question set categories	Security	Failed	2026-11-20T04:51	tickets	runs=11	pass=0	fail=11	flips=0	retrysteps=11	[Security] Category API without project_id returns only this project	GET /api/project_material_category/ :: Observed: 757 categories from 15 project(s) · Observed: 757 categories from 15 project(s)
+T548-01	BUGS-548 Organisation question sets	Positive	Passed	2026-11-20T04:51	tickets	runs=8	pass=8	fail=0	flips=0	retrysteps=0	[Positive] Save "CLD548 Source" to the organisation	
+T548-02	BUGS-548 Organisation question sets	Negative	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Negative] Name rules: same name in other case and empty name are refused	
+T548-03	BUGS-548 Organisation question sets	Positive	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Positive] View is read-only and lists groups and questions in order	
+T548-04	BUGS-548 Organisation question sets	Integration	Skipped	2026-11-20T04:51	tickets	runs=7	pass=0	fail=0	flips=0	retrysteps=0	[Integration] Organisation sets are shared within the organisation only	
+T548-05	BUGS-548 Organisation question sets	Positive	Passed	2026-11-20T04:51	tickets	runs=8	pass=8	fail=0	flips=0	retrysteps=0	[Positive] Rename: same rule as saving; the copy shows the new name	
+T548-06	BUGS-548 Organisation question sets	Positive	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Positive] Update from project set "Phone" replaces the contents; the name and existing copies stay	
+T548-07	BUGS-548 Organisation question sets	Positive	Passed	2026-11-20T04:51	tickets	runs=8	pass=8	fail=0	flips=0	retrysteps=0	[Positive] Create a project set from the organisation set (copy)	
+T548-10	BUGS-548 Organisation question sets	Boundary	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Boundary] All Categories organisation set follows the one-per-project rule (dialog only, nothing created)	
+T548-11	BUGS-548 Organisation question sets	Deferred	Skipped	2026-11-20T04:51	tickets	runs=6	pass=0	fail=0	flips=0	retrysteps=0	[Deferred] Deleted bank question is skipped on create	
+T548-12	BUGS-548 Organisation question sets	Deferred	Skipped	2026-11-20T04:51	tickets	runs=6	pass=0	fail=0	flips=0	retrysteps=0	[Deferred] Create is all-or-nothing (two-tab race)	
+T548-13	BUGS-548 Organisation question sets	Positive	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Positive] "Created from" line on the copy only	
+T548-14	BUGS-548 Organisation question sets	Positive	Passed	2026-11-20T04:51	tickets	runs=8	pass=7	fail=1	flips=1	retrysteps=2	[Positive] Delete: removed from the list; the copy keeps its questions and shows "(deleted)"	
+T548-15	BUGS-548 Organisation question sets	Positive	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Positive] Moving a question in the copy marks it "Edited in this project since"; the organisation set is unchanged	
+T548-16	BUGS-548 Organisation question sets	Deferred	Skipped	2026-11-20T04:51	tickets	runs=6	pass=0	fail=0	flips=0	retrysteps=0	[Deferred] Bank question used in an organisation set cannot be deleted	
+T548-17	BUGS-548 Organisation question sets	Integration	Passed	2026-11-20T04:51	tickets	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Integration] Audit log records the organisation set and the copy	
+T548-18	BUGS-548 Organisation question sets	Deferred	Skipped	2026-11-20T04:51	tickets	runs=6	pass=0	fail=0	flips=0	retrysteps=0	[Deferred] View-only user has no organisation actions	
+TC-01	Authentication	Authentication	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=15	fail=0	flips=0	retrysteps=0	Login, project and location selected once	
+TC-02	Homepage	Homepage	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=15	fail=0	flips=0	retrysteps=0	Homepage tabs, widgets, KPIs, Alerts / Notifications / Tasks baseline	
+TC-02B	Analytics	Analytics	Passed	2026-11-20T17:45	e2e-smoke	runs=10	pass=10	fail=0	flips=0	retrysteps=0	Analytics baseline: every page, sub-tab and section before any setup	
+TC-03	Project Management	Project Management	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=15	fail=0	flips=0	retrysteps=0	Create Material Category	
+TC-04	Project Management	Project Management	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=15	fail=0	flips=0	retrysteps=0	Upload new material (Material Master upload only)	
+TC-05	Supplier Management	Supplier Management	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=15	fail=0	flips=0	retrysteps=0	Create exactly one normal Supplier (Is Sub-Contractor OFF)	
+TC-06	User Management	User Management	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=10	fail=5	flips=1	retrysteps=3	Create one normal organisation user	
+TC-07	Supplier Management	Supplier Management	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=15	fail=0	flips=0	retrysteps=0	Material-to-Supplier mapping (one popup)	
+TC-08	Procurement Log	Procurement Log	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=15	fail=0	flips=0	retrysteps=0	Create one submittal with the primary material	
+TC-09	Procurement Log	Procurement Log	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=14	fail=1	flips=1	retrysteps=1	Add the secondary material with "+ Add material"	
+TC-10	Procurement Log	Procurement Log	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=14	fail=0	flips=1	retrysteps=0	Components and lead-time confirmation	
+TC-10B	Procurement Log	Procurement Log	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=12	fail=2	flips=4	retrysteps=1	Delivery booking for each component	
+TC-11	Procurement Log	Procurement Log	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=14	fail=1	flips=1	retrysteps=2	Status filter and Export	
+TC-12	Procurement Log	Procurement Log	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=13	fail=2	flips=1	retrysteps=2	Assign Responsible user	
+TC-13	Procurement Log	Procurement Log	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=13	fail=2	flips=1	retrysteps=2	Bulk Edit Spec Description: Confirm, then Roll Back validation	
+TC-14	Procurement Log	Procurement Log	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=10	fail=5	flips=1	retrysteps=4	Create Procurement alert	
+TC-15	Supplier	Supplier	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=12	fail=0	flips=3	retrysteps=0	Logout Project Admin, login Supplier, Supplier approval	
+TC-16	Subcontractor	Subcontractor	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=6	fail=6	flips=7	retrysteps=0	Logout Supplier, login Subcontractor, Subcontractor approval	
+TC-17	Procurement Log	Procurement Log	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=6	fail=0	flips=5	retrysteps=1	Logout Subcontractor, login Project Admin, complete deliveries	
+TC-17B	Procurement Log	Procurement Log	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=2	fail=2	flips=8	retrysteps=0	Generate and verify GRN; submittal delivered	
+TC-18	FDI Configuration	FDI Configuration	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=5	fail=2	flips=6	retrysteps=1	Assign the new user as inspector of the new material	
+TC-19	FDI Configuration	FDI Configuration	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=14	fail=1	flips=2	retrysteps=2	FDI question set, category, group and questions	
+TC-20	First Delivery Inspections	First Delivery Inspections	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=4	fail=0	flips=5	retrysteps=0	FDI record generated for the run delivery	
+TC-21	First Delivery Inspections	First Delivery Inspections	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=3	fail=1	flips=6	retrysteps=0	Self Assign, fill, save and submit the inspection	
+TC-22	First Delivery Inspections	First Delivery Inspections	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=3	fail=0	flips=5	retrysteps=0	Filter and view the submitted inspection	
+TC-23	Management Dashboard	Management Dashboard	Known Defect	2026-11-20T17:45	e2e-smoke	runs=15	pass=0	fail=0	flips=5	retrysteps=0	Previous vs current KPI values	Procurement value of the new category → Spend rises by the submittal's total Procurement L :: Observed: Dashboard change 12500 $; Procurement Log 1500 ₹
+TC-23B	Alerts / Notifications / Tasks	Alerts / Notifications / Tasks	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=2	fail=2	flips=6	retrysteps=1	Alerts, Notifications and Tasks of the run	
+TC-24	Analytics	Analytics	Known Defect	2026-11-20T17:45	e2e-smoke	runs=15	pass=0	fail=1	flips=5	retrysteps=1	Analytics after the flow (every page, compared with TC-02B) and reference data / configuration	Management Dashboard spend of "Material Category 5 20261120" → shown in the configured cur :: Observed: Dashboard spend "$12,500" (currency $); configured INR - Indian Rupees
+TC-25	Reporting	Reporting	Failed	2026-11-20T17:45	e2e-smoke	runs=15	pass=1	fail=14	flips=2	retrysteps=2	Detailed execution report generated	Location never cleared/changed by the application after selection (0 re-selections needed) :: Observed: Procurement Log listing: header showed "Site T2 Pmr2-2611201108" · First Delivery Inspections list: header showed "Site T2 Pmr2-2611201108"
+TC-26	Authentication	Authentication	Passed	2026-11-20T17:45	e2e-smoke	runs=15	pass=9	fail=1	flips=6	retrysteps=0	Logout the active account	
+TC01	Landing Page	Landing Page	Passed	2026-11-11T11:33	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Project Admin login, project and site, dashboard baseline	
+TC02	Project Management	Project Management	Passed	2026-11-11T11:33	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=6	One material created by upload (no manual entry)	
+TC03	User Management	User Management	Passed	2026-11-11T11:33	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Supplier record created and the new material mapped	
+TC04	User Management	User Management	Passed	2026-11-11T11:33	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	One normal organisation user (Subcontractor, Voyage Control) invited	
+TC05	Procurement Log	Procurement Log	Passed	2026-11-11T11:33	e2e-smoke	runs=6	pass=6	fail=0	flips=0	retrysteps=0	One submittal with the new supplier and material	
+TC06	Procurement Log	Procurement Log	Passed	2026-11-11T11:33	e2e-smoke	runs=6	pass=3	fail=3	flips=1	retrysteps=3	Lead time confirmed; one component and one delivery	
+TC07	Session	Session	Passed	2026-11-11T11:33	e2e-smoke	runs=6	pass=2	fail=1	flips=2	retrysteps=1	Project Admin steps verified, Project Admin logs out	
+TC08	Supplier Approval	Supplier Approval	Passed	2026-11-11T11:33	e2e-smoke	runs=6	pass=1	fail=1	flips=2	retrysteps=1	Existing Supplier account logs in and completes the checklist	
+TC09	Subcontractor Approval	Subcontractor Approval	Passed	2026-11-11T11:33	e2e-smoke	runs=6	pass=1	fail=0	flips=1	retrysteps=0	New Subcontractor user activates, logs in and approves	
+TC10	Procurement Log	Procurement Log	Known Defect	2026-11-11T11:33	e2e-smoke	runs=6	pass=0	fail=0	flips=1	retrysteps=0	Project Admin completes the delivery and generates the GRN	Procurement Log: search E2E2611111133-SUB → Status "Delivered" and Actual Delivery Date 11 :: Observed: Status "Delivered", Actual Delivery Date "-"
+TC11	Management Dashboard	Management Dashboard	Failed	2026-11-11T11:33	e2e-smoke	runs=6	pass=0	fail=1	flips=1	retrysteps=1	Dashboard previous vs current values	Monetary value → "Paint" Spend rises by the Procurement Log "Value Delivered" of the run c :: Observed: Dashboard change 10000 $; Procurement Log Value Delivered ₹1,000.00 · Observed: Dashboard change 10000 $; Procurement Log Value Delivered ₹1,000.00
+TC12	Management Dashboard	Management Dashboard	Failed	2026-11-11T11:33	e2e-smoke	runs=6	pass=0	fail=1	flips=1	retrysteps=1	Alerts, notifications and tasks for the run records	Alerts › click the new-submittal alert → opens submittal E2E2611111133-SUB :: Observed: Link opened /submittal-manager · Observed: Link opened /submittal-manager
+TC13	Session	Session	Passed	2026-11-11T11:33	e2e-smoke	runs=6	pass=5	fail=0	flips=2	retrysteps=0	Final screenshot and Project Admin logout	
+TKT-SETUP	Setup	Setup	Passed	2026-11-20T04:51	tickets	runs=16	pass=16	fail=0	flips=0	retrysteps=1	[Setup] Sign in on NRVC_Hall	
+UM-REG-01	User Management	Negative	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Negative] Send Invites needs email + role	
+UM-REG-02	User Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=7	pass=7	fail=0	flips=0	retrysteps=0	[Positive] Invite a user	
+UM-REG-03	User Management	Negative	Known Defect	2026-11-20T04:27	app-regression	runs=7	pass=0	fail=2	flips=1	retrysteps=2	[Negative] Duplicate invite rejected (R2)	User Management › "Invite Users": enter um.apr2611200427@yopmail.com in upper case, role " :: Observed: Toast: Invite Sent Successfully
+UM-REG-04	User Management	Positive	Skipped	2026-11-20T04:27	app-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Positive] Organization optional	
+UM-REG-05	User Management	Positive	Skipped	2026-11-20T04:27	app-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Positive] Add Another User	
+UM-REG-06	User Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Search users (fragment, case ignored)	
+UM-REG-07	User Management	Positive	Passed	2026-11-20T04:27	app-regression	runs=5	pass=5	fail=0	flips=0	retrysteps=0	[Positive] Change Project Role persists	
+UM-REG-08	User Management	Positive	Known Defect	2026-11-20T04:27	app-regression	runs=7	pass=0	fail=2	flips=1	retrysteps=2	[Positive] Remove From Project (run user)	Reload User Management, search um.apr2611200427@yopmail.com → the user is no longer listed :: 
+UM-REG-09	User Management	Integration	Skipped	2026-11-20T04:27	app-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Integration] Invite → accept → active	
+UM-REG-10	User Management	Role	Skipped	2026-11-20T04:27	app-regression	runs=5	pass=0	fail=0	flips=0	retrysteps=0	[Role] Role access applies to screens	
+UM-REG-11	User Management	Positive	Known Defect	2026-11-20T04:27	app-regression	runs=7	pass=0	fail=2	flips=1	retrysteps=2	[Positive] Filter narrows rows	User Management: "Filter" › tab "status" › "Invited" › "Apply Filter" → every listed row h :: 
+UM-SMK-01	User Management	Smoke	Failed	2026-11-10T07:14	app-smoke	runs=2	pass=1	fail=1	flips=1	retrysteps=1	User Management loads	User Management → search box "Search users", buttons "Filter" and "Invite Users"; columns  :: 
+UM-SMK-02	User Management	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	User profile panel	
+UM-SMK-03	User Management	Smoke	Passed	2026-11-10T07:14	app-smoke	runs=2	pass=2	fail=0	flips=0	retrysteps=0	Invite dialog	
+UPL-MM-01	Project Management	Material Master › Upload	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Template download and layout	
+UPL-MM-02	Project Management	Material Master › Upload	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	UoM dropdown matches Common UoM	
+UPL-MM-03	Project Management	Material Master › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Valid upload creates materials	
+UPL-MM-04	Project Management	Material Master › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Fully invalid file	
+UPL-MM-05	Project Management	Material Master › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Partly valid file	
+UPL-MM-06	Project Management	Material Master › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Required cells	
+UPL-MM-07	Project Management	Material Master › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	UoM not in the list	
+UPL-MM-08	Project Management	Material Master › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Unknown category – confirm	
+UPL-MM-09	Project Management	Material Master › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Duplicate of an existing material	
+UPL-MM-10	Project Management	Material Master › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Duplicate inside the same file	
+UPL-MM-11	Project Management	Material Master › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Item conversion boundaries	
+UPL-MM-12	Project Management	Material Master › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Item fields must go together	
+UPL-MM-13	Project Management	Material Master › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Wrong file / wrong layout	
+UPL-MM-14	Project Management	Material Master › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Header-only file	
+UPL-MM-15	Project Management	Material Master › Upload	Passed	2026-11-20T05:38	regression2	runs=12	pass=6	fail=0	flips=11	retrysteps=0	Reports can be downloaded	
+UPL-MM-16	Project Management	Material Master › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Unknown category – decline	
+UPL-SITE-01	Project Management	Site Details › Upload	Passed	2026-11-20T05:04	regression	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Template download and layout	
+UPL-SITE-02	Project Management	Site Details › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Valid upload creates a site with locations	
+UPL-SITE-03	Project Management	Site Details › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Fully invalid file	
+UPL-SITE-04	Project Management	Site Details › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Partly valid file	
+UPL-SITE-05	Project Management	Site Details › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Required cells	
+UPL-SITE-06	Project Management	Site Details › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Invalid type values	
+UPL-SITE-07	Project Management	Site Details › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Template sample types are not valid by default	
+UPL-SITE-08	Project Management	Site Details › Upload	Known Defect	2026-11-20T05:38	regression2	runs=7	pass=0	fail=1	flips=2	retrysteps=1	Existing site name	Sites table → still one "Gate PMR2-2611201108" and its Locations count unchanged (rule R46 :: 
+UPL-SITE-09	Project Management	Site Details › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Duplicate location in one site	
+UPL-SITE-10	Project Management	Site Details › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Same location name, different sites	
+UPL-SITE-11	Project Management	Site Details › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Wrong file type accepted by picker	
+UPL-SITE-12	Project Management	Site Details › Upload	Passed	2026-11-20T05:38	regression2	runs=6	pass=6	fail=0	flips=0	retrysteps=0	Header-only file	
+UPL-SITE-13	Project Management	Site Details › Upload	Passed	2026-11-20T05:38	regression2	runs=12	pass=6	fail=0	flips=11	retrysteps=0	Reports can be downloaded	

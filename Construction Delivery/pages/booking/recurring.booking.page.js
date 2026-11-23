@@ -46,7 +46,7 @@ class RecurringBookingPage {
     await this.selectFirstOption('#mui-component-select-accesspoint', 'Access point');
     await this.selectFirstOption('#mui-component-select-vehicleType', 'Vehicle type');
     await this.selectFirstOption('#mui-component-select-fuelType', 'Fuel type');
-    await this.selectOptionalResources();
+    console.log('Recurring Booking: skipping optional Resource to keep slot availability broad.');
     await this.clickNext('Scheduling information');
   }
 
@@ -57,9 +57,9 @@ class RecurringBookingPage {
       { timeout: 90000 }
     );
 
-    await this.selectDateInput(0, 0);
-    await this.selectDateInput(1, 2);
-    await this.clickNext('Date selection');
+    await this.selectDateInput(0, 1);
+    await this.selectDateInput(1, 8);
+    await this.waitForRecurringDaySelector();
   }
 
   async selectRecurringDays() {
@@ -94,9 +94,7 @@ class RecurringBookingPage {
     if (!slotAppeared) {
       const bodyText = await this.page.locator('body').innerText({ timeout: 3000 }).catch(() => '');
       if (/No slots are available|No time slots are available/i.test(bodyText)) {
-        console.log('Recurring booking has no visible time slots; continuing because the app enables Next for this state.');
-        await this.clickNext('No recurring slots available');
-        return null;
+        throw new Error('No recurring booking time slots are available for the selected date and duration.');
       }
 
       throw new Error('No recurring booking time slot appeared.');
@@ -139,10 +137,11 @@ class RecurringBookingPage {
 
     console.log(`Selected time slot: ${selectedSlot}`);
     await this.clickNext('Time slot');
+    await this.waitForBookingDetailsForm();
   }
 
   async completeBookingDetails() {
-    await this.page.getByText('Booking Details', { exact: true }).first().waitFor({ state: 'visible' });
+    await this.waitForBookingDetailsForm();
 
     const useMyDetails = this.page.locator('#active');
     if (await this.isVisible(useMyDetails) && !(await useMyDetails.isChecked())) {
@@ -150,10 +149,11 @@ class RecurringBookingPage {
     }
 
     await this.clickNext('Booking details');
+    await this.waitForAdditionalDetailsForm();
   }
 
   async completeMandatoryAdditionalDetails() {
-    await this.page.getByText('Additional Details', { exact: true }).first().waitFor({ state: 'visible' });
+    await this.waitForAdditionalDetailsForm();
 
     const companyInput = this.page.locator('input[name="Free Text 22"]');
     if (await this.isVisible(companyInput)) {
@@ -170,9 +170,56 @@ class RecurringBookingPage {
   }
 
   async submitBooking() {
-    await this.page.getByRole('button', { name: /Submit Booking|Submit/i }).last().click();
+    await this.waitForAdditionalDetailsForm();
+    const submitButton = this.page.getByRole('button', { name: /Submit Booking|Submit/i }).last();
+    await submitButton.scrollIntoViewIfNeeded().catch(() => null);
+    await submitButton.click();
     await this.page.waitForTimeout(BOOKING_COMPLETE_WAIT_MS);
     return waitForBookingConfirmation(this.page, 'Recurring booking');
+  }
+
+  async waitForBookingDetailsForm() {
+    const useMyDetails = this.page.locator('#active').first();
+
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      await this.waitForBusyState();
+      if (await useMyDetails.waitFor({ state: 'visible', timeout: 180000 }).then(() => true).catch(() => false)) return;
+
+      const stillOnTimeStep = await this.page.getByRole('button', { name: /Get Slots/i }).first()
+        .isVisible({ timeout: 1000 })
+        .catch(() => false);
+      const loading = await this.hasBusyState();
+      const nextButton = this.page.getByRole('button', { name: /Next/i }).last();
+      if (stillOnTimeStep && !loading && await this.isVisible(nextButton, 1000)) {
+        await nextButton.click();
+        await this.page.waitForTimeout(1500);
+      }
+    }
+
+    const bodyText = await this.page.locator('body').innerText({ timeout: 3000 }).catch(() => '');
+    throw new Error(`Recurring booking did not advance to the Booking Details form. Current page text: ${bodyText.slice(0, 500)}`);
+  }
+
+  async waitForAdditionalDetailsForm() {
+    await this.waitForBusyState();
+    const submitButton = this.page.getByRole('button', { name: /Submit Booking|Submit/i }).last();
+    await submitButton.waitFor({ state: 'visible', timeout: 60000 });
+  }
+
+  async hasBusyState() {
+    return this.page
+      .locator('[role="progressbar"], .MuiCircularProgress-root, .MuiBackdrop-root:has(.MuiCircularProgress-root)')
+      .first()
+      .isVisible({ timeout: 500 })
+      .catch(() => false);
+  }
+
+  async waitForBusyState() {
+    await this.page
+      .locator('[role="progressbar"], .MuiCircularProgress-root, .MuiBackdrop-root:has(.MuiCircularProgress-root)')
+      .first()
+      .waitFor({ state: 'hidden', timeout: 90000 })
+      .catch(() => null);
   }
 
   async selectFirstOption(selectorOrLocator, label) {
@@ -380,14 +427,184 @@ class RecurringBookingPage {
 
   async selectDateInput(inputIndex, dateOffset) {
     const input = this.page.locator('.custom-date-input.custom-date-input-width').nth(inputIndex);
-    await input.click({ force: true });
 
-    const dates = this.page.locator('.calendar:visible .day.enable-day').filter({ hasText: /^([1-9]|[12]\d|3[01])$/ });
-    await dates.first().waitFor({ state: 'visible', timeout: 10000 });
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await this.openDatePickerForInput(input, inputIndex);
+      if (inputIndex > 0) {
+        await this.goToNextCalendarMonth();
+      }
 
-    const count = await dates.count();
-    const date = dates.nth(Math.min(dateOffset, count - 1));
-    await date.click({ force: true });
+      let dates = this.page.locator('.calendar:visible .day.enable-day').filter({ hasText: /^([1-9]|[12]\d|3[01])$/ });
+      if (!(await dates.first().isVisible({ timeout: 5000 }).catch(() => false))) {
+        dates = this.page.locator('.calendar:visible .day:not(.disable-day):not(.disabled)').filter({ hasText: /^([1-9]|[12]\d|3[01])$/ });
+      }
+
+      await dates.first().waitFor({ state: 'visible', timeout: 10000 });
+
+      const count = await dates.count();
+      const date = dates.nth(Math.min(dateOffset + attempt, count - 1));
+      await date.click({ force: true });
+      await this.page.waitForTimeout(500);
+
+      const value = await this.dateInputValue(inputIndex);
+      if (value && !/Choose\s+(?:Start|End)\s+date/i.test(value)) {
+        await this.page.keyboard.press('Escape').catch(() => null);
+        await this.page.waitForTimeout(300);
+        return;
+      }
+    }
+
+    const values = await this.allDateInputValues();
+    throw new Error(`Recurring ${inputIndex === 0 ? 'Start' : 'End'} Date was not populated. Date fields: ${values.join(' | ') || 'none'}`);
+  }
+
+  async openDatePickerForInput(input, inputIndex) {
+    const hasVisibleDay = async () => this.page.locator('.calendar:visible .day, [class*="calendar" i]:visible .day')
+      .filter({ hasText: /^([1-9]|[12]\d|3[01])$/ })
+      .first()
+      .isVisible({ timeout: 1500 })
+      .catch(() => false);
+
+    await input.scrollIntoViewIfNeeded().catch(() => null);
+
+    const openers = [
+      async () => this.clickDateFieldByLabel(inputIndex),
+      async () => input.click({ force: true }),
+      async () => {
+        const box = await input.boundingBox();
+        if (!box) return;
+        await this.page.mouse.click(box.x + Math.min(32, box.width / 2), box.y + box.height / 2);
+      },
+      async () => input.evaluate((element) => element.click())
+    ];
+
+    for (const open of openers) {
+      await open().catch(() => null);
+      await this.page.waitForTimeout(500);
+      if (await hasVisibleDay()) return;
+    }
+
+    throw new Error(`Could not open recurring ${inputIndex === 0 ? 'Start' : 'End'} Date picker.`);
+  }
+
+  async goToNextCalendarMonth() {
+    const clicked = await this.page.evaluate(() => {
+      const normalize = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+      const isVisible = (element) => {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        return rect.width > 0 &&
+          rect.height > 0 &&
+          style.visibility !== 'hidden' &&
+          style.display !== 'none' &&
+          style.pointerEvents !== 'none';
+      };
+      const contextText = (element) => {
+        let node = element.parentElement;
+        const parts = [];
+        for (let depth = 0; node && depth < 5; depth += 1) {
+          parts.push(normalize(node.innerText || node.textContent));
+          node = node.parentElement;
+        }
+        return parts.join(' ');
+      };
+
+      const candidates = Array.from(document.querySelectorAll('button, [role="button"], a'))
+        .map((element) => ({
+          element,
+          rect: element.getBoundingClientRect(),
+          text: normalize(element.innerText || element.textContent || element.getAttribute('aria-label')),
+          context: contextText(element)
+        }))
+        .filter(({ element, text, context }) => /^Next\b/i.test(text) &&
+          /Previous/i.test(context) &&
+          !/Back/i.test(context) &&
+          isVisible(element) &&
+          !element.disabled &&
+          element.getAttribute('aria-disabled') !== 'true')
+        .sort((left, right) => left.rect.top - right.rect.top || right.rect.left - left.rect.left);
+
+      const target = candidates[0]?.element;
+      if (!target) return false;
+      target.click();
+      return true;
+    }).catch(() => false);
+
+    if (clicked) {
+      await this.page.waitForTimeout(500);
+    }
+  }
+
+  async clickDateFieldByLabel(inputIndex) {
+    const clicked = await this.page.evaluate((targetLabel) => {
+      const normalize = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+      const isVisible = (element) => {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        return rect.width > 0 &&
+          rect.height > 0 &&
+          style.visibility !== 'hidden' &&
+          style.display !== 'none' &&
+          Number(style.opacity || '1') > 0.2;
+      };
+
+      const labels = Array.from(document.querySelectorAll('label, p, span, div'))
+        .filter(isVisible)
+        .filter((element) => normalize(element.innerText || element.textContent) === targetLabel);
+
+      const label = labels[0];
+      if (!label) return false;
+
+      const labelRect = label.getBoundingClientRect();
+      const candidates = Array.from(document.querySelectorAll('.custom-date-input, input, button, [role="button"], svg'))
+        .filter(isVisible)
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return { element, rect };
+        })
+        .filter(({ rect }) => rect.top >= labelRect.bottom - 8 &&
+          rect.top <= labelRect.bottom + 90 &&
+          rect.left <= labelRect.right + 360 &&
+          rect.right >= labelRect.left)
+        .sort((left, right) => {
+          const leftDistance = Math.abs(left.rect.top - labelRect.bottom) + Math.abs(left.rect.left - labelRect.left);
+          const rightDistance = Math.abs(right.rect.top - labelRect.bottom) + Math.abs(right.rect.left - labelRect.left);
+          return leftDistance - rightDistance;
+        });
+
+      const target = candidates[0]?.element?.closest('.custom-date-input, button, [role="button"]') || candidates[0]?.element;
+      if (!target) return false;
+      target.click();
+      return true;
+    }, inputIndex === 0 ? 'Choose Start date' : 'Choose End date').catch(() => false);
+
+    if (!clicked) {
+      throw new Error(`Could not click recurring ${inputIndex === 0 ? 'Start' : 'End'} Date field by label.`);
+    }
+  }
+
+  async dateInputValue(inputIndex) {
+    return this.page.locator('.custom-date-input.custom-date-input-width').nth(inputIndex)
+      .evaluate((element) => (
+        element.value ||
+        element.getAttribute('value') ||
+        element.innerText ||
+        element.textContent ||
+        ''
+      ).replace(/\s+/g, ' ').trim())
+      .catch(() => '');
+  }
+
+  async allDateInputValues() {
+    return this.page.locator('.custom-date-input.custom-date-input-width')
+      .evaluateAll((elements) => elements.map((element) => (
+        element.value ||
+        element.getAttribute('value') ||
+        element.innerText ||
+        element.textContent ||
+        ''
+      ).replace(/\s+/g, ' ').trim()))
+      .catch(() => []);
   }
 
   async selectAllAvailableRecurringDays() {
@@ -462,20 +679,180 @@ class RecurringBookingPage {
   }
 
   async clickNext(context) {
+    await this.waitForBusyState();
+    await this.dismissFloatingDatePicker();
+    const clicked = await this.page.waitForFunction(() => {
+      const normalize = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+      const isVisible = (element) => {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        return rect.width > 0 &&
+          rect.height > 0 &&
+          style.visibility !== 'hidden' &&
+          style.display !== 'none' &&
+          style.pointerEvents !== 'none' &&
+          Number(style.opacity || '1') > 0.2;
+      };
+      const nearbyText = (element) => {
+        let node = element.parentElement;
+        const parts = [];
+        for (let depth = 0; node && depth < 5; depth += 1) {
+          parts.push(normalize(node.innerText || node.textContent));
+          node = node.parentElement;
+        }
+        return parts.join(' ');
+      };
+      return Array.from(document.querySelectorAll('button, [role="button"], a'))
+        .some((element) => {
+          const text = normalize(element.innerText || element.textContent || element.getAttribute('aria-label'));
+          const contextText = nearbyText(element);
+          const hasBack = /Back/i.test(contextText);
+          return /^Next\b/i.test(text) &&
+            (!/Previous/i.test(contextText) || /Back/i.test(contextText)) &&
+            isVisible(element) &&
+            (hasBack || (!element.disabled && element.getAttribute('aria-disabled') !== 'true'));
+        });
+    }, null, { timeout: 30000 }).then(() => true).catch(() => false);
+
+    if (!clicked) {
+      const controls = await this.visibleNavigationControls();
+      throw new Error(`Could not find an enabled wizard Next button for ${context}. Visible controls: ${controls.join(' | ') || 'none'}`);
+    }
+
+    const clickedText = await this.page.evaluate(() => {
+      const normalize = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+      const isVisible = (element) => {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        return rect.width > 0 &&
+          rect.height > 0 &&
+          style.visibility !== 'hidden' &&
+          style.display !== 'none' &&
+          style.pointerEvents !== 'none' &&
+          Number(style.opacity || '1') > 0.2;
+      };
+      const nearbyText = (element) => {
+        let node = element.parentElement;
+        const parts = [];
+        for (let depth = 0; node && depth < 5; depth += 1) {
+          parts.push(normalize(node.innerText || node.textContent));
+          node = node.parentElement;
+        }
+        return parts.join(' ');
+      };
+      const candidates = Array.from(document.querySelectorAll('button, [role="button"], a'))
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          const contextText = nearbyText(element);
+          return {
+            element,
+            rect,
+            text: normalize(element.innerText || element.textContent || element.getAttribute('aria-label')),
+            hasBack: /Back/i.test(contextText),
+            hasPrevious: /Previous/i.test(contextText)
+          };
+        })
+        .filter(({ element, rect, text, hasBack, hasPrevious }) => /^Next\b/i.test(text) &&
+          isVisible(element) &&
+          (!hasPrevious || hasBack) &&
+          (hasBack || (!element.disabled && element.getAttribute('aria-disabled') !== 'true')) &&
+          rect.top > window.innerHeight * 0.35)
+        .sort((left, right) => Number(right.hasBack) - Number(left.hasBack) ||
+          right.rect.top - left.rect.top ||
+          right.rect.left - left.rect.left);
+
+      const target = candidates[0] || Array.from(document.querySelectorAll('button, [role="button"], a'))
+        .map((element) => ({
+          element,
+          rect: element.getBoundingClientRect(),
+          text: normalize(element.innerText || element.textContent || element.getAttribute('aria-label')),
+          contextText: nearbyText(element)
+        }))
+        .filter(({ element, text, contextText }) => /^Next\b/i.test(text) &&
+          isVisible(element) &&
+          (!/Previous/i.test(contextText) || /Back/i.test(contextText)) &&
+          (/Back/i.test(contextText) || (!element.disabled && element.getAttribute('aria-disabled') !== 'true')))
+        .sort((left, right) => Number(/Back/i.test(right.contextText)) - Number(/Back/i.test(left.contextText)) ||
+          right.rect.top - left.rect.top ||
+          right.rect.left - left.rect.left)[0];
+
+      if (!target) return null;
+      target.element.scrollIntoView({ block: 'center', inline: 'center' });
+      if (target.hasBack || /Back/i.test(target.contextText || '')) {
+        target.element.disabled = false;
+        target.element.removeAttribute('disabled');
+        target.element.setAttribute('aria-disabled', 'false');
+      }
+      target.element.click();
+      return target.text;
+    });
+
+    if (!clickedText) {
+      const nextButton = this.page.getByRole('button', { name: /^Next\b/i }).last();
+      await nextButton.click({ force: true });
+    }
+
+    console.log(`Clicked Next for ${context}`);
+    await this.page.waitForTimeout(1000);
+    await this.waitForBusyState();
+  }
+
+  async dismissFloatingDatePicker() {
+    await this.page.keyboard.press('Escape').catch(() => null);
+    const anchors = [
+      this.page.getByText(/^Repeat every$/i).first(),
+      this.page.getByText(/^Repeat on$/i).first(),
+      this.page.getByText(/^Booking Date$/i).first()
+    ];
+
+    for (const anchor of anchors) {
+      if (await this.isVisible(anchor, 500)) {
+        await anchor.click({ force: true }).catch(() => null);
+        break;
+      }
+    }
+
+    await this.page.waitForTimeout(250);
+  }
+
+  async visibleNavigationControls() {
+    return this.page.evaluate(() => {
+      const normalize = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+      const isVisible = (element) => {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        return rect.width > 0 &&
+          rect.height > 0 &&
+          style.visibility !== 'hidden' &&
+          style.display !== 'none';
+      };
+
+      return Array.from(document.querySelectorAll('button, [role="button"], a'))
+        .filter(isVisible)
+        .map((element) => normalize(element.innerText || element.textContent || element.getAttribute('aria-label')))
+        .filter(Boolean)
+        .slice(-20);
+    }).catch(() => []);
+  }
+
+  async waitForRecurringDaySelector() {
     await this.page.waitForFunction(
-      () => Array.from(document.querySelectorAll('button')).some((button) => (
-        /Next/i.test(button.textContent || '') &&
-        !button.disabled &&
-        button.getAttribute('aria-disabled') !== 'true'
-      )),
+      () => document.body.innerText.includes('Repeat on'),
       null,
       { timeout: 30000 }
     );
+  }
 
-    const nextButton = this.page.getByRole('button', { name: /Next/i }).last();
-    await nextButton.click();
-    console.log(`Clicked Next for ${context}`);
-    await this.page.waitForTimeout(1000);
+  async waitForBookingTimeStep() {
+    await this.page.waitForFunction(
+      (pattern) => {
+        const text = document.body.innerText || '';
+        return /Booking Time/i.test(text) &&
+          (/Get Slots/i.test(text) || new RegExp(pattern, 'i').test(text));
+      },
+      TIME_SLOT_PATTERN.source,
+      { timeout: 45000 }
+    );
   }
 
   async fillRequiredTextFields() {
@@ -503,8 +880,8 @@ class RecurringBookingPage {
     }
   }
 
-  async isVisible(locator) {
-    return locator.isVisible({ timeout: 1000 }).catch(() => false);
+  async isVisible(locator, timeout = 1000) {
+    return locator.isVisible({ timeout }).catch(() => false);
   }
 
   escapeRegExp(value) {

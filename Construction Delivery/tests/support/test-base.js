@@ -69,7 +69,12 @@ function authStateMatchesEmail(authStatePath, email) {
   if (!email || !fs.existsSync(authStatePath)) return false;
 
   try {
-    const state = JSON.parse(fs.readFileSync(authStatePath, 'utf8'));
+    const rawState = fs.readFileSync(authStatePath, 'utf8');
+    if (!rawState.toLowerCase().includes(String(email).toLowerCase())) {
+      return false;
+    }
+
+    const state = JSON.parse(rawState);
     const nowInSeconds = Date.now() / 1000;
     return (state.cookies || []).some((cookie) =>
       cookie.name === 'sessionid' &&

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Project Admin Report</title>
+  <style>
+    body { margin: 0; background: #f4f6f9; color: #172033; font-family: Inter, Segoe UI, Arial, sans-serif; }
+    header, main { padding: 28px 40px; }
+    header { background: #fff; border-bottom: 1px solid #dfe5ee; }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 30px; }
+    h2 { margin: 24px 0 12px; font-size: 20px; }
+    .grid { display: grid; gap: 14px; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 18px; }
+    .card { background: #fff; border: 1px solid #dfe5ee; border-radius: 8px; padding: 16px; }
+    .label { color: #607089; font-size: 12px; text-transform: uppercase; font-weight: 800; letter-spacing: .08em; }
+    .value { display: block; margin-top: 7px; font-size: 25px; font-weight: 800; overflow-wrap: anywhere; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #dfe5ee; table-layout: fixed; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid #dfe5ee; text-align: left; vertical-align: top; font-size: 14px; overflow-wrap: anywhere; }
+    th { background: #f8fafc; color: #3e4b61; text-transform: uppercase; font-size: 12px; letter-spacing: .05em; }
+    .status { display: inline-flex; border-radius: 999px; padding: 4px 9px; font-weight: 800; font-size: 12px; text-transform: uppercase; }
+    .passed { background: #dff8ee; color: #04745a; }
+    .failed { background: #ffe3e0; color: #af2f2a; }
+    .skipped { background: #fff7d6; color: #8a5a00; }
+    tr.failed { box-shadow: inset 6px 0 0 #e02424; background: #fff0ef; }
+    tr.skipped { box-shadow: inset 6px 0 0 #d99a00; background: #fffaf0; }
+    a { color: #2c6fbb; font-weight: 650; }
+    @media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } header, main { padding-left: 20px; padding-right: 20px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Project Admin Report</h1>
+    <div class="grid">
+      <div class="card"><span class="label">Environment</span><strong class="value">Staging</strong></div>
+      <div class="card"><span class="label">Browser</span><strong class="value">Google Chrome 152.0.7977.64</strong></div>
+      <div class="card"><span class="label">Execution Date</span><strong class="value">31 Aug 2026, 17:21</strong></div>
+      <div class="card"><span class="label">Duration</span><strong class="value">26m 56s</strong></div>
+    </div>
+  </header>
+  <main>
+    <section class="grid">
+      <div class="card"><span class="label">Total Test Cases</span><strong class="value">0</strong></div>
+      <div class="card"><span class="label">Passed</span><strong class="value">0</strong></div>
+      <div class="card"><span class="label">Failed / Skipped</span><strong class="value">0 / 0</strong></div>
+      <div class="card"><span class="label">Pass Percentage</span><strong class="value">0.00%</strong><p>0 passed / 0 executed</p></div>
+      <div class="card"><span class="label">Role User</span><strong class="value">-</strong></div>
+      <div class="card"><span class="label">Modules Available</span><strong class="value">-</strong></div>
+      <div class="card"><span class="label">Positive Scenarios</span><strong class="value">0</strong></div>
+      <div class="card"><span class="label">Negative Scenarios</span><strong class="value">0</strong></div>
+    </section>
+    <section>
+      <h2>Module-wise Coverage</h2>
+      <table><thead><tr><th>Module</th><th>Status</th><th>Passed</th><th>Failed</th><th>Skipped</th><th>Reason</th></tr></thead><tbody><tr><td colspan="6">No role-scoped module data was recorded.</td></tr></tbody></table>
+    </section>
+    <section>
+      <h2>Positive and Negative Scenario Coverage</h2>
+      <table><thead><tr><th>Type</th><th>Module</th><th>Scenario</th><th>Status</th><th>Reason</th></tr></thead><tbody><tr><td colspan="5">No role-scoped scenario data was recorded.</td></tr></tbody></table>
+    </section>
+    <section>
+      <h2>Booking Types Covered</h2>
+      <table><thead><tr><th>Booking Type</th><th>Status</th><th>Booking Ref</th><th>Reason</th><th>Duration</th><th>Evidence</th></tr></thead><tbody><tr class="testcase-row skipped">
+      <td>Delivery</td>
+      <td><span class="status skipped">skipped</span></td>
+      <td>-</td>
+      <td>Project Admin did not execute this booking type in the captured role data.</td>
+      <td>-</td>
+      <td><a href="../screenshots\full_app_available-booking-types_2026-08-31T11-52-10-230Z.png">screenshots\full_app_available-booking-types_2026-08-31T11-52-10-230Z.png</a></td>
+    </tr><tr class="testcase-row skipped">
+      <td>Recurring</td>
+      <td><span class="status skipped">skipped</span></td>
+      <td>-</td>
+      <td>Project Admin did not execute this booking type in the captured role data.</td>
+      <td>-</td>
+      <td><a href="../screenshots\full_app_available-booking-types_2026-08-31T11-52-10-230Z.png">screenshots\full_app_available-booking-types_2026-08-31T11-52-10-230Z.png</a></td>
+    </tr><tr class="testcase-row skipped">
+      <td>Multi-Vehicle</td>
+      <td><span class="status skipped">skipped</span></td>
+      <td>-</td>
+      <td>Project Admin did not execute this booking type in the captured role data.</td>
+      <td>-</td>
+      <td><a href="../screenshots\full_app_available-booking-types_2026-08-31T11-52-10-230Z.png">screenshots\full_app_available-booking-types_2026-08-31T11-52-10-230Z.png</a></td>
+    </tr><tr class="testcase-row skipped">
+      <td>Resource-Only</td>
+      <td><span class="status skipped">skipped</span></td>
+      <td>-</td>
+      <td>Project Admin did not execute this booking type in the captured role data.</td>
+      <td>-</td>
+      <td><a href="../screenshots\full_app_available-booking-types_2026-08-31T11-52-10-230Z.png">screenshots\full_app_available-booking-types_2026-08-31T11-52-10-230Z.png</a></td>
+    </tr></tbody></table>
+    </section>
+    <section>
+      <h2>Restricted Features Validated</h2>
+      <table><thead><tr><th>Feature</th><th>Check</th><th>Status</th><th>Reason</th></tr></thead><tbody><tr><td colspan="4">No restricted feature checks were recorded for this role.</td></tr></tbody></table>
+    </section>
+    <section>
+      <h2>Failure Screenshots, Videos, Traces, and Logs</h2>
+      <table><thead><tr><th>Item</th><th>Screenshot</th><th>Video</th><th>Trace</th><th>Log</th><th>Reason</th></tr></thead><tbody><tr><td colspan="6">No evidence artifacts were attached.</td></tr></tbody></table>
+    </section>
+  </main>
+</body>
+</html>

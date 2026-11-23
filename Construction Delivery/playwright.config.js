@@ -11,6 +11,9 @@ module.exports = defineConfig({
     'smoke/**/*.spec.js',
     'regression/**/*.spec.js'
   ],
+  testIgnore: [
+    'regression/full-regression-single-session.spec.js'
+  ],
   timeout: 420000,
   fullyParallel: false,
   workers: 1,

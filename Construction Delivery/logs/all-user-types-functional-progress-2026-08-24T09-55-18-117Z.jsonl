@@ -1,0 +1,44 @@
+{"timestamp":"2026-08-24T09:55:30.449Z","event":"role-functional-suite-start","roles":["Super Project User","Project User","Security Guard","View-Only User","Project Admin","Project Manager","Project Owner","All Role Access","All User Access","Project Senior User"]}
+{"timestamp":"2026-08-24T09:55:30.452Z","event":"role-skipped","role":"Super Project User","reason":"Credentials not configured. Set ROLE_SUPER_PROJECT_USER_EMAIL/ROLE_SUPER_PROJECT_USER_PASSWORD."}
+{"timestamp":"2026-08-24T09:55:30.458Z","event":"role-start","role":"Project User","username":"hari@yopmail.com"}
+{"timestamp":"2026-08-24T09:56:03.771Z","event":"role-tabs-collected","role":"Project User","tabs":["Booking List","Calendar","New Booking"]}
+{"timestamp":"2026-08-24T09:56:03.775Z","event":"role-flow-start","role":"Project User","tab":"New Booking","flow":"All available booking creation flows"}
+{"timestamp":"2026-08-24T09:56:45.345Z","event":"role-flow-finished","role":"Project User","tab":"New Booking","flow":"All available booking creation flows","status":"passed","durationMs":41570}
+{"timestamp":"2026-08-24T09:56:45.346Z","event":"role-flow-start","role":"Project User","tab":"Booking List","flow":"Booking List filters"}
+{"timestamp":"2026-08-24T09:58:39.875Z","event":"role-flow-finished","role":"Project User","tab":"Booking List","flow":"Booking List filters","status":"passed","durationMs":114529}
+{"timestamp":"2026-08-24T09:58:39.878Z","event":"role-flow-start","role":"Project User","tab":"Booking List","flow":"Booking List statuses and sorting"}
+{"timestamp":"2026-08-24T09:59:20.173Z","event":"role-flow-finished","role":"Project User","tab":"Booking List","flow":"Booking List statuses and sorting","status":"passed","durationMs":40295}
+{"timestamp":"2026-08-24T09:59:20.176Z","event":"role-flow-start","role":"Project User","tab":"Calendar","flow":"Calendar functional flow"}
+{"timestamp":"2026-08-24T09:59:24.996Z","event":"role-flow-finished","role":"Project User","tab":"Calendar","flow":"Calendar functional flow","status":"passed","durationMs":4820}
+{"timestamp":"2026-08-24T09:59:24.998Z","event":"role-flow-start","role":"Project User","tab":"Profile Menu","flow":"My Account profile flow"}
+{"timestamp":"2026-08-24T09:59:42.624Z","event":"role-flow-finished","role":"Project User","tab":"Profile Menu","flow":"My Account profile flow","status":"passed","durationMs":17626}
+{"timestamp":"2026-08-24T09:59:42.625Z","event":"role-flow-start","role":"Project User","tab":"Profile Menu","flow":"Notification Preferences flow"}
+{"timestamp":"2026-08-24T10:00:35.289Z","event":"role-flow-finished","role":"Project User","tab":"Profile Menu","flow":"Notification Preferences flow","status":"passed","durationMs":52664}
+{"timestamp":"2026-08-24T10:00:35.293Z","event":"role-flow-start","role":"Project User","tab":"Profile Menu","flow":"My Organization flow"}
+{"timestamp":"2026-08-24T10:00:41.358Z","event":"role-flow-finished","role":"Project User","tab":"Profile Menu","flow":"My Organization flow","status":"passed","durationMs":6065}
+{"timestamp":"2026-08-24T10:00:41.359Z","event":"role-finished","role":"Project User","status":"completed"}
+{"timestamp":"2026-08-24T10:00:41.361Z","event":"role-skipped","role":"Security Guard","reason":"Credentials not configured. Set ROLE_SECURITY_GUARD_EMAIL/ROLE_SECURITY_GUARD_PASSWORD."}
+{"timestamp":"2026-08-24T10:00:41.362Z","event":"role-skipped","role":"View-Only User","reason":"Credentials not configured. Set ROLE_VIEW_ONLY_USER_EMAIL/ROLE_VIEW_ONLY_USER_PASSWORD."}
+{"timestamp":"2026-08-24T10:00:41.363Z","event":"role-start","role":"Project Admin","username":"hariharan.r@neuralrays.ai"}
+{"timestamp":"2026-08-24T10:01:08.490Z","event":"role-tabs-collected","role":"Project Admin","tabs":["Analytics","Booking List","Calendar","Equipment Management","New Booking","Project Management","User Management","Vehicle Tracking"]}
+{"timestamp":"2026-08-24T10:01:08.493Z","event":"role-flow-start","role":"Project Admin","tab":"Project Management","flow":"Project Management setup validation"}
+{"timestamp":"2026-08-24T10:01:08.525Z","event":"role-flow-finished","role":"Project Admin","tab":"Project Management","flow":"Project Management setup validation","status":"passed","durationMs":32}
+{"timestamp":"2026-08-24T10:01:08.526Z","event":"role-flow-start","role":"Project Admin","tab":"New Booking","flow":"All available booking creation flows"}
+{"timestamp":"2026-08-24T10:01:57.653Z","event":"role-flow-finished","role":"Project Admin","tab":"New Booking","flow":"All available booking creation flows","status":"passed","durationMs":49127}
+{"timestamp":"2026-08-24T10:01:57.655Z","event":"role-flow-start","role":"Project Admin","tab":"Booking List","flow":"Booking lifecycle edit flow"}
+{"timestamp":"2026-08-24T10:03:15.835Z","event":"role-flow-finished","role":"Project Admin","tab":"Booking List","flow":"Booking lifecycle edit flow","status":"passed","durationMs":78180}
+{"timestamp":"2026-08-24T10:03:15.836Z","event":"role-flow-start","role":"Project Admin","tab":"Booking List","flow":"Booking List filters"}
+{"timestamp":"2026-08-24T10:05:09.861Z","event":"role-flow-finished","role":"Project Admin","tab":"Booking List","flow":"Booking List filters","status":"passed","durationMs":114025}
+{"timestamp":"2026-08-24T10:05:09.861Z","event":"role-flow-start","role":"Project Admin","tab":"Booking List","flow":"Booking List statuses and sorting"}
+{"timestamp":"2026-08-24T10:05:49.766Z","event":"role-flow-finished","role":"Project Admin","tab":"Booking List","flow":"Booking List statuses and sorting","status":"passed","durationMs":39905}
+{"timestamp":"2026-08-24T10:05:49.768Z","event":"role-flow-start","role":"Project Admin","tab":"Calendar","flow":"Calendar functional flow"}
+{"timestamp":"2026-08-24T10:05:55.677Z","event":"role-flow-finished","role":"Project Admin","tab":"Calendar","flow":"Calendar functional flow","status":"passed","durationMs":5909}
+{"timestamp":"2026-08-24T10:05:55.682Z","event":"role-flow-start","role":"Project Admin","tab":"Analytics","flow":"Analytics and Environment Reports flow"}
+{"timestamp":"2026-08-24T10:07:19.614Z","event":"role-flow-finished","role":"Project Admin","tab":"Analytics","flow":"Analytics and Environment Reports flow","status":"passed","durationMs":83932}
+{"timestamp":"2026-08-24T10:07:19.616Z","event":"role-flow-start","role":"Project Admin","tab":"Equipment Management","flow":"Equipment Management functional flow"}
+{"timestamp":"2026-08-24T10:09:42.772Z","event":"role-flow-finished","role":"Project Admin","tab":"Equipment Management","flow":"Equipment Management functional flow","status":"failed","durationMs":143156,"reason":"TC-76 Run Equipment List and Usage automation failed: locator.waitFor: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-vc-created-equipment-usage-row=\"true\"]').first() to be visible\u001b[22m\n"}
+{"timestamp":"2026-08-24T10:09:42.775Z","event":"role-flow-start","role":"Project Admin","tab":"User Management","flow":"User Management functional flow"}
+{"timestamp":"2026-08-24T10:14:52.351Z","event":"role-flow-finished","role":"Project Admin","tab":"User Management","flow":"User Management functional flow","status":"passed","durationMs":309576}
+{"timestamp":"2026-08-24T10:14:52.355Z","event":"role-flow-start","role":"Project Admin","tab":"Profile Menu","flow":"My Account profile flow"}
+{"timestamp":"2026-08-24T10:15:11.413Z","event":"role-flow-finished","role":"Project Admin","tab":"Profile Menu","flow":"My Account profile flow","status":"passed","durationMs":19058}
+{"timestamp":"2026-08-24T10:15:11.414Z","event":"role-flow-start","role":"Project Admin","tab":"Profile Menu","flow":"Notification Preferences flow"}

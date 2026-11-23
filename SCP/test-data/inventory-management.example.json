@@ -1,0 +1,10 @@
+{
+  "project": "REPLACE_WITH_APPROVED_STAGING_PROJECT",
+  "site": "REPLACE_WITH_EXACT_SITE",
+  "referenceMaterialId": "REPLACE_WITH_EXISTING_REFERENCE_MATERIAL_UUID",
+  "subcontractor": "REPLACE_WITH_VALID_PROJECT_SUBCONTRACTOR",
+  "sourceLocation": "REPLACE_WITH_SITE_LOCATION",
+  "destinationLocation": "REPLACE_WITH_DIFFERENT_SITE_LOCATION",
+  "secondSite": "REPLACE_WITH_SECOND_SITE",
+  "returnReducesStock": true
+}

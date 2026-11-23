@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Project User and View-Only User Status Report</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; color: #172033; background: #f6f8fb; }
+    header { background: #172033; color: #fff; padding: 28px 36px; }
+    header h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: 0; }
+    header p { margin: 0; color: #d6deea; }
+    main { padding: 28px 36px 48px; }
+    section { background: #fff; border: 1px solid #dce3ed; border-radius: 6px; padding: 18px; margin: 18px 0; }
+    h2 { margin: 0 0 14px; font-size: 20px; letter-spacing: 0; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    th, td { border: 1px solid #e6ebf2; padding: 10px; text-align: left; vertical-align: top; word-break: break-word; }
+    th { background: #f0f4f9; }
+    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 20px; }
+    .summary div { background: #fff; border: 1px solid #dce3ed; border-radius: 6px; padding: 14px; color: #172033; }
+    .summary strong { display: block; font-size: 20px; }
+    .summary span { color: #637083; font-size: 12px; text-transform: uppercase; }
+    .pill { border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+    .passed { background: #dff8e7; color: #126c34; }
+    .skipped { background: #fff1c7; color: #7a5300; }
+    .running { background: #dcecff; color: #174a8b; }
+    .pending { background: #eceff4; color: #4b5563; }
+    .note { color: #637083; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Project User and View-Only User Status Report</h1>
+    <p>Construction Delivery role-functional Chrome automation | Generated from progress log at 27 Aug 2026</p>
+    <div class="summary">
+      <div><strong>Project User</strong><span>Current Role</span></div>
+      <div><strong>Notification Preferences</strong><span>Current Flow</span></div>
+      <div><strong>6 passed / 1 running</strong><span>Project User Flow Status</span></div>
+      <div><strong>Not Started</strong><span>View-Only User</span></div>
+      <div><strong>In Progress</strong><span>Overall Status</span></div>
+    </div>
+  </header>
+  <main>
+    <section>
+      <h2>Run Scope</h2>
+      <table>
+        <thead><tr><th>Item</th><th>Status</th><th>Details</th></tr></thead>
+        <tbody>
+          <tr><td>Target roles</td><td><span class="pill running">Scoped</span></td><td>Project User, View-Only User</td></tr>
+          <tr><td>Project Management setup</td><td><span class="pill passed">Passed</span></td><td>Access Point: Gate 344992; Resource: Crane 344992; Vehicle: Car; Fuel: Hybrid</td></tr>
+          <tr><td>Missing role bootstrap</td><td><span class="pill passed">Completed</span></td><td>View-Only user credential bootstrap ran before role validation.</td></tr>
+          <tr><td>Final dashboard</td><td><span class="pill pending">Pending</span></td><td>The normal final dashboard has not been written yet because the runner has not completed.</td></tr>
+        </tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Project User Progress</h2>
+      <table>
+        <thead><tr><th>Tab</th><th>Functional Flow</th><th>Status</th><th>Duration</th></tr></thead>
+        <tbody>
+          <tr><td>Left Navigation</td><td>Visible tabs collected: Booking List, Calendar, New Booking</td><td><span class="pill passed">Passed</span></td><td>-</td></tr>
+          <tr><td>New Booking</td><td>All available booking creation flows</td><td><span class="pill passed">Passed</span></td><td>2m 35s</td></tr>
+          <tr><td>Booking List</td><td>Booking lifecycle edit flow</td><td><span class="pill skipped">Skipped</span></td><td>1m 10s</td></tr>
+          <tr><td>Booking List</td><td>Booking List filters</td><td><span class="pill passed">Passed</span></td><td>2m 10s</td></tr>
+          <tr><td>Booking List</td><td>Booking List statuses and sorting</td><td><span class="pill passed">Passed</span></td><td>43s</td></tr>
+          <tr><td>Calendar</td><td>Calendar functional flow</td><td><span class="pill passed">Passed</span></td><td>6s</td></tr>
+          <tr><td>Profile Menu</td><td>My Account profile flow</td><td><span class="pill passed">Passed</span></td><td>23s</td></tr>
+          <tr><td>Profile Menu</td><td>Notification Preferences flow</td><td><span class="pill running">Running</span></td><td>Started 2026-08-27T11:50:07.510Z</td></tr>
+        </tbody>
+      </table>
+    </section>
+    <section>
+      <h2>View-Only User Progress</h2>
+      <table>
+        <thead><tr><th>Tab</th><th>Functional Flow</th><th>Status</th><th>Details</th></tr></thead>
+        <tbody>
+          <tr><td>Role Bootstrap</td><td>Login and collect available tabs</td><td><span class="pill pending">Pending</span></td><td>Not started yet.</td></tr>
+          <tr><td>Booking List</td><td>Booking List flows</td><td><span class="pill pending">Pending</span></td><td>Will run only if visible to the View-Only User.</td></tr>
+          <tr><td>Calendar</td><td>Calendar functional flow</td><td><span class="pill pending">Pending</span></td><td>Will run only if visible to the View-Only User.</td></tr>
+          <tr><td>Profile Menu</td><td>Profile flows</td><td><span class="pill pending">Pending</span></td><td>Will run after role bootstrap.</td></tr>
+        </tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Report Files</h2>
+      <table>
+        <thead><tr><th>File</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>reports/project-view-only-status-report.html</td><td><span class="pill passed">Generated</span></td><td>This current status report.</td></tr>
+          <tr><td>logs/all-user-types-functional-progress-2026-08-27T11-38-28-310Z.jsonl</td><td><span class="pill passed">Available</span></td><td>Source progress log used for this report.</td></tr>
+          <tr><td>reports/automation-dashboard-latest.html</td><td><span class="pill pending">Pending</span></td><td>Will update only after the full automation runner writes its final JSON and dashboard.</td></tr>
+        </tbody>
+      </table>
+      <p class="note">Browser console noise from analytics, survey scripts, favicon loading, push notification support, and intermittent staging responses is not counted as a test failure unless an assertion step failed.</p>
+    </section>
+  </main>
+</body>
+</html>

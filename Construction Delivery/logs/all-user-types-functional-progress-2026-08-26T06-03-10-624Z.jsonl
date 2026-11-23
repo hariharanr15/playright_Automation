@@ -1,0 +1,11 @@
+{"timestamp":"2026-08-26T06:03:22.490Z","event":"role-functional-suite-start","roles":["Project Admin"]}
+{"timestamp":"2026-08-26T06:03:22.495Z","event":"role-start","role":"Project Admin","username":"hariharan.r@neuralrays.ai"}
+{"timestamp":"2026-08-26T06:03:51.107Z","event":"role-tabs-collected","role":"Project Admin","tabs":["Analytics","Booking List","Calendar","Equipment Management","New Booking","Project Management","User Management","Vehicle Tracking"]}
+{"timestamp":"2026-08-26T06:03:51.111Z","event":"role-flow-start","role":"Project Admin","tab":"Project Management","flow":"Project Management setup validation"}
+{"timestamp":"2026-08-26T06:03:51.160Z","event":"role-flow-finished","role":"Project Admin","tab":"Project Management","flow":"Project Management setup validation","status":"passed","durationMs":49}
+{"timestamp":"2026-08-26T06:03:51.162Z","event":"role-flow-start","role":"Project Admin","tab":"Booking List","flow":"Booking List filters"}
+{"timestamp":"2026-08-26T06:05:57.148Z","event":"role-flow-finished","role":"Project Admin","tab":"Booking List","flow":"Booking List filters","status":"passed","durationMs":125986}
+{"timestamp":"2026-08-26T06:05:57.150Z","event":"role-flow-start","role":"Project Admin","tab":"Booking List","flow":"Booking List statuses and sorting"}
+{"timestamp":"2026-08-26T06:07:07.865Z","event":"role-flow-finished","role":"Project Admin","tab":"Booking List","flow":"Booking List statuses and sorting","status":"passed","durationMs":70715}
+{"timestamp":"2026-08-26T06:07:07.868Z","event":"role-finished","role":"Project Admin","status":"completed"}
+{"timestamp":"2026-08-26T06:07:07.869Z","event":"role-functional-suite-finished","passed":4,"failed":0,"skipped":9,"roles":{"Project Admin":{"passed":4,"failed":0,"skipped":9}}}

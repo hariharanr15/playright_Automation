@@ -1,0 +1,4 @@
+{"timestamp":"2026-08-24T12:51:59.181Z","event":"role-functional-suite-start","roles":["Project User"]}
+{"timestamp":"2026-08-24T12:51:59.189Z","event":"role-start","role":"Project User","username":"hari@yopmail.com"}
+{"timestamp":"2026-08-24T12:52:32.621Z","event":"role-tabs-collected","role":"Project User","tabs":["Booking List","Calendar","New Booking"]}
+{"timestamp":"2026-08-24T12:52:32.653Z","event":"role-flow-start","role":"Project User","tab":"New Booking","flow":"All available booking creation flows"}

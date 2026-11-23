@@ -10,7 +10,6 @@ const { clearProjectManagementSetupState } = require('../utils/project-managemen
 const ROOT_DIR = path.resolve(__dirname, '..');
 const REGRESSION_DIR = path.join(ROOT_DIR, 'tests', 'regression');
 const SETUP_SPEC = path.join(REGRESSION_DIR, 'Project management_EnvironmentSetting.spec.js');
-const SINGLE_SESSION_SPEC = 'full-regression-single-session.spec.js';
 
 function testFilePattern(filePath) {
   const fileName = path.basename(filePath);
@@ -110,7 +109,7 @@ function main() {
 
   clearProjectManagementSetupState();
   console.log('Running the full regression order in one Playwright browser worker/session.');
-  process.exit(runPlaywright([SINGLE_SESSION_SPEC], options));
+  process.exit(runPlaywright([setup, ...remaining], options));
 }
 
 main();

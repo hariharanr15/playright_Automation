@@ -51,7 +51,7 @@ const UNIT_DEFINITIONS = {
     },
     {
       unit: 'US Tons',
-      pattern: /\b(us|usa|us\s*tons?|short\s*tons?|tons?)\b/i
+      pattern: /\b(us|usa|us\s*tons?|short\s*tons?)\b/i
     }
   ]
 };

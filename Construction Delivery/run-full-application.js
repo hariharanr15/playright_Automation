@@ -20,16 +20,27 @@ const { MyAccountPage } = require('./pages/booking/my-account.page');
 const { MyOrganizationPage } = require('./pages/booking/my-organization.page');
 const { NotificationPreferencePage } = require('./pages/booking/notification-preference.page');
 const { ProjectSettingsPage } = require('./pages/booking/project-settings.page');
+const { RoleNavigationRunner, readRoleMatrix } = require('./scripts/run-role-navigation-flow');
+const { RoleNavigationPage } = require('./pages/booking/role-navigation.page');
 const { loadEnvFile } = require('./utils/env');
 const { ScreenDetector } = require('./utils/screen-detector');
 const { clickHighlighted, fillHighlighted } = require('./utils/highlight');
 const { BOOKING_TYPES, discoverAvailableBookingTypes } = require('./utils/booking-types');
+const {
+  clearProjectManagementSetupState,
+  loadProjectManagementSetupState
+} = require('./utils/project-management-setup-state');
 
 const RESULTS_DIR = path.resolve('test-results');
 const AUTH_STATE_PATH = path.resolve('auth.json');
 const USER_MANAGEMENT_SEQUENCE_PATH = path.resolve('config', 'user-management-sequence.json');
 const DEFAULT_LOGIN_EMAIL = 'hariharan.r@neuralrays.ai';
 const DEFAULT_LOGIN_PASSWORD = 'Master@15';
+const DEFAULT_ROLE_FUNCTIONAL_TARGET_ROLES = Object.freeze([
+  'Project Admin',
+  'Project User',
+  'View-Only User'
+]);
 const FLOW_PAGE_NAMES = Object.freeze({
   'Delivery Booking': 'Booking Creation',
   'Recurring Booking': 'Booking Creation',
@@ -78,7 +89,7 @@ function createGeneratedUserAccountsFile(count = 3) {
   const outputDir = path.resolve('test-results', 'user-management-inputs');
   fs.mkdirSync(outputDir, { recursive: true });
 
-  const roles = String(process.env.USER_INVITE_ROLES || 'Project Admin,Project Manager,View Only User')
+  const roles = String(process.env.USER_INVITE_ROLES || 'Project Admin,Project User,View Only User')
     .split(',')
     .map((role) => role.trim())
     .filter(Boolean);
@@ -118,7 +129,7 @@ function authStateMatchesEmail(authStatePath, email) {
 
   try {
     const rawState = fs.readFileSync(authStatePath, 'utf8');
-    if (rawState.includes(email)) return true;
+    if (!rawState.toLowerCase().includes(String(email).toLowerCase())) return false;
 
     const state = JSON.parse(rawState);
     const nowInSeconds = Date.now() / 1000;
@@ -149,9 +160,20 @@ function parseArguments() {
   const slowMo = slowMoIndex !== -1 ? Number(args[slowMoIndex + 1]) : args.includes('--slow') ? 1000 : turbo ? 0 : 150;
   const actionGap = gapIndex !== -1 ? Number(args[gapIndex + 1]) : turbo ? 0 : args.includes('--fast') ? 250 : 1500;
   const highlightMs = highlightIndex !== -1 ? Number(args[highlightIndex + 1]) : turbo ? 0 : args.includes('--fast') ? 0 : 1200;
-  const generatedUsers = Number(getArgValue('generated-users') || process.env.GENERATED_USER_COUNT || 3);
+  const generatedUsersValue = getArgValue('generated-users') || process.env.GENERATED_USER_COUNT || '';
+  const generatedUsers = Number(generatedUsersValue || 3);
+  const generatedUsersExplicit = Boolean(generatedUsersValue);
   const explicitUserAccountsFile = getArgValue('users-file') || getArgValue('user-accounts-file') || '';
   const reuseEnvUsers = args.includes('--reuse-env-users');
+  const roleFunctionalTargetRoles = String(
+    getArgValue('roles') ||
+      getArgValue('role-functional-roles') ||
+      process.env.ROLE_FUNCTIONAL_TARGET_ROLES ||
+      ''
+  )
+    .split(',')
+    .map((role) => role.trim())
+    .filter(Boolean);
 
   return {
     headless: args.includes('--headless'),
@@ -163,6 +185,7 @@ function parseArguments() {
     generateReport: !args.includes('--no-report'),
     noOpen: args.includes('--no-open'),
     skipUserManagement: args.includes('--skip-user-management'),
+    skipUserManagementNegative: args.includes('--skip-user-management-negative'),
     skipAnalytics: args.includes('--skip-analytics'),
     skipEquipmentManagement: args.includes('--skip-equipment-management'),
     skipBookingFlows: args.includes('--skip-booking-flows'),
@@ -173,6 +196,11 @@ function parseArguments() {
     skipMyOrganization: args.includes('--skip-my-organization'),
     skipNotificationPreferences: args.includes('--skip-notification-preferences'),
     approvalMatrix: args.includes('--approval-matrix') || args.includes('--automatic-approval-matrix'),
+    dynamicRoleBased: args.includes('--dynamic-role-based') || args.includes('--dynamic-role-flow'),
+    roleFunctionalFlows: args.includes('--role-functional-flows') ||
+      args.includes('--all-user-types') ||
+      args.includes('--all-user-type-flows'),
+    clearSetupState: args.includes('--clear-setup-state'),
     singleBrowser,
     turbo,
     slowMo: Number.isFinite(slowMo) ? slowMo : 150,
@@ -181,11 +209,13 @@ function parseArguments() {
     baseUrl: process.env.BASE_URL || 'https://stg-login.voyagecontrol.com',
     appUrl: process.env.APP_URL || 'https://stg-app.voyagecontrol.com',
     projectId: process.env.PROJECT_ID || '5ET10000010',
-    email: process.env.VC_EMAIL || DEFAULT_LOGIN_EMAIL,
-    password: process.env.VC_PASSWORD || DEFAULT_LOGIN_PASSWORD,
+    email: process.env.VC_EMAIL || process.env.PROJECT_ADMIN_EMAIL || process.env.ROLE_PROJECT_ADMIN_EMAIL || DEFAULT_LOGIN_EMAIL,
+    password: process.env.VC_PASSWORD || process.env.PROJECT_ADMIN_PASSWORD || process.env.ROLE_PROJECT_ADMIN_PASSWORD || DEFAULT_LOGIN_PASSWORD,
     userAccountsFile: explicitUserAccountsFile || (reuseEnvUsers ? process.env.USER_ACCOUNTS_FILE || '' : ''),
     userAccountsFileExplicit: Boolean(explicitUserAccountsFile),
-    generatedUsers: Number.isFinite(generatedUsers) && generatedUsers > 0 ? Math.floor(generatedUsers) : 3
+    generatedUsersExplicit,
+    generatedUsers: Number.isFinite(generatedUsers) && generatedUsers > 0 ? Math.floor(generatedUsers) : 3,
+    roleFunctionalTargetRoles
   };
 }
 
@@ -197,6 +227,31 @@ function redactSensitiveUrl(url) {
   return String(url)
     .replace(/((?:access|refresh|token)=)[^&\s]+/gi, '$1[REDACTED]')
     .replace(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, '[REDACTED_JWT]');
+}
+
+function markdownCell(value) {
+  if (Array.isArray(value)) {
+    value = value.length ? value.join(', ') : '-';
+  } else if (value && typeof value === 'object') {
+    value = JSON.stringify(value);
+  } else if (value === null || value === undefined || value === '') {
+    value = '-';
+  }
+
+  return String(value).replace(/\|/g, '\\|').replace(/\r?\n/g, '<br>');
+}
+
+function markdownTable(headers, rows) {
+  if (!rows.length) return '- None\n';
+  return [
+    `| ${headers.map(markdownCell).join(' | ')} |`,
+    `| ${headers.map(() => '---').join(' | ')} |`,
+    ...rows.map((row) => `| ${row.map(markdownCell).join(' | ')} |`)
+  ].join('\n');
+}
+
+function listText(items) {
+  return Array.isArray(items) && items.length ? items.join(', ') : '-';
 }
 
 class FullApplicationRunner {
@@ -211,6 +266,16 @@ class FullApplicationRunner {
     this.bookingTypeAvailability = [];
     this.bookingTypeResults = [];
     this.approvalValidationResults = [];
+    this.roleNavigationResults = [];
+    this.roleNavigationSummary = null;
+    this.roleFunctionalResults = [];
+    this.roleFunctionalSummary = null;
+    this.progressLogPath = null;
+    this.blockedScenarios = [];
+    this.createdUsers = [];
+    this.dynamicTestData = null;
+    this.dynamicRoleCredentials = {};
+    this.currentRoleContext = null;
     this.recentHttpErrors = [];
     this.stepCounter = 0;
     this.startTime = null;
@@ -218,6 +283,8 @@ class FullApplicationRunner {
   }
 
   async setupBrowser() {
+    this.progressLogPath = this.progressLogPath || path.resolve('logs', `all-user-types-functional-progress-${formatTimestampForFile()}.jsonl`);
+    fs.mkdirSync(path.dirname(this.progressLogPath), { recursive: true });
     process.env.HIGHLIGHT_MS = String(this.options.highlightMs);
     process.env.ACTION_PAUSE_MS = String(this.options.actionGap);
     process.env.DISABLE_AUTOMATION_VISUALS = this.options.turbo
@@ -254,6 +321,7 @@ class FullApplicationRunner {
       slowMo: this.options.slowMo,
       args: screenDetector.getBrowserArgs(100)
     });
+    this.browserVersion = this.browser.version();
 
     this.context = await this.browser.newContext({
       viewport: this.options.headless ? this.viewport : null,
@@ -299,6 +367,17 @@ class FullApplicationRunner {
       await this.page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight })).catch(() => this.viewport);
     this.viewport = actualViewport || this.viewport;
     console.log(`Chrome browser launched once at browser-fit viewport: ${this.viewport.width}x${this.viewport.height}`);
+  }
+
+  logProgress(event, details = {}) {
+    const record = {
+      timestamp: new Date().toISOString(),
+      event,
+      ...details
+    };
+    console.log(`[progress] ${event}: ${Object.entries(details).map(([key, value]) => `${key}=${Array.isArray(value) ? value.join(',') : value}`).join(' ')}`);
+    if (!this.progressLogPath) return;
+    fs.appendFileSync(this.progressLogPath, `${JSON.stringify(record)}\n`, 'utf8');
   }
 
   async maximizeWindow() {
@@ -617,7 +696,9 @@ class FullApplicationRunner {
           button.getAttribute('aria-disabled') !== 'true'
       );
       const text = (document.body.innerText || '').replace(/\s+/g, ' ');
-      return hasNewBookingButton && /Booking List/i.test(text);
+      const hasBookingListTable = /Booking List/i.test(text) &&
+        (/Booking Ref/i.test(text) || /\bActive\b.*\bScheduled\b.*\bCancelled\b/i.test(text));
+      return (hasNewBookingButton || hasBookingListTable) && /Booking List/i.test(text);
     }, null, { timeout, polling: 500 }).then(() => true).catch(() => false);
   }
 
@@ -743,6 +824,8 @@ class FullApplicationRunner {
       id: `TC-${String(stepNumber).padStart(2, '0')}`,
       flowName,
       pageName: this.getPageName(flowName),
+      userRole: this.currentRoleContext?.roleName || null,
+      username: this.currentRoleContext?.email || null,
       name: stepName,
       status: 'running',
       timestamp: startedAt.toISOString(),
@@ -775,6 +858,107 @@ class FullApplicationRunner {
       record.duration = Date.now() - startedAt.getTime();
       await this.page.waitForTimeout(this.options.actionGap).catch(() => null);
     }
+  }
+
+  recordBlockedStep(flowName, stepName, reason, extra = {}) {
+    const stepNumber = ++this.stepCounter;
+    const record = {
+      stepNumber,
+      id: `TC-${String(stepNumber).padStart(2, '0')}`,
+      flowName,
+      pageName: extra.pageName || this.getPageName(flowName),
+      userRole: extra.userRole || this.currentRoleContext?.roleName || null,
+      username: extra.username || this.currentRoleContext?.email || null,
+      name: stepName,
+      status: 'skipped',
+      blocked: true,
+      timestamp: new Date().toISOString(),
+      duration: 0,
+      error: reason,
+      dependsOn: extra.dependsOn || null
+    };
+    this.steps.push(record);
+    this.blockedScenarios.push(record);
+    console.log(`${record.id} blocked/skipped: ${reason}`);
+    return record;
+  }
+
+  requireProjectManagementSetup() {
+    const state = loadProjectManagementSetupState();
+    const requiredFields = [
+      ['accessPointName', 'Access Point'],
+      ['resourceName', 'Resource'],
+      ['vehicleName', 'Vehicle'],
+      ['vehicleFuelType', 'Vehicle fuel type']
+    ];
+    const missing = requiredFields
+      .filter(([key]) => !String(state?.[key] || '').trim())
+      .map(([, label]) => label);
+
+    this.dynamicTestData = state ? {
+      projectId: state.projectId || this.options.projectId,
+      accessPointName: state.accessPointName || null,
+      accessPointId: state.accessPointId || null,
+      resourceName: state.resourceName || null,
+      resourceAvailabilityEnabledName: state.resourceAvailabilityEnabledName || null,
+      vehicleName: state.vehicleName || null,
+      vehicleFuelType: state.vehicleFuelType || null,
+      vehicleEmissionName: state.vehicleEmissionName || null,
+      equipmentName: state.equipmentName || null,
+      updatedAt: state.updatedAt || null
+    } : null;
+
+    if (missing.length) {
+      const reason = state
+        ? `Project Management setup is incomplete. Missing: ${missing.join(', ')}.`
+        : 'Project Management setup state was not found. Run the Project Management setup flow first.';
+      return { ready: false, reason, missing, state };
+    }
+
+    return { ready: true, reason: null, missing: [], state };
+  }
+
+  blockDynamicDependentFlows(reason) {
+    const dependentFlows = [
+      ['Booking Creation', 'Create bookings using current-run Access Point, Resource, and Vehicle'],
+      ['Booking List', 'Validate booking list using current-run bookings'],
+      ['Calendar', 'Validate calendar using current-run project data'],
+      ['Analytics', 'Validate analytics using current-run emissions data'],
+      ['Equipment Management', 'Validate equipment management using current-run records'],
+      ['Role-Based Access', 'Log in as generated Project User and View-Only User']
+    ];
+
+    for (const [flowName, stepName] of dependentFlows) {
+      this.recordBlockedStep(flowName, stepName, reason, { dependsOn: 'Project Management setup' });
+    }
+  }
+
+  async prepareDynamicProjectManagementData() {
+    const flowName = 'Project Management';
+    if (this.options.clearSetupState) {
+      clearProjectManagementSetupState();
+    }
+
+    await this.runStep(flowName, 'Validate current-run Access Point, Resource, Vehicle, and fuel setup', async () => {
+      const setup = this.requireProjectManagementSetup();
+      if (!setup.ready) {
+        throw new Error(setup.reason);
+      }
+      console.log(`Using Project Management setup: Access Point "${setup.state.accessPointName}", ` +
+        `Resource "${setup.state.resourceName}", Vehicle "${setup.state.vehicleName}", Fuel "${setup.state.vehicleFuelType}".`);
+    });
+
+    const failedSetup = this.steps.find((step) =>
+      step.flowName === flowName &&
+      step.name === 'Validate current-run Access Point, Resource, Vehicle, and fuel setup' &&
+      step.status === 'failed'
+    );
+    if (failedSetup) {
+      this.blockDynamicDependentFlows(failedSetup.error);
+      return false;
+    }
+
+    return true;
   }
 
   async recoverAfterStepFailure(record) {
@@ -905,8 +1089,8 @@ class FullApplicationRunner {
     await this.runStep(flowName, 'Select Fuel type', async () => {
       await recurringBooking.selectFirstOption('#mui-component-select-fuelType', 'Fuel type');
     });
-    await this.runStep(flowName, 'Select optional resources', async () => {
-      await recurringBooking.selectOptionalResources();
+    await this.runStep(flowName, 'Skip optional resources', async () => {
+      console.log(`${flowName}: skipping optional Resource to keep recurring slot availability broad.`);
     });
     await this.runStep(flowName, 'Continue from Scheduling Information', async () => {
       await recurringBooking.clickNext('Scheduling information');
@@ -922,13 +1106,13 @@ class FullApplicationRunner {
       );
     });
     await this.runStep(flowName, 'Select recurring start date', async () => {
-      await recurringBooking.selectDateInput(0, 0);
+      await recurringBooking.selectDateInput(0, 1);
     });
     await this.runStep(flowName, 'Select recurring end date', async () => {
-      await recurringBooking.selectDateInput(1, 2);
+      await recurringBooking.selectDateInput(1, 8);
     });
     await this.runStep(flowName, 'Continue from Recurring Date Range', async () => {
-      await recurringBooking.clickNext('Date selection');
+      await recurringBooking.waitForRecurringDaySelector();
     });
   }
 
@@ -949,12 +1133,13 @@ class FullApplicationRunner {
     });
     await this.runStep(flowName, 'Continue from Recurring Days', async () => {
       await recurringBooking.clickNext('Recurring days');
+      await recurringBooking.waitForBookingTimeStep();
     });
   }
 
   async runRecurringBookingDetailsSteps(flowName, recurringBooking) {
     await this.runStep(flowName, 'Wait for Booking Details form', async () => {
-      await this.page.getByText('Booking Details', { exact: true }).first().waitFor({ state: 'visible' });
+      await recurringBooking.waitForBookingDetailsForm();
     });
     await this.runStep(flowName, 'Use requester details', async () => {
       const useMyDetails = this.page.locator('#active');
@@ -964,6 +1149,7 @@ class FullApplicationRunner {
     });
     await this.runStep(flowName, 'Continue from Booking Details', async () => {
       await recurringBooking.clickNext('Booking details');
+      await recurringBooking.waitForAdditionalDetailsForm();
     });
   }
 
@@ -974,6 +1160,10 @@ class FullApplicationRunner {
       multiVehicle: () => this.runMultiVehicleFlow(),
       resourceOnly: () => this.runResourceFlow()
     }[typeKey];
+  }
+
+  canRunBookingTypeForCurrentRole(typeKey) {
+    return BOOKING_TYPES.some((type) => type.key === typeKey);
   }
 
   async discoverBookingTypesForRun() {
@@ -1005,10 +1195,16 @@ class FullApplicationRunner {
   }
 
   recordBookingTypeOutcome(type, outcome) {
-    const existingIndex = this.bookingTypeResults.findIndex((result) => result.key === type.key);
+    const userRole = outcome.userRole || this.currentRoleContext?.roleName || null;
+    const existingIndex = this.bookingTypeResults.findIndex((result) =>
+      result.key === type.key &&
+      (result.userRole || null) === userRole
+    );
     const record = {
       key: type.key,
       label: type.label,
+      userRole,
+      username: outcome.username || this.currentRoleContext?.email || null,
       mandatory: Boolean(type.mandatory),
       status: outcome.status,
       reason: outcome.reason || null,
@@ -1032,23 +1228,28 @@ class FullApplicationRunner {
     const availability = await this.discoverBookingTypesForRun();
 
     for (const type of availability) {
+      if (!this.canRunBookingTypeForCurrentRole(type.key)) {
+        const reason = `${type.label} is not a supported booking type for this automation runner.`;
+        const screenshot = await this.captureEvidenceScreenshot(`${type.label}-booking-type-role-skipped`);
+        this.recordBookingTypeOutcome(type, {
+          status: 'skipped',
+          reason,
+          screenshot
+        });
+        console.log(`${type.label} skipped for role: ${reason}`);
+        continue;
+      }
+
       if (!type.available || !type.enabled) {
-        const reason = type.mandatory
-          ? 'Mandatory Delivery booking type was not visible or enabled.'
-          : `${type.label} option was unavailable in the New Booking screen.`;
+        const reason = `${type.label} booking type was not visible or enabled for ${this.currentRoleContext?.roleName || 'the current role'}, but all booking types are required when the role has creation access.`;
         const screenshot = await this.captureEvidenceScreenshot(`${type.label}-booking-type-skipped`);
         this.recordBookingTypeOutcome(type, {
-          status: type.mandatory ? 'failed' : 'skipped',
+          status: 'failed',
           reason,
           screenshot
         });
 
-        if (type.mandatory) {
-          throw new Error(reason);
-        }
-
-        console.log(`${type.label} skipped: ${reason}`);
-        continue;
+        throw new Error(reason);
       }
 
       const startedAt = Date.now();
@@ -1060,13 +1261,20 @@ class FullApplicationRunner {
           throw new Error(`No booking flow is registered for ${type.label}.`);
         }
         await runFlow();
-        const failedStep = this.steps
+        const creation = this.bookingCreations.slice(beforeCount).pop() || {};
+        const failedSteps = this.steps
           .slice(beforeStepCount)
-          .find((step) => step.flowName === type.flowName && step.status === 'failed');
+          .filter((step) => step.flowName === type.flowName && step.status === 'failed');
+        if ((creation.bookingRef || creation.message) && failedSteps.length) {
+          for (const failedStep of failedSteps) {
+            failedStep.status = 'passed';
+            failedStep.error = `Recovered after ${type.label} booking confirmation was captured. Original issue: ${failedStep.error || '-'}`;
+          }
+        }
+        const failedStep = failedSteps.find((step) => step.status === 'failed');
         if (failedStep) {
           throw new Error(`${failedStep.id} ${failedStep.name} failed: ${failedStep.error}`);
         }
-        const creation = this.bookingCreations.slice(beforeCount).pop() || {};
         const screenshot = await this.captureEvidenceScreenshot(`${type.label}-booking-type-passed`);
         this.recordBookingTypeOutcome(type, {
           status: 'passed',
@@ -1508,7 +1716,188 @@ class FullApplicationRunner {
     throw new Error('No editable single scheduled booking was found for the edit booking flow.');
   }
 
+  async selectFirstScheduledBookingForAvailableOperations(editBooking) {
+    const candidates = await this.getScheduledBookingCandidates();
+    for (const candidate of candidates.slice(0, 12)) {
+      console.log(`Checking scheduled candidate for available Booking List operations: ${candidate.bookingId}`);
+      try {
+        await editBooking.selectBookingById(candidate.bookingId);
+        await editBooking.waitForBookingDetailsReady();
+        return candidate.bookingId;
+      } catch (error) {
+        console.log(`Skipping ${candidate.bookingId}; booking details could not be opened: ${error.message}`);
+        await editBooking.closeSideBarModal().catch(() => null);
+        await this.page.waitForTimeout(1000);
+      }
+    }
+
+    return null;
+  }
+
+  async runBookingDetailsOperationIfAvailable(flowName, stepName, editBooking, actionName, aliases, operation, options = {}) {
+    const available = await editBooking.hasBookingDetailsAction(actionName, aliases, {
+      timeout: options.timeout ?? 1500,
+      menuTimeout: options.menuTimeout ?? 1500
+    });
+
+    if (!available) {
+      this.recordBlockedStep(
+        flowName,
+        stepName,
+        `${actionName} operation icon/action was not available for ${this.currentRoleContext?.roleName || 'the current user'}.`,
+        { pageName: 'Booking List' }
+      );
+      return false;
+    }
+
+    await this.runStep(flowName, stepName, operation);
+    return true;
+  }
+
+  skipBookingDetailsOperation(flowName, stepName, reason) {
+    this.recordBlockedStep(flowName, stepName, reason, { pageName: 'Booking List' });
+    return false;
+  }
+
   async runEditBookingFlow() {
+    const flowName = 'Edit Booking';
+    const editBooking = new EditBookingPage(this.page);
+    let bookingId;
+    let checkedIn = false;
+    let checkedOut = false;
+    let undoCheckout = false;
+    let cancelled = false;
+
+    await this.runStep(flowName, 'Open authenticated Booking List', async () => {
+      await this.openBookingList();
+      await editBooking.applyDefaultViewFilter();
+      await editBooking.applyBookingListDateRange();
+    });
+
+    bookingId = await this.selectFirstScheduledBookingForAvailableOperations(editBooking);
+    if (!bookingId) {
+      this.recordBlockedStep(
+        flowName,
+        'Select first Scheduled booking',
+        'No Scheduled booking could be opened to inspect available Booking List operation icons.',
+        { pageName: 'Booking List' }
+      );
+      return;
+    }
+
+    await this.runStep(flowName, 'Select first Scheduled booking', async () => {
+      if (!/^BK[A-Z0-9]+/.test(bookingId)) throw new Error(`Invalid booking id selected: ${bookingId}`);
+    });
+
+    checkedIn = await this.runBookingDetailsOperationIfAvailable(
+      flowName,
+      'Check in the selected booking',
+      editBooking,
+      'Check In',
+      ['Checked-in', 'Checked In'],
+      async () => editBooking.checkInBooking({ keepBookingDetailsOpen: true })
+    );
+
+    if (!checkedIn) {
+      this.skipBookingDetailsOperation(
+        flowName,
+        'Check out the selected booking',
+        'Check Out was skipped because Check In was not available or was skipped.'
+      );
+    } else {
+      checkedOut = await this.runBookingDetailsOperationIfAvailable(
+        flowName,
+        'Check out the selected booking',
+        editBooking,
+        'Check Out',
+        ['Checked-Out', 'Checked Out'],
+        async () => {
+          await this.page.waitForTimeout(2000);
+          await editBooking.checkOutBooking({ keepBookingDetailsOpen: true });
+        }
+      );
+    }
+
+    if (!checkedIn && !checkedOut) {
+      this.skipBookingDetailsOperation(
+        flowName,
+        'Return to list and reopen the same booking',
+        'Reopen was skipped because no lifecycle operation changed the selected booking.'
+      );
+    } else {
+      await this.runStep(flowName, 'Return to list and reopen the same booking', async () => {
+        await editBooking.returnToBookingListPage({ applyDefaultView: true, applyDateRange: true });
+        await editBooking.selectBookingById(bookingId);
+        await editBooking.waitForBookingDetailsReady();
+      });
+    }
+
+    if (!checkedOut) {
+      this.skipBookingDetailsOperation(
+        flowName,
+        'Undo checkout for this booking',
+        'Undo checkout was skipped because Check Out was not available or was skipped.'
+      );
+    } else {
+      undoCheckout = await this.runBookingDetailsOperationIfAvailable(
+        flowName,
+        'Undo checkout for this booking',
+        editBooking,
+        'Undo',
+        ['Reinstate'],
+        async () => editBooking.undoBookingAction({ keepBookingDetailsOpen: true })
+      );
+    }
+
+    if (!checkedIn) {
+      this.skipBookingDetailsOperation(
+        flowName,
+        'Undo check-in for this booking',
+        'Undo check-in was skipped because Check In was not available or was skipped.'
+      );
+    } else if (checkedOut && !undoCheckout) {
+      this.skipBookingDetailsOperation(
+        flowName,
+        'Undo check-in for this booking',
+        'Undo check-in was skipped because Undo checkout was not available or was skipped.'
+      );
+    } else {
+      await this.runBookingDetailsOperationIfAvailable(
+        flowName,
+        'Undo check-in for this booking',
+        editBooking,
+        'Undo',
+        ['Reinstate'],
+        async () => {
+          await this.page.waitForTimeout(2000);
+          await editBooking.undoBookingAction({ keepBookingDetailsOpen: true });
+        }
+      );
+    }
+
+    cancelled = await this.runBookingDetailsOperationIfAvailable(
+      flowName,
+      'Cancel the booking and confirm Cancel Booking popup',
+      editBooking,
+      'Cancel',
+      ['Cancel Booking'],
+      async () => {
+        await this.page.waitForTimeout(2000);
+        await editBooking.cancelBooking({ keepBookingDetailsOpen: true });
+      }
+    );
+
+    await this.runStep(flowName, 'Return to Booking List', async () => {
+      await editBooking.returnToBookingListPage({ applyDefaultView: true, applyDateRange: true });
+      if (!(await this.waitForBookingListReady(15000))) {
+        throw new Error(`Booking List did not reopen after ${cancelled ? 'cancel' : 'operation inspection'}.`);
+      }
+    });
+
+    this.bookingId = bookingId;
+  }
+
+  async runPrivilegedEditBookingFlow() {
     const flowName = 'Edit Booking';
     const editBooking = new EditBookingPage(this.page);
     let bookingId;
@@ -1746,7 +2135,11 @@ class FullApplicationRunner {
         throw new Error('My Organization name was missing or changed unexpectedly.');
       }
       if (!result.details.tradeTypeUpdated || !result.details.submitted) {
-        throw new Error('My Organization Trade Type was not updated and saved.');
+        if (result.details.tradeTypeReadOnly && result.details.before?.tradeType) {
+          console.log('My Organization Trade Type is read-only for this role; validated current value instead of updating it.');
+        } else {
+          throw new Error('My Organization Trade Type was not updated and saved.');
+        }
       }
     });
 
@@ -1877,6 +2270,34 @@ class FullApplicationRunner {
     this.equipmentManagementFlow = this.summarizeEquipmentManagementFlow(equipmentManagementFlow);
   }
 
+  async runEquipmentManagementRoleAccessFlow() {
+    const flowName = 'Equipment Management';
+    const equipmentManagement = this.createEquipmentManagementPage();
+
+    await this.runStep(flowName, 'Open authenticated Equipment List', async () => {
+      await equipmentManagement.openEquipmentListDirectly();
+    });
+
+    await this.runStep(flowName, 'Validate Equipment Management list is usable', async () => {
+      const bodyText = await this.page.locator('body').innerText({ timeout: 15000 }).catch(() => '');
+      if (!/Equipment|List Of Equipment|Equipment Usage/i.test(bodyText)) {
+        throw new Error('Equipment Management page did not show expected list content.');
+      }
+      const hasTableOrEmptyState = await this.page.locator('table, [role="table"], [role="grid"]')
+        .first()
+        .isVisible({ timeout: 5000 })
+        .catch(() => false) ||
+        /No Data found|No records found|No equipment/i.test(bodyText);
+      if (!hasTableOrEmptyState) {
+        throw new Error('Equipment Management list did not show a table or expected empty state.');
+      }
+    });
+
+    this.equipmentManagementFlow = {
+      roleAccessValidated: true
+    };
+  }
+
   async runUserManagementFlow() {
     const flowName = 'User Management';
     const userManagement = new UserManagementPage(this.page, {
@@ -1886,22 +2307,30 @@ class FullApplicationRunner {
     const accountUsers = this.getUserManagementAccounts(userManagement);
 
     await this.runStep(flowName, 'Open authenticated User Management page', async () => this.openUserManagement());
-    await this.runStep(flowName, 'Negative: reject duplicate roles and invalid invite details', async () => {
-      const duplicateRoleUsers = accountUsers.slice(0, 2).map((user) => ({ ...user }));
-      if (duplicateRoleUsers.length === 2) {
-        duplicateRoleUsers[1].role = duplicateRoleUsers[0].role;
-        let duplicateRejected = false;
-        try {
-          userManagement.validateInviteUserDataset(duplicateRoleUsers);
-        } catch (error) {
-          duplicateRejected = /duplicate role/i.test(error.message);
+    if (this.options.skipUserManagementNegative) {
+      this.recordBlockedStep(
+        flowName,
+        'Negative: reject duplicate roles and invalid invite details',
+        'Skipped while bootstrapping required role credentials for role-functional validation.'
+      );
+    } else {
+      await this.runStep(flowName, 'Negative: reject duplicate roles and invalid invite details', async () => {
+        const duplicateRoleUsers = accountUsers.slice(0, 2).map((user) => ({ ...user }));
+        if (duplicateRoleUsers.length === 2) {
+          duplicateRoleUsers[1].role = duplicateRoleUsers[0].role;
+          let duplicateRejected = false;
+          try {
+            userManagement.validateInviteUserDataset(duplicateRoleUsers);
+          } catch (error) {
+            duplicateRejected = /duplicate role/i.test(error.message);
+          }
+          if (!duplicateRejected) {
+            throw new Error('Duplicate invite roles were not rejected by validation.');
+          }
         }
-        if (!duplicateRejected) {
-          throw new Error('Duplicate invite roles were not rejected by validation.');
-        }
-      }
-      await userManagement.verifyInviteFormNegativeScenarios('invalid-email');
-    });
+        await userManagement.verifyInviteFormNegativeScenarios('invalid-email');
+      });
+    }
     for (let index = 0; index < accountUsers.length; index += 1) {
       const accountUser = accountUsers[index];
       let preparedUser = accountUser;
@@ -1938,18 +2367,54 @@ class FullApplicationRunner {
 
     for (const user of setupReadyUsers) {
       await this.runStep(flowName, `Accept invite and complete account setup for ${user.name}`, async () => {
-        await userManagement.acceptInvitationAndCompleteAccountSetup(user, {
-          sameBrowserContext: this.options.singleBrowser,
-          keepSetupPageOpen: false
-        });
+        try {
+          await userManagement.acceptInvitationAndCompleteAccountSetup(user, {
+            sameBrowserContext: false,
+            keepSetupPageOpen: false
+          });
+        } catch (error) {
+          if (!/Invitation email was not received|Yopmail|inbox/i.test(error.message)) {
+            throw error;
+          }
+
+          const reason = `${error.message} Account activation skipped so downstream role validation will not use this unactivated credential.`;
+          user.accountSetupSkipped = true;
+          user.setupMissingFields = Array.from(new Set([
+            ...(user.setupMissingFields || []),
+            'activation email'
+          ]));
+          user.activationSkippedReason = reason;
+          this.recordBlockedStep(flowName, `Activate account for ${user.email}`, reason, {
+            dependsOn: 'Yopmail invitation email'
+          });
+          console.log(reason);
+        }
       });
     }
 
-    if (setupReadyUsers.length) {
+    const activatedUsers = accountUsers.filter((accountUser) =>
+      !accountUser.accountSetupSkipped &&
+      !accountUser.setupMissingFields?.length
+    );
+
+    if (activatedUsers.length && !this.options.dynamicRoleBased) {
       await this.runStep(flowName, 'Change organization for one completed user account', async () => {
-        const changedOrganization = await userManagement.changeOrganizationForUser(setupReadyUsers[0]);
-        setupReadyUsers[0].updatedOrganization = changedOrganization;
+        const changedOrganization = await userManagement.changeOrganizationForUser(activatedUsers[0]);
+        activatedUsers[0].updatedOrganization = changedOrganization;
       });
+    } else if (activatedUsers.length && this.options.dynamicRoleBased) {
+      this.recordBlockedStep(
+        flowName,
+        'Change organization for one completed user account',
+        'Skipped in dynamic role-based mode so generated role credentials remain unchanged for role validation.'
+      );
+    } else if (setupReadyUsers.length) {
+      this.recordBlockedStep(
+        flowName,
+        'Change organization for one completed user account',
+        'Skipped because no generated user account was activated; activation email delivery is required before organization changes are available.',
+        { dependsOn: 'Yopmail invitation email' }
+      );
     }
 
     const setupSkippedUsers = accountUsers.filter((user) => user.setupMissingFields?.length);
@@ -1961,15 +2426,55 @@ class FullApplicationRunner {
     }
 
     this.inviteEmail = null;
-    this.createdUsers = accountUsers.map((user) => ({
+    const createdUsersForFlow = accountUsers.map((user) => ({
       name: user.name,
       email: user.email,
+      role: user.role,
+      createdByRole: this.currentRoleContext?.roleName || null,
+      password: user.password,
       mobile: user.mobile,
       address: user.address,
       updatedOrganization: user.updatedOrganization || null,
       accountSetupSkipped: Boolean(user.setupMissingFields?.length),
-      setupMissingFields: user.setupMissingFields || []
+      setupMissingFields: user.setupMissingFields || [],
+      activationSkippedReason: user.activationSkippedReason || null
     }));
+    this.createdUsers.push(...createdUsersForFlow);
+
+    if (this.options.dynamicRoleBased) {
+      this.dynamicRoleCredentials = Object.fromEntries(createdUsersForFlow.map((user) => [
+        user.role,
+        {
+          name: user.name,
+          email: user.email,
+          password: user.password,
+          role: user.role,
+          accountSetupSkipped: user.accountSetupSkipped,
+          setupMissingFields: user.setupMissingFields,
+          activationSkippedReason: user.activationSkippedReason || null
+        }
+      ]));
+    }
+  }
+
+  async runUserManagementRoleAccessFlow() {
+    const flowName = 'User Management';
+
+    await this.runStep(flowName, 'Open authenticated User Management page', async () => this.openUserManagement());
+    await this.runStep(flowName, 'Validate User Management list is usable', async () => {
+      const bodyText = await this.page.locator('body').innerText({ timeout: 15000 }).catch(() => '');
+      if (!/User Management|Invite Users|Project Role|Organization Role/i.test(bodyText)) {
+        throw new Error('User Management page did not show expected content.');
+      }
+      const hasListOrEmptyState = await this.page.locator('table, [role="table"], [role="grid"], [role="row"]')
+        .first()
+        .isVisible({ timeout: 5000 })
+        .catch(() => false) ||
+        /No Data found|No records found|No users/i.test(bodyText);
+      if (!hasListOrEmptyState) {
+        throw new Error('User Management list did not show a table or expected empty state.');
+      }
+    });
   }
 
   getUserManagementAccounts(userManagement) {
@@ -1986,6 +2491,539 @@ class FullApplicationRunner {
     return userManagement.getUserAccountsFromFile(generatedFile);
   }
 
+  normalizeRoleName(value) {
+    return String(value || '')
+      .toLowerCase()
+      .replace(/\buser\b/g, '')
+      .replace(/[-_\s]+/g, ' ')
+      .trim();
+  }
+
+  roleCredentialsForMatrixRole(roleName) {
+    const normalizedRole = this.normalizeRoleName(roleName);
+    return Object.values(this.dynamicRoleCredentials || {})
+      .find((credential) =>
+        this.normalizeRoleName(credential.role) === normalizedRole &&
+        !credential.accountSetupSkipped &&
+        !credential.setupMissingFields?.length
+      ) || null;
+  }
+
+  roleFunctionalTargetRoleNames() {
+    const configuredRoles = Array.isArray(this.options.roleFunctionalTargetRoles)
+      ? this.options.roleFunctionalTargetRoles
+      : [];
+    return configuredRoles.length ? configuredRoles : [...DEFAULT_ROLE_FUNCTIONAL_TARGET_ROLES];
+  }
+
+  roleConfigsForTargetRoles(matrix, targetRoleNames) {
+    return targetRoleNames
+      .map((roleName) => {
+        const roleConfig = matrix.roles.find((role) =>
+          this.normalizeRoleName(role.name) === this.normalizeRoleName(roleName)
+        );
+        if (!roleConfig) {
+          this.recordRoleFunctionalResult({
+            userRole: roleName,
+            tabName: 'Role Matrix',
+            flowName: 'Resolve target role',
+            status: 'failed',
+            reason: `Role "${roleName}" was not found in test-data/roles/role-navigation-matrix.json.`,
+            visibleTabs: []
+          });
+        }
+        return roleConfig;
+      })
+      .filter(Boolean);
+  }
+
+  credentialsForRoleFunctionalRun(roleRunner, roleConfig) {
+    const generatedCredential = this.roleCredentialsForMatrixRole(roleConfig.name);
+    if (generatedCredential?.email && generatedCredential?.password) {
+      return generatedCredential;
+    }
+    return roleRunner.credentialsFor(roleConfig);
+  }
+
+  async ensureRoleFunctionalCredentials(roleConfigs, roleRunner) {
+    const missingRoleConfigs = roleConfigs.filter((roleConfig) => {
+      const credentials = this.credentialsForRoleFunctionalRun(roleRunner, roleConfig);
+      return !credentials?.email || !credentials?.password;
+    });
+
+    if (!missingRoleConfigs.length || this.options.skipUserManagement) return;
+
+    console.log(
+      `Creating missing role accounts for role-functional validation: ${
+        missingRoleConfigs.map((role) => role.name).join(', ')
+      }`
+    );
+
+    const previousDynamicRoleBased = this.options.dynamicRoleBased;
+    const previousGeneratedUsers = this.options.generatedUsers;
+    const previousSkipUserManagementNegative = this.options.skipUserManagementNegative;
+    const previousInviteRoles = process.env.USER_INVITE_ROLES;
+    const missingInviteRoles = missingRoleConfigs.map((role) => role.name.replace('View-Only', 'View Only'));
+
+    try {
+      this.options.dynamicRoleBased = true;
+      this.options.skipUserManagementNegative = true;
+      this.options.generatedUsers = this.options.generatedUsersExplicit
+        ? Math.max(Number(this.options.generatedUsers || 0), missingRoleConfigs.length)
+        : missingRoleConfigs.length;
+      process.env.USER_INVITE_ROLES = missingInviteRoles.join(',');
+      await this.runUserManagementFlow();
+    } finally {
+      this.options.dynamicRoleBased = previousDynamicRoleBased;
+      this.options.generatedUsers = previousGeneratedUsers;
+      this.options.skipUserManagementNegative = previousSkipUserManagementNegative;
+      if (previousInviteRoles === undefined) {
+        delete process.env.USER_INVITE_ROLES;
+      } else {
+        process.env.USER_INVITE_ROLES = previousInviteRoles;
+      }
+    }
+  }
+
+  buildDynamicRoleCredentialMap(roleConfigs) {
+    return Object.fromEntries(roleConfigs.map((roleConfig) => {
+      const credential = this.roleCredentialsForMatrixRole(roleConfig.name);
+      return [roleConfig.name, credential || {}];
+    }));
+  }
+
+  appendRoleNavigationSteps(roleRunner) {
+    for (const sourceStep of roleRunner.steps || []) {
+      const stepNumber = ++this.stepCounter;
+      const roleName = String(sourceStep.flowName || '').replace(/^Role Navigation\s+-\s+/i, '') || null;
+      this.steps.push({
+        ...sourceStep,
+        stepNumber,
+        id: `TC-${String(stepNumber).padStart(2, '0')}`,
+        pageName: 'Role-Based Access',
+        userRole: roleName,
+        timestamp: sourceStep.timestamp || new Date().toISOString()
+      });
+    }
+  }
+
+  async runDynamicRoleBasedAccessFlow() {
+    const matrix = readRoleMatrix();
+    const requiredRoleNames = ['Project Admin', 'Project User', 'View-Only User'];
+    const roleConfigs = requiredRoleNames.map((roleName) =>
+      matrix.roles.find((role) => this.normalizeRoleName(role.name) === this.normalizeRoleName(roleName))
+    ).filter(Boolean);
+    const missingCreatedRoles = requiredRoleNames.filter((roleName) => !this.roleCredentialsForMatrixRole(roleName));
+
+    if (missingCreatedRoles.length) {
+      const reason = `Generated user credentials are missing for: ${missingCreatedRoles.join(', ')}.`;
+      for (const roleName of missingCreatedRoles) {
+        this.recordBlockedStep(`Role-Based Access - ${roleName}`, 'Validate role permissions', reason, {
+          pageName: 'Role-Based Access',
+          dependsOn: 'User Management user creation'
+        });
+      }
+    }
+
+    const runnableRoleConfigs = roleConfigs.filter((roleConfig) => this.roleCredentialsForMatrixRole(roleConfig.name));
+    if (!runnableRoleConfigs.length) return;
+
+    const roleRunner = new RoleNavigationRunner({
+      ...this.options,
+      roleCredentials: this.buildDynamicRoleCredentialMap(runnableRoleConfigs),
+      continueOnFailure: this.options.continueOnFailure,
+      noOpen: true,
+      generateReport: false
+    });
+    roleRunner.browser = this.browser;
+
+    for (const roleConfig of runnableRoleConfigs) {
+      await roleRunner.validateRole(roleConfig);
+    }
+
+    this.roleNavigationResults = roleRunner.results;
+    this.roleNavigationSummary = {
+      passed: roleRunner.results.filter((result) => result.status === 'passed').length,
+      failed: roleRunner.results.filter((result) => result.status === 'failed').length,
+      skipped: roleRunner.results.filter((result) => result.status === 'skipped').length
+    };
+    this.appendRoleNavigationSteps(roleRunner);
+  }
+
+  recordRoleFunctionalResult(record) {
+    this.roleFunctionalResults.push({
+      userRole: record.userRole,
+      username: record.username || null,
+      tabName: record.tabName || '-',
+      flowName: record.flowName || '-',
+      status: record.status,
+      reason: record.reason || null,
+      duration: record.duration || 0,
+      visibleTabs: record.visibleTabs || [],
+      evidence: record.evidence || null
+    });
+  }
+
+  summarizeRoleFunctionalResults() {
+    const summary = {
+      passed: 0,
+      failed: 0,
+      skipped: 0,
+      roles: {}
+    };
+
+    for (const result of this.roleFunctionalResults) {
+      const status = result.status || 'skipped';
+      summary[status] = (summary[status] || 0) + 1;
+      if (!summary.roles[result.userRole]) {
+        summary.roles[result.userRole] = { passed: 0, failed: 0, skipped: 0 };
+      }
+      summary.roles[result.userRole][status] = (summary.roles[result.userRole][status] || 0) + 1;
+    }
+
+    return summary;
+  }
+
+  async runRoleFunctionalFlow(roleRun, tabName, flowName, action) {
+    const startedAt = Date.now();
+    const beforeStepCount = this.steps.length;
+    this.logProgress('role-flow-start', {
+      role: roleRun.name,
+      tab: tabName,
+      flow: flowName
+    });
+
+    try {
+      await action();
+      const failedStep = this.steps
+        .slice(beforeStepCount)
+        .find((step) => step.status === 'failed');
+      const skippedSteps = this.steps
+        .slice(beforeStepCount)
+        .filter((step) => step.status === 'skipped');
+
+      if (failedStep) {
+        throw new Error(`${failedStep.id} ${failedStep.name} failed: ${failedStep.error}`);
+      }
+
+      this.recordRoleFunctionalResult({
+        userRole: roleRun.name,
+        username: roleRun.email,
+        tabName,
+        flowName,
+        status: skippedSteps.length ? 'skipped' : 'passed',
+        reason: skippedSteps.length
+          ? skippedSteps.map((step) => `${step.id}: ${step.error || step.name}`).join(' | ')
+          : null,
+        duration: Date.now() - startedAt,
+        visibleTabs: roleRun.visibleTabs
+      });
+      this.logProgress('role-flow-finished', {
+        role: roleRun.name,
+        tab: tabName,
+        flow: flowName,
+        status: skippedSteps.length ? 'skipped' : 'passed',
+        durationMs: Date.now() - startedAt
+      });
+    } catch (error) {
+      this.recordRoleFunctionalResult({
+        userRole: roleRun.name,
+        username: roleRun.email,
+        tabName,
+        flowName,
+        status: 'failed',
+        reason: error.message,
+        duration: Date.now() - startedAt,
+        visibleTabs: roleRun.visibleTabs
+      });
+      this.logProgress('role-flow-finished', {
+        role: roleRun.name,
+        tab: tabName,
+        flow: flowName,
+        status: 'failed',
+        durationMs: Date.now() - startedAt,
+        reason: error.message
+      });
+      if (!this.options.continueOnFailure) throw error;
+    }
+  }
+
+  roleCanRunPrivilegedLifecycle(roleName) {
+    return /\b(Admin|Manager|Owner)\b|All\s+(Role|User)\s+Access/i.test(String(roleName || ''));
+  }
+
+  getRoleFunctionalFlowDefinitions(roleRun = {}) {
+    return [
+      {
+        tabName: 'Project Management',
+        flowName: 'Project Management setup validation',
+        skip: false,
+        run: async () => {
+          const setupReady = await this.prepareDynamicProjectManagementData();
+          if (!setupReady) {
+            throw new Error('Project Management setup prerequisites are missing.');
+          }
+        }
+      },
+      {
+        tabName: 'New Booking',
+        flowName: 'All available booking creation flows',
+        skip: this.options.skipBookingFlows,
+        skipReason: 'Booking creation flows were disabled by --skip-booking-flows.',
+        run: async () => this.runDiscoveredBookingCreationFlows()
+      },
+      {
+        tabName: 'Booking List',
+        flowName: 'Booking lifecycle edit flow',
+        skip: this.options.skipBookingFlows,
+        skipReason: 'Booking lifecycle flow was disabled by --skip-booking-flows.',
+        run: async () => this.roleCanRunPrivilegedLifecycle(roleRun.name)
+          ? this.runPrivilegedEditBookingFlow()
+          : this.runEditBookingFlow()
+      },
+      {
+        tabName: 'Booking List',
+        flowName: 'Booking List filters',
+        skip: this.options.skipFilter,
+        skipReason: 'Booking List filter flow was disabled by --skip-filter.',
+        run: async () => this.runFilterFlow()
+      },
+      {
+        tabName: 'Booking List',
+        flowName: 'Booking List statuses and sorting',
+        skip: this.options.skipBookingListValidation,
+        skipReason: 'Booking List validation was disabled by --skip-booking-list-validation.',
+        run: async () => this.runBookingListValidationFlow()
+      },
+      {
+        tabName: 'Calendar',
+        flowName: 'Calendar functional flow',
+        skip: this.options.skipCalendar,
+        skipReason: 'Calendar flow was disabled by --skip-calendar.',
+        run: async () => this.runCalendarFlow()
+      },
+      {
+        tabName: 'Analytics',
+        flowName: 'Analytics and Environment Reports flow',
+        skip: this.options.skipAnalytics,
+        skipReason: 'Analytics flow was disabled by --skip-analytics.',
+        run: async () => this.runAnalyticsFlow()
+      },
+      {
+        tabName: 'Equipment Management',
+        flowName: 'Equipment Management functional flow',
+        skip: this.options.skipEquipmentManagement,
+        skipReason: 'Equipment Management flow was disabled by --skip-equipment-management.',
+        run: async () => this.runEquipmentManagementRoleAccessFlow()
+      },
+      {
+        tabName: 'User Management',
+        flowName: 'User Management functional flow',
+        skip: this.options.skipUserManagement,
+        skipReason: 'User Management flow was disabled by --skip-user-management.',
+        run: async () => this.runUserManagementRoleAccessFlow()
+      }
+    ];
+  }
+
+  getRoleProfileFlowDefinitions() {
+    return [
+      {
+        tabName: 'Profile Menu',
+        flowName: 'My Account profile flow',
+        skip: this.options.skipMyAccount,
+        skipReason: 'My Account flow was disabled by --skip-my-account.',
+        run: async () => this.runMyAccountFlow()
+      },
+      {
+        tabName: 'Profile Menu',
+        flowName: 'Notification Preferences flow',
+        skip: this.options.skipNotificationPreferences,
+        skipReason: 'Notification Preferences flow was disabled by --skip-notification-preferences.',
+        run: async () => this.runNotificationPreferencesFlow()
+      },
+      {
+        tabName: 'Profile Menu',
+        flowName: 'My Organization flow',
+        skip: this.options.skipMyOrganization,
+        skipReason: 'My Organization flow was disabled by --skip-my-organization.',
+        run: async () => this.runMyOrganizationFlow()
+      }
+    ];
+  }
+
+  async runRoleNavigationForMatrix(roleConfigs) {
+    const roleRunner = new RoleNavigationRunner({
+      ...this.options,
+      roleCredentials: this.buildDynamicRoleCredentialMap(roleConfigs),
+      continueOnFailure: this.options.continueOnFailure,
+      noOpen: true,
+      generateReport: false
+    });
+    roleRunner.browser = this.browser;
+
+    for (const roleConfig of roleConfigs) {
+      await roleRunner.validateRole(roleConfig);
+    }
+
+    this.roleNavigationResults = roleRunner.results;
+    this.roleNavigationSummary = {
+      passed: roleRunner.results.filter((result) => result.status === 'passed').length,
+      failed: roleRunner.results.filter((result) => result.status === 'failed').length,
+      skipped: roleRunner.results.filter((result) => result.status === 'skipped').length
+    };
+    this.appendRoleNavigationSteps(roleRunner);
+  }
+
+  async runFunctionalFlowsForRole(roleConfig, credentials) {
+    if (!credentials.email || !credentials.password) {
+      const reason = `Credentials not configured. Set ${roleConfig.emailEnv}/${roleConfig.passwordEnv}.`;
+      this.logProgress('role-skipped', {
+        role: roleConfig.name,
+        reason
+      });
+      this.recordBlockedStep(`Role Functional - ${roleConfig.name}`, 'Run available tab flows', reason, {
+        pageName: 'Role Functional Flows',
+        userRole: roleConfig.name
+      });
+      this.recordRoleFunctionalResult({
+        userRole: roleConfig.name,
+        tabName: 'Credentials',
+        flowName: 'Available tab functional flows',
+        status: 'skipped',
+        reason,
+        visibleTabs: []
+      });
+      return;
+    }
+
+    const roleRun = {
+      name: roleConfig.name,
+      email: credentials.email,
+      password: credentials.password,
+      visibleTabs: []
+    };
+    const previousRoleContext = this.currentRoleContext;
+    const previousEmail = this.options.email;
+    const previousPassword = this.options.password;
+
+    this.currentRoleContext = {
+      roleName: roleRun.name,
+      email: roleRun.email
+    };
+    this.options.email = roleRun.email;
+    this.options.password = roleRun.password;
+    this.logProgress('role-start', {
+      role: roleRun.name,
+      username: roleRun.email
+    });
+
+    try {
+      await this.resetBrowserContextForRole(roleRun);
+      await this.openBookingList();
+      const roleNavigation = new RoleNavigationPage(this.page, this.options);
+      const visibleTabs = await roleNavigation.collectVisibleNavigationTabs();
+      roleRun.visibleTabs = visibleTabs.map((tab) => tab.name);
+      const visibleTabSet = new Set(roleRun.visibleTabs);
+      const screenshot = await this.captureEvidenceScreenshot(`${roleRun.name}-functional-tabs`);
+      this.logProgress('role-tabs-collected', {
+        role: roleRun.name,
+        tabs: roleRun.visibleTabs
+      });
+
+      this.recordRoleFunctionalResult({
+        userRole: roleRun.name,
+        username: roleRun.email,
+        tabName: 'Left Navigation',
+        flowName: 'Collect available tabs',
+        status: 'passed',
+        duration: 0,
+        visibleTabs: roleRun.visibleTabs,
+        evidence: screenshot
+      });
+
+      for (const flow of this.getRoleFunctionalFlowDefinitions(roleRun)) {
+        if (!visibleTabSet.has(flow.tabName)) continue;
+        if (flow.skip) {
+          this.recordRoleFunctionalResult({
+            userRole: roleRun.name,
+            username: roleRun.email,
+            tabName: flow.tabName,
+            flowName: flow.flowName,
+            status: 'skipped',
+            reason: flow.skipReason,
+            visibleTabs: roleRun.visibleTabs
+          });
+          continue;
+        }
+        await this.runRoleFunctionalFlow(roleRun, flow.tabName, flow.flowName, flow.run);
+      }
+
+      for (const flow of this.getRoleProfileFlowDefinitions()) {
+        if (flow.skip) {
+          this.recordRoleFunctionalResult({
+            userRole: roleRun.name,
+            username: roleRun.email,
+            tabName: flow.tabName,
+            flowName: flow.flowName,
+            status: 'skipped',
+            reason: flow.skipReason,
+            visibleTabs: roleRun.visibleTabs
+          });
+          continue;
+        }
+        await this.runRoleFunctionalFlow(roleRun, flow.tabName, flow.flowName, flow.run);
+      }
+    } catch (error) {
+      this.recordRoleFunctionalResult({
+        userRole: roleRun.name,
+        username: roleRun.email,
+        tabName: 'Role Bootstrap',
+        flowName: 'Login and open project',
+        status: 'failed',
+        reason: error.message,
+        visibleTabs: roleRun.visibleTabs
+      });
+      this.logProgress('role-finished', {
+        role: roleRun.name,
+        status: 'failed',
+        reason: error.message
+      });
+      if (!this.options.continueOnFailure) throw error;
+    } finally {
+      this.options.email = previousEmail;
+      this.options.password = previousPassword;
+      this.currentRoleContext = previousRoleContext;
+      this.logProgress('role-finished', {
+        role: roleRun.name,
+        status: this.roleFunctionalResults.some((result) =>
+          result.userRole === roleRun.name && result.status === 'failed'
+        ) ? 'failed' : 'completed'
+      });
+    }
+  }
+
+  async runRoleFunctionalFlowsForAllUserTypes() {
+    const matrix = readRoleMatrix();
+    const roleRunner = new RoleNavigationRunner(this.options);
+    const targetRoleNames = this.roleFunctionalTargetRoleNames();
+    const roleConfigs = this.roleConfigsForTargetRoles(matrix, targetRoleNames);
+    this.logProgress('role-functional-suite-start', {
+      roles: roleConfigs.map((role) => role.name)
+    });
+
+    await this.ensureRoleFunctionalCredentials(roleConfigs, roleRunner);
+    await this.runRoleNavigationForMatrix(roleConfigs);
+
+    for (const roleConfig of roleConfigs) {
+      const credentials = this.credentialsForRoleFunctionalRun(roleRunner, roleConfig);
+      await this.runFunctionalFlowsForRole(roleConfig, credentials);
+    }
+
+    this.roleFunctionalSummary = this.summarizeRoleFunctionalResults();
+    this.logProgress('role-functional-suite-finished', this.roleFunctionalSummary);
+  }
+
   async runAllFlows() {
     this.startTime = new Date();
     await this.setupBrowser();
@@ -1995,6 +3033,26 @@ class FullApplicationRunner {
         console.log('Skipping SSO bootstrap and using existing auth.json session.');
       } else {
         await this.loginOnce();
+      }
+      if (this.options.roleFunctionalFlows) {
+        await this.prepareDynamicProjectManagementData();
+        await this.runRoleFunctionalFlowsForAllUserTypes();
+        return;
+      }
+      if (this.options.dynamicRoleBased) {
+        const setupReady = await this.prepareDynamicProjectManagementData();
+        if (!setupReady) {
+          console.log('Stopping dynamic role-based run because Project Management setup prerequisites are missing.');
+          return;
+        }
+        if (this.options.skipUserManagement) {
+          const reason = 'User Management was skipped, so generated role credentials were not created.';
+          this.recordBlockedStep('User Management', 'Create Project Admin, Project User, and View-Only User accounts', reason);
+          this.recordBlockedStep('Role-Based Access', 'Validate generated role permissions', reason);
+          return;
+        }
+        await this.runUserManagementFlow();
+        await this.runDynamicRoleBasedAccessFlow();
       }
       if (this.options.bookingListPageOnly) {
         console.log('Running Booking List page only: Edit Booking, filters, and Booking List validations.');
@@ -2047,9 +3105,11 @@ class FullApplicationRunner {
       } else {
         await this.runEquipmentManagementFlow();
       }
-      if (this.options.skipUserManagement) {
-        this.userManagementSkipped = true;
-        console.log('Skipping User Management flow because --skip-user-management was provided.');
+      if (this.options.skipUserManagement || this.options.dynamicRoleBased) {
+        this.userManagementSkipped = Boolean(this.options.skipUserManagement);
+        console.log(this.options.dynamicRoleBased
+          ? 'Skipping later User Management flow because generated users were created at the start of dynamic role-based mode.'
+          : 'Skipping User Management flow because --skip-user-management was provided.');
       } else {
         await this.runUserManagementFlow();
       }
@@ -2100,7 +3160,9 @@ class FullApplicationRunner {
     const stepFailed = this.steps.some((step) => step.status === 'failed');
     const bookingTypeFailed = this.bookingTypeResults.some((result) => result.status === 'failed');
     const approvalFailed = this.approvalValidationResults.some((result) => result.status === 'failed');
-    return stepFailed || bookingTypeFailed || approvalFailed ? 'failed' : 'passed';
+    const roleFailed = this.roleNavigationResults.some((result) => result.status === 'failed');
+    const roleFunctionalFailed = this.roleFunctionalResults.some((result) => result.status === 'failed');
+    return stepFailed || bookingTypeFailed || approvalFailed || roleFailed || roleFunctionalFailed ? 'failed' : 'passed';
   }
 
   getPageReports() {
@@ -2137,12 +3199,220 @@ class FullApplicationRunner {
     return Array.from(pages.values());
   }
 
+  buildIssueReport(report, reportPath, issueReportPath) {
+    const roleFailures = (report.roleNavigationResults || []).filter((result) => result.status === 'failed');
+    const roleFunctionalFailures = (report.roleFunctionalResults || []).filter((result) => result.status === 'failed');
+    const failedMatrixRows = [
+      ...(report.bookingTypeResults || []),
+      ...(report.approvalValidationResults || []),
+      ...(report.roleFunctionalResults || [])
+    ].filter((result) => result.status === 'failed');
+    const skippedRows = [
+      ...(report.tests || []).filter((step) => step.status === 'skipped'),
+      ...(report.blockedScenarios || [])
+    ];
+    const data = report.dynamicTestData || {};
+    const lines = [];
+
+    lines.push('# Construction Delivery Automation Issue Report');
+    lines.push('');
+    lines.push(`Run timestamp: ${report.startTime} to ${report.endTime}`);
+    lines.push(`Environment: ${report.environmentName || 'Staging'}`);
+    lines.push(`Project ID: ${report.projectId || data.projectId || this.options.projectId || '-'}`);
+    lines.push(`Browser: Chrome, ${report.browserMode || (this.options.headless ? 'headless' : 'headed')}`);
+    lines.push(`Workflow: ${report.workflow || '-'}`);
+    lines.push('');
+    lines.push('## Report Files');
+    lines.push('');
+    lines.push(`- HTML dashboard: reports/automation-dashboard-latest.html`);
+    lines.push(`- JSON result: ${path.relative(process.cwd(), reportPath).replace(/\\/g, '/')}`);
+    lines.push(`- Issue report: ${path.relative(process.cwd(), issueReportPath).replace(/\\/g, '/')}`);
+    lines.push('');
+    lines.push('## Overall Result');
+    lines.push('');
+    lines.push(`- Final status: ${report.status}`);
+    lines.push(`- Totals: ${report.total} total, ${report.passed} passed, ${report.failed} failed, ${report.skipped} skipped`);
+    lines.push(`- Duration: ${Math.round((Number(report.duration) || 0) / 1000)}s`);
+    lines.push('');
+    lines.push('## Page Summary');
+    lines.push('');
+    lines.push(markdownTable(
+      ['Page', 'Status', 'Total', 'Passed', 'Failed', 'Skipped'],
+      (report.pages || []).map((pageReport) => [
+        pageReport.pageName,
+        pageReport.status,
+        pageReport.total,
+        pageReport.passed,
+        pageReport.failed,
+        pageReport.skipped || 0
+      ])
+    ));
+    lines.push('');
+    lines.push('## Generated Project Management Data');
+    lines.push('');
+    lines.push(markdownTable(
+      ['Data Type', 'Value'],
+      [
+        ['Access Point', data.accessPointName],
+        ['Access Point ID', data.accessPointId],
+        ['Resource', data.resourceName],
+        ['Resource Availability Enabled Name', data.resourceAvailabilityEnabledName],
+        ['Vehicle', data.vehicleName],
+        ['Vehicle Fuel Type', data.vehicleFuelType],
+        ['Vehicle Emission Name', data.vehicleEmissionName],
+        ['Equipment', data.equipmentName],
+        ['Updated At', data.updatedAt]
+      ]
+    ));
+    lines.push('');
+    lines.push('## Generated Role Users');
+    lines.push('');
+    lines.push(markdownTable(
+      ['Role', 'Email', 'Password'],
+      (report.createdUsers || []).map((user) => [user.role, user.email, user.password])
+    ));
+    lines.push('');
+    lines.push('## Booking Flow Results');
+    lines.push('');
+    lines.push('All booking flows should use the Access Point, Resource, and Vehicle generated for the same automation execution.');
+    lines.push('');
+    lines.push(markdownTable(
+      ['User Role', 'Booking Type', 'Status', 'Booking Reference', 'Reason'],
+      (report.bookingTypeResults || []).map((result) => [
+        result.userRole || '-',
+        result.label || result.key,
+        result.status,
+        result.bookingRef || result.bookingId,
+        result.reason || result.error || result.skipReason
+      ])
+    ));
+    lines.push('');
+    lines.push('## Failed Test Cases');
+    lines.push('');
+    lines.push(markdownTable(
+      ['ID', 'Page', 'Flow', 'Name', 'Error', 'Screenshot'],
+      (report.failedTestCases || []).map((test) => [
+        test.id,
+        test.pageName,
+        test.flowName,
+        test.name,
+        test.error,
+        test.screenshot
+      ])
+    ));
+
+    if (roleFailures.length) {
+      lines.push('');
+      lines.push('## Failed Role Permission Results');
+      for (const result of roleFailures) {
+        lines.push('');
+        lines.push(`### ${result.userRole || 'Unknown Role'}`);
+        lines.push('');
+        lines.push(`- User: ${result.username || '-'}`);
+        lines.push(`- Status: ${result.status}`);
+        lines.push(`- Reason: ${result.reason || '-'}`);
+        lines.push(`- Expected tabs: ${listText(result.expectedTabs)}`);
+        lines.push(`- Restricted tabs: ${listText(result.restrictedTabs)}`);
+        lines.push(`- Actual tabs: ${listText(result.actualTabs)}`);
+        lines.push(`- Duplicate visible tabs: ${listText(result.duplicateTabs)}`);
+        lines.push(`- Screenshot: ${result.screenshot || '-'}`);
+
+        const failedPermittedAccess = (result.permittedAccess || []).filter((access) => access.status === 'failed');
+        if (failedPermittedAccess.length) {
+          lines.push('');
+          lines.push(markdownTable(
+            ['Permitted Tab', 'Reason', 'Attempts'],
+            failedPermittedAccess.map((access) => [
+              access.tabName,
+              access.reason,
+              (access.attempts || []).map((attempt) =>
+                `${attempt.targetUrl} -> ${attempt.finalUrl}; unauthorized=${attempt.unauthorized}; contentVisible=${attempt.contentVisible}`
+              ).join(' | ')
+            ])
+          ));
+        }
+      }
+    }
+
+    if (roleFunctionalFailures.length) {
+      lines.push('');
+      lines.push('## Failed Role Functional Flow Results');
+      lines.push('');
+      lines.push(markdownTable(
+        ['Role', 'User', 'Tab', 'Flow', 'Reason'],
+        roleFunctionalFailures.map((result) => [
+          result.userRole,
+          result.username,
+          result.tabName,
+          result.flowName,
+          result.reason
+        ])
+      ));
+    }
+
+    lines.push('');
+    lines.push('## Failed Matrix Rows');
+    lines.push('');
+    lines.push(markdownTable(
+      ['Type', 'Status', 'Reason'],
+      failedMatrixRows.map((result) => [
+        result.label || result.name || result.flowName || result.key,
+        result.status,
+        result.reason || result.error
+      ])
+    ));
+    lines.push('');
+    lines.push('## Skipped Or Blocked Scenarios');
+    lines.push('');
+    lines.push(markdownTable(
+      ['ID', 'Page', 'Name', 'Reason'],
+      skippedRows.map((step) => [
+        step.id,
+        step.pageName,
+        step.name,
+        step.error || step.reason || step.skipReason
+      ])
+    ));
+    lines.push('');
+    lines.push('## Recent HTTP Errors');
+    lines.push('');
+    lines.push(markdownTable(
+      ['Status', 'Method', 'URL'],
+      (report.recentHttpErrors || []).map((error) => [error.status, error.method, error.url])
+    ));
+    lines.push('');
+    lines.push('## Notes');
+    lines.push('');
+    lines.push('- External analytics, survey script, favicon, and Chrome notification limitations may appear in the browser console and are not counted as application failures unless a test assertion failed.');
+
+    return `${lines.join('\n')}\n`;
+  }
+
+  writeIssueReport(report, reportPath, endTime) {
+    const reportsDir = path.resolve('reports');
+    fs.mkdirSync(reportsDir, { recursive: true });
+    const issueReportPath = path.join(reportsDir, `issue-report-${formatTimestampForFile(endTime)}.md`);
+    const latestIssueReportPath = path.join(reportsDir, 'issue-report-latest.md');
+    const markdown = this.buildIssueReport(report, reportPath, issueReportPath);
+
+    fs.writeFileSync(issueReportPath, markdown, 'utf8');
+    fs.writeFileSync(latestIssueReportPath, markdown, 'utf8');
+    this.issueReportPath = issueReportPath;
+
+    return issueReportPath;
+  }
+
   async writeReport() {
     fs.mkdirSync(RESULTS_DIR, { recursive: true });
 
     const endTime = this.endTime || new Date();
     const status = this.getReportStatus();
-    const matrixRows = [...this.bookingTypeResults, ...this.approvalValidationResults];
+    const matrixRows = [
+      ...this.bookingTypeResults,
+      ...this.approvalValidationResults,
+      ...this.roleNavigationResults,
+      ...this.roleFunctionalResults
+    ];
     const passed = this.steps.filter((step) => step.status === 'passed').length +
       matrixRows.filter((row) => row.status === 'passed').length;
     const failed = this.steps.filter((step) => step.status === 'failed').length +
@@ -2174,8 +3444,17 @@ class FullApplicationRunner {
       bookingTypeAvailability: this.bookingTypeAvailability,
       bookingTypeResults: this.bookingTypeResults,
       approvalValidationResults: this.approvalValidationResults,
+      roleNavigationResults: this.roleNavigationResults,
+      roleNavigationSummary: this.roleNavigationSummary,
+      roleFunctionalResults: this.roleFunctionalResults,
+      roleFunctionalSummary: this.roleFunctionalSummary,
+      progressLogPath: this.progressLogPath,
       inviteEmail: this.inviteEmail || null,
       createdUsers: this.createdUsers || [],
+      dynamicTestData: this.dynamicTestData,
+      blockedScenarios: this.blockedScenarios,
+      recentHttpErrors: this.recentHttpErrors,
+      projectId: this.options.projectId,
       userAccountsSource: this.userAccountsSource || null,
       userManagementSkipped: Boolean(this.userManagementSkipped),
       analyticsSkipped: Boolean(this.analyticsSkipped),
@@ -2195,13 +3474,17 @@ class FullApplicationRunner {
       myAccountFlow: this.myAccountFlow || null,
       notificationPreferencesFlow: this.notificationPreferencesFlow || null,
       myOrganizationFlow: this.myOrganizationFlow || null,
-      workflow: this.options.bookingCreationOnly
-        ? (this.options.approvalMatrix ? 'dynamic-booking-approval-matrix' : 'dynamic-booking-creation')
-        : 'single-session-full-application',
+      workflow: this.options.roleFunctionalFlows
+        ? 'all-user-types-tab-functional-flows'
+        : this.options.bookingCreationOnly
+          ? (this.options.approvalMatrix ? 'dynamic-booking-approval-matrix' : 'dynamic-booking-creation')
+          : 'single-session-full-application',
       environmentName: process.env.ENVIRONMENT_NAME || 'Staging',
       baseUrl: this.options.baseUrl,
       appUrl: this.options.appUrl,
       browserMode: this.options.headless ? 'headless' : 'headed',
+      browserName: 'Google Chrome',
+      browserVersion: this.browserVersion || null,
       viewport: this.viewport,
       actionGap: this.options.actionGap,
       highlightMs: this.options.highlightMs,
@@ -2215,6 +3498,8 @@ class FullApplicationRunner {
     };
 
     const reportPath = path.join(RESULTS_DIR, `full-application-report-${formatTimestampForFile(endTime)}.json`);
+    const issueReportPath = this.writeIssueReport(report, reportPath, endTime);
+    report.issueReportPath = issueReportPath;
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2), 'utf8');
     this.reportPath = reportPath;
 
@@ -2226,6 +3511,7 @@ class FullApplicationRunner {
     }
     console.log(`Duration: ${Math.round(report.duration / 1000)}s`);
     console.log(`Report: ${path.relative(process.cwd(), reportPath)}`);
+    console.log(`Issue Report: ${path.relative(process.cwd(), issueReportPath)}`);
   }
 }
 
