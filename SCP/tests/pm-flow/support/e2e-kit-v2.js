@@ -562,7 +562,9 @@ function e2eKitV2(page, { kit, navigator, outDir, config, site }) {
     // Configuration Options: every "label → value" setting (Currency Type, …).
     async configurationOptions() {
       await navigator.open('Configuration Options'); await settle(1500);
-      return page.evaluate(() => {
+      // 23 Nov 2026: read too early, a dropdown still shows its placeholder "Choose" (Currency Type "Choose" → "INR" was
+      // reported as a change). Re-read for up to ~16 s until no dropdown shows the placeholder.
+      const read = () => page.evaluate(() => {
         const c = t => String(t || '').replace(/\s+/g, ' ').trim();
         const out = {};
         // Each setting is a "justify-between" row: first <p> = label (its "?" More-info button removed), then either a
@@ -581,6 +583,13 @@ function e2eKitV2(page, { kit, navigator, outDir, config, site }) {
         }
         return out;
       });
+      let out = {};
+      for (let n = 0; n < 8; n++) {
+        out = await read();
+        if (!Object.values(out).some(v => /^Choose$/i.test(v))) break;
+        await page.waitForTimeout(2000);
+      }
+      return out;
     },
 
     async leadTimeAnalysisRow(category) {

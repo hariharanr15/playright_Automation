@@ -137,34 +137,43 @@ test('Role-based access – admin changes', async ({ page, browserName }) => {
       await run.scenario(meta('PM-REG-ROLE-22', 'Org Admin creates a project in the admin portal'), async s => {
         await s.step(`Voyage Control Admin › "New Project": Project Name "${RUN}", first Region, address, Project Owner = the admin account, "Create Project" → listed under Projects`, async () => {
           await nav('New Project'); await settleA(1500);
-          const form = st.adm.getByText('Project Name*').first().locator('xpath=ancestor::div[.//button[normalize-space()="Create Project"]][1]');
-          const field = label => form.getByText(label, { exact: true }).first().locator('xpath=following::input[1]');
-          await field('Project Name*').fill(RUN);
-          const region = form.getByText('Region*', { exact: true }).first().locator('xpath=following::*[self::select or @role="combobox"][1]');
-          if (await region.evaluate(e => e.tagName === 'SELECT').catch(() => false)) await region.selectOption({ index: 1 });
-          else { await region.click(); await st.adm.getByRole('option').first().click(); }
-          await field('Project Address*').fill('32 London Bridge St. London, UK');
-          await st.adm.waitForTimeout(1500); await st.adm.keyboard.press('Escape').catch(() => null);
-          await field('Project Owner Email Address*').fill(config.username);
+          // Fields by their name attribute (siteName / siteAddress / email). Escape closes the whole New Project dialog (23 Nov 2026), so it is never pressed.
+          const form = st.adm.locator('input[name=siteName]').locator('xpath=ancestor::div[.//button[normalize-space()="Create Project"]][1]');
+          await form.locator('input[name=siteName]').fill(RUN);
+          await form.getByText('Region*', { exact: true }).first().locator('xpath=following::input[1]').click(); await st.adm.waitForTimeout(1200);
+          const region = (await st.adm.getByRole('option').allInnerTexts())[0];
+          await st.adm.getByRole('option', { name: region, exact: true }).click(); await st.adm.waitForTimeout(800);
+          s.observe(`region: ${region}`);
+          await form.locator('input[name=siteAddress]').fill('32 London Bridge St. London, UK');
+          await form.locator('input[name=email]').fill(config.username);
+          // "Create Project" is enabled only after the email field loses focus (checked 23 Nov 2026); Tab, not Escape.
+          await form.locator('input[name=email]').press('Tab'); await st.adm.waitForTimeout(800);
           await form.getByRole('button', { name: 'Create Project', exact: true }).last().click(); await settleA(4000);
           s.observe((await st.adm.getByRole('status').allInnerTexts().catch(() => [])).join(' | ') || '(no message)');
           await nav('Projects');
           const box = st.adm.getByRole('textbox').first(); await box.fill(RUN); await box.press('Enter'); await settleA();
           await expect(st.adm.getByRole('row').filter({ hasText: RUN }).first(), `"${RUN}" listed`).toBeVisible({ timeout: 20000 });
-        });
+        }, { attempts: 1 }); // a retry would create a second project
       });
     } finally {
       await run.scenario({ ...meta('ROLEW-RESTORE', 'Restore the test role and the Supplier account', 'Setup'), always: true }, async s => {
+        // A failed step can leave a portal dialog open (it blocks the Roles page): start from a reloaded portal page.
+        if (st.adm) { await st.adm.reload({ waitUntil: 'domcontentloaded' }).catch(() => null); await settleA(); }
         await s.step('Test role back to its baseline permissions', async () => {
           if (!st.baseline) return;
           await setPermissions(TEST_ROLE, st.baseline);
           expect([...(await permissions(TEST_ROLE))].sort()).toEqual([...st.baseline].sort());
         });
         await s.step('Supplier account back on its original Project Role, verified from its own session', async () => {
-          if (!st.assigned) { s.observe('role not changed by this run'); return; }
+          // Checked from the Supplier's own session even when this run did not change it (a stopped run may have).
+          await supplierSignIn();
+          let now = await sessionRole();
+          if (now === 'Supplier') { s.observe('role already Supplier'); return; }
+          // A failed earlier step (e.g. the New Project form) can leave a dialog open: start from a fresh portal page.
+          await st.adm.reload({ waitUntil: 'domcontentloaded' }).catch(() => null); await settleA();
           await setProjectRole(st.original && st.original !== TEST_ROLE ? st.original : 'Supplier');
           await supplierSignIn();
-          const now = await sessionRole(); s.observe(`role now: ${now}`);
+          now = await sessionRole(); s.observe(`role now: ${now}`);
           expect(now).toBe('Supplier');
         }, { critical: true });
       });

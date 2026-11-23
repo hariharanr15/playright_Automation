@@ -333,3 +333,22 @@ Discovery facts used: row ticks survive navigation (untick first); choosing a ro
 **Held back until after the demo** (they change NRVC_Hall's live settings): CFG-09/10/13/15/16 and PLC-06.
 
 **Incident (resolved):** the test Supplier account stayed on "SCP Automation Test Role", an exact copy of Supplier, after the first role run. The portal row read back "Supplier". It was put back to Supplier and verified from the account's own session. Lesson: verify a role from the user's session, not the portal row.
+
+## 19. Overnight demo run and re-runs (22/23 Nov 2026)
+
+**Result (600 test cases, overnight full regression + decision suites + re-runs of 23 Nov):** 497 Passed · 60 Known Defect · 43 Skipped · **0 Failed · 0 Blocked**. Smoke suites: PM 19/20 (1 skipped), Procurement Log 18/18, All Modules 40/40. E2E smoke: 27 passed, 3 known defects (TC-23/24/25).
+
+| Case | What happened overnight | Fix / outcome |
+|---|---|---|
+| ROLEW-RESTORE | The Supplier account was left on the test role after ROLE-22 failed (a portal dialog stayed open) | Restored at 02:20 and verified from the Supplier's own session. The restore step now reloads the portal page and always checks the Supplier's session role |
+| PM-REG-ROLE-22 | Escape closes the whole New Project dialog; "Create Project" is enabled only after the email field loses focus | Fields filled by name, Tab after the email, one attempt only → **Passed** ("SCP Auto Test …" project created) |
+| FRP-SETUP / PSC-05 / CFG-18 | Needed ROLE-22's project | **Passed** on the new project |
+| PM-REG-FDI-16 | The automation's own "SCP Automation Test Role" is now in the platform-wide role list | Test role ignored, the rest must match exactly → **Passed** |
+| SHP-REG-05 / 11 | International Shipments needed ~200 s to show its list | 6-minute wait, loaded page reused → **Passed** |
+| SHP-REG-03 / 06 / 08 / 09 | Back in scope (user, 23 Nov) | Known defects pending confirmation: SCP-DEF-067 (03, 08), SCP-DEF-083 (06), SCP-DEF-084 (09) |
+| PM-REG-INT-02 | Empty Booking System Project ID › Submit shows no message | **SCP-DEF-082** (pending confirmation) |
+| SL-REG-15 | "Promote to SSO Organisation" does nothing (no dialog, message or request; checked 3 times) | **SCP-DEF-085** (pending confirmation) |
+| PM-REG-CFG-13 / 15 / 16 | Verified at 06:05 against the 22 Nov seeds. The first check read only 6 of 1,097 alert pages; it now searches the Alerts list by submittal number and ignores "New submittal … was added" notices | CFG-16 **Passed** (no alert three weeks out); CFG-13/15 **SCP-DEF-086** (no batch alert inside the 1-week window, pending confirmation). The 23 Nov seed is kept for the next morning |
+| TC-24 (E2E) | Configuration Options read before the Currency dropdown loaded ("Choose" → "INR") | Snapshot re-reads until loaded → only the registered currency defect SCP-DEF-049 remains |
+
+**Left open on purpose:** T548-16 (the app has no visible action that deletes a bank question – needs the team to name the action), FDI-28a (would disable the admin's own inspector entry mid-flow), NAV-08/09 (a 9-step Setup Wizard not mapped yet), ENT-REG-02/03 (weak oracle – needs the Enterprise requirement), invite-based cases (SCP invites do not arrive at mail.tm; YOPmail shows a human check that is never bypassed).

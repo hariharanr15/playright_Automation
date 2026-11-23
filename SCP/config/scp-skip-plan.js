@@ -128,7 +128,7 @@ Object.assign(module.exports.plan, {
 // User decisions of 22 Nov 2026 (evening).
 {
   const deferred = 'Deferred by the user on 22 Nov 2026 (Procore / International Shipments / Document Management out of scope for now). No action until the scope is reopened.';
-  for (const id of ['FDI-REG-12', 'DOC-REG-11', 'DOC-REG-12', 'DOC-REG-16', 'SHP-REG-03', 'SHP-REG-06', 'SHP-REG-08', 'SHP-REG-09'])
+  for (const id of ['FDI-REG-12', 'DOC-REG-11', 'DOC-REG-12', 'DOC-REG-16'])
     module.exports.plan[id] = { group: 'X', owner: 'User decision', effort: '-', need: deferred };
   module.exports.plan['T548-16'] = { group: 'A', owner: 'Automation', effort: 'M', need: 'Expected result confirmed by the user (22 Nov 2026): a bank question used in an organisation set of any project of the organisation cannot be deleted or edited. Automate with a run-owned bank question used in a run-owned organisation set (find where the bank question delete/edit is offered first).' };
 }

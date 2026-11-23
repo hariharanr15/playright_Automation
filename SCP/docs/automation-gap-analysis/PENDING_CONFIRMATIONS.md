@@ -112,6 +112,20 @@ These failed in **every** full regression run from 17 to 21 Nov 2026 with the sa
 
 **27. SCP-DEF-080 / PM-REG-FDI-05h** – On the inspection form, use "Add photo" to add a .pdf, .xlsx and .csv file. No error is shown, but only images appear on the form. Are only images meant to be accepted? If so, the picker should refuse the other types with a message.
 
+**28. SCP-DEF-081 / PM-REG-SITE-07** – Site Details: a run site that had received deliveries (and showed stock in Inventory) › Delete › "Are you sure you want to proceed?" › Delete → "Site deleted successfully!". Material Master refuses to delete a material with stock history. Should a site with deliveries or stock also be refused (or at least warned)?
+
+**29. SCP-DEF-082 / PM-REG-INT-02** – Project Management › Integrations › Booking Integration: with "Booking System Project ID" empty, Submit shows no message at all. The expected result (validation message) was confirmed on 22 Nov 2026; please confirm this is a defect.
+
+**30. SCP-DEF-083 / SHP-REG-06** – International Shipments: changing a row's status (e.g. to "Shipped") gives no confirmation message. Is a confirmation expected? (International Shipments back in scope from 23 Nov 2026.)
+
+**31. SCP-DEF-084 / SHP-REG-09** – Enterprise Shipments › "Open" on a shipment opens the shipments list instead of that shipment. Which page should "Open" show?
+
+**32. SCP-DEF-067 (now also SHP-REG-03 / SHP-REG-08)** – A newly logged shipment starts at "Pending Order" and shows Required Date "-" although its submittal is already ordered/delivering and the component has a Required Date. Should the shipment take its status and Required Date from the Procurement Log?
+
+**33. SCP-DEF-086 (PM-REG-CFG-13 / CFG-15)** – Submittals seeded on 22 Nov 2026 with Date Required on Site 28/11/2026 (one component not ordered, one ordered with an unconfirmed lead time) got no not-ordered or lead-time alert from the 23 Nov 05:00–06:00 IST batch (Management Dashboard › Alerts, searched by submittal number: only the "New submittal … was added" notice). The control submittal three weeks out correctly has none (CFG-16 passed). Did the batch run on staging, and is the alert week threshold of 1 in effect for NRVC_Hall?
+
+**Note – International Shipments load time.** On 23 Nov 2026 the International Shipments list took about 200 seconds to appear (the "list-by-project" request). The tests now wait up to 6 minutes and record each slow load in the report as "SLOW PAGE". Is this load time expected on staging?
+
 ## Corrected test (not an application issue)
 
 **INV-REG-18** compared the upload error file's "available" figure (stock at the row's From Location, e.g. Gate 5 = 59) with the ledger Closing Balance (whole site, 582). These can never be equal. Since 21 Nov it compares with the Add Activity hint for the same location, which is the figure the save check uses (INV-R3), minus the valid rows above the invalid row in the file (item 8).

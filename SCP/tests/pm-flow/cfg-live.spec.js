@@ -140,23 +140,30 @@ test('Configuration Options – live effects', async ({ page, browserName }) => 
     const seed = fs.existsSync(SEED_FILE) ? JSON.parse(fs.readFileSync(SEED_FILE, 'utf8')) : null;
     const batchDone = seed && new Date(seed.seededAt).toDateString() !== stamp.toDateString() && (stamp.getHours() > 6 || (stamp.getHours() === 6 && stamp.getMinutes() >= 0));
     if (batchDone) {
-      const alertRows = async () => {
+      // The Alerts tab holds 1000+ unread alerts: search for the seed (submittal number) instead of paging.
+      const alertRows = async term => {
         await page.goto('/management-dashboard', { waitUntil: 'domcontentloaded' }); await k.settle(3000);
         await main.getByRole('button', { name: /^Alerts(\s+\d+\+?)?$/ }).first().click(); await k.settle(2500);
+        const box = main.getByRole('textbox').filter({ hasNot: page.locator('[readonly]') }).locator('visible=true').last();
+        const search = main.locator('input[type=search], input[placeholder*="earch" i]').first();
+        const field = (await search.isVisible().catch(() => false)) ? search : box;
+        await field.fill(term); await field.press('Enter').catch(() => {}); await k.settle(3500);
         const rows = [];
-        for (let p = 1; p <= 6; p++) {
+        for (let p = 1; p <= 4; p++) {
           if (p > 1) { const next = main.getByRole('button', { name: String(p), exact: true }).last(); if (!(await next.isVisible().catch(() => false))) break; await next.click(); await k.settle(1500); }
           rows.push(...(await main.locator('tbody tr').allInnerTexts()).map(t => t.replace(/\s+/g, ' ')));
         }
         return rows;
       };
-      const mentions = (rows, d) => rows.filter(r => r.includes(d.number) || r.includes(d.material || '') && r.includes(d.roj));
+      // Creation notices ("New submittal '…' was added") are not batch alerts.
+      const mentions = (rows, d) => rows.filter(r => !/was added/i.test(r) && (r.includes(d.number) || r.includes(d.material || '') && r.includes(d.roj)));
       const verify = (id, title, key, expected) => run.scenario(meta(id, title), async s => {
         await s.step(`Management Dashboard › Alerts (after the ${new Date(seed.seededAt).toLocaleDateString('en-GB')} batch) → seed ${seed[key].number} (Date Required on Site ${seed[key].roj}) ${expected ? 'has an alert' : 'has no alert'}`, async () => {
-          state.alerts = state.alerts || await alertRows();
-          const hits = mentions(state.alerts, seed[key]);
+          let all = await alertRows(seed[key].number); let hits = mentions(all, seed[key]);
+          if (!hits.length && seed[key].material) { const more = await alertRows(seed[key].material); s.observe(`search ${seed[key].material}: ${more.length} row(s) – ${more.slice(0, 6).map(r => r.slice(0, 140)).join(' ¦ ')}`); all = all.concat(more); hits = mentions(all, seed[key]); }
+          s.observe(`search ${seed[key].number}: ${all.length} row(s) – ${all.slice(0, 4).map(r => r.slice(0, 120)).join(' ¦ ') || 'none'}`);
           s.observe(hits.length ? hits[0].slice(0, 200) : `no alert mentions ${seed[key].number}`);
-          expect(hits.length > 0, `alert for ${seed[key].number}`).toBe(expected);
+          expect(hits.length > 0, expected ? `No daily-batch alert for ${seed[key].number}` : `Alert outside the 1-week window for ${seed[key].number}`).toBe(expected);
         });
       });
       await verify('PM-REG-CFG-13', 'Not-ordered alert raised by the daily batch (1 week)', 'notOrdered', true);

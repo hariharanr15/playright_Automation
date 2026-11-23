@@ -21,17 +21,16 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
 const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // Run submittals created by the Procurement regression (latest first in the option lists).
 const RUN_SUBMITTAL = /PL[TRS]\d{10}-SUB-P|PL[TRS]\d{10}-SUB/;
-const SHP_SKIP = 'Skipped on user triage 13 Nov 2026: International Shipments has no clear requirement document yet';
 const ENT_SKIP = 'Skipped on user triage 13 Nov 2026: Enterprise requirement not clear yet';
 
 test.describe.configure({ mode: 'serial' });
-test.setTimeout(90 * 60 * 1000);
+test.setTimeout(120 * 60 * 1000); // International Shipments alone needs ~3.5 min per page load (23 Nov 2026)
 
 test('Remaining modules – regression', async ({ page, browserName }) => {
   await runPmSuite({ page, browserName, suite: SUITE, scenarios: async ({ run, config }) => {
     // 13 Nov 2026 user triage of the full regression: these cases are recorded as Skipped with the reason, not executed.
     const TRIAGE_SKIP = {
-      'SHP-REG-03': SHP_SKIP, 'SHP-REG-06': SHP_SKIP, 'SHP-REG-08': SHP_SKIP, 'SHP-REG-09': SHP_SKIP,
+      // SHP-REG-03/06/08/09 run again from 23 Nov 2026 (user: International Shipments back in scope); failures are pending-confirmation defects.
       'ENT-REG-02': ENT_SKIP, 'ENT-REG-03': ENT_SKIP
     };
     const runScenario = run.scenario.bind(run);
@@ -355,18 +354,30 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
     });
     // SL-REG-15 (approved by the user on 22 Nov 2026: "can create – system will allow"): the run supplier is promoted.
     await run.scenario(slm('SL-REG-15', 'Promote to SSO Organisation', 'Positive'), async s => {
-      await s.step(`Supplier List › search ${RUN} › row "${SUP}" › menu "Promote to SSO Organisation" → the promotion dialog opens`, async () => {
+      // 23 Nov 2026: on staging the menu item opened no dialog, showed no message and sent no request (checked twice).
+      let acted = false; let dlgText = '';
+      await s.step(`Supplier List › search ${RUN} › row "${SUP}" › menu "Promote to SSO Organisation" → a confirmation dialog opens or the promotion is sent`, async () => {
         await slOpen(); await slSearch(RUN);
         await expect(supRow(SUP), `${SUP} listed`).toBeVisible({ timeout: 15000 });
+        const sent = [];
+        const onReq = r => { if (r.method() !== 'GET' && /\/api\//.test(r.url())) sent.push(`${r.method()} ${new URL(r.url()).pathname}`); };
+        page.on('request', onReq);
         await supRow(SUP).locator('img[alt="Menu"]').click();
-        await page.getByRole('menuitem', { name: 'Promote to SSO Organisation' }).or(page.getByText('Promote to SSO Organisation', { exact: true })).last().click();
-        await k.settle(1500);
-        const dlg = page.locator('div.fixed.inset-0').filter({ visible: true }).last();
-        s.observe(`dialog: ${(await dlg.innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 400)}`);
-      }, { critical: true });
+        await page.getByRole('menuitem', { name: 'Promote to SSO Organisation' }).first().click();
+        await k.settle(3000);
+        page.off('request', onReq);
+        const dlg = page.locator('[role=dialog], div.fixed.inset-0').filter({ visible: true }).last();
+        dlgText = (await dlg.innerText().catch(() => '')).replace(/\s+/g, ' ').trim();
+        const toastText = await anyToast();
+        s.observe(`dialog: ${dlgText.slice(0, 300) || '(none)'} · message: ${toastText || '(none)'} · requests: ${sent.join(', ') || '(none)'}`);
+        acted = Boolean(dlgText || toastText || sent.length);
+        expect(acted, 'Promote to SSO Organisation does nothing (no dialog, message or request)').toBe(true);
+      }, { critical: true, attempts: 1 });
       await s.step('Confirm the promotion once → success message; the supplier is shown as an SSO organisation', async () => {
-        const dlg = page.locator('div.fixed.inset-0').filter({ visible: true }).last();
-        await dlg.getByRole('button', { name: /^(Promote|Confirm|Yes|Submit|Save)/ }).last().click(); await k.settle(2500);
+        // Nothing appeared in the first step (SCP-DEF-085): there is nothing to confirm, so this step only records that.
+        if (!acted) { s.observe('nothing to confirm – the menu item did not act (SCP-DEF-085)'); return; }
+        const dlg = page.locator('[role=dialog], div.fixed.inset-0').filter({ visible: true }).last();
+        if (dlgText) { await dlg.getByRole('button', { name: /^(Promote|Confirm|Yes|Submit|Save)/ }).last().click(); await k.settle(2500); }
         const toastText = await anyToast();
         s.observe(`message: ${toastText || '(none)'}`);
         expect(toastText, 'promotion confirmed').toMatch(/success|promoted|created/i);
@@ -651,10 +662,13 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
     // The page shows "Loading international shipments…" until the data arrives; on 21 Nov 2026 this took more than 90 s after a
     // long run (shared staging data). Wait up to 3 min and record slow loads, so a slow page is visible in the report.
     const slowLoads = [];
-    const intlShip = async () => {
+    // 23 Nov 2026: the list took ~200 s to appear (list-by-project API), so wait up to 6 min. reuse=true keeps an already loaded page
+    // (no reload) where the case does not need fresh data.
+    const intlShip = async (reuse = false) => {
+      if (reuse && /\/international-shipments/.test(page.url()) && await page.getByText('Total International').first().isVisible().catch(() => false)) return;
       const started = Date.now();
       await open('/international-shipments', SHP);
-      await expect(page.getByText('Total International').first()).toBeVisible({ timeout: 180000 }); // a loading text can linger after the data shows
+      await expect(page.getByText('Total International').first()).toBeVisible({ timeout: 360000 }); // a loading text can linger after the data shows
       const seconds = Math.round((Date.now() - started) / 1000);
       if (seconds > 30) slowLoads.push(seconds);
     };
@@ -734,14 +748,14 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
       });
       await run.scenario(meta('SHP-REG-06', SHP, 'Status change confirmation', 'Positive'), async s => {
         await s.step(`International Shipments: set the row's status select to "Shipped" → a confirmation toast appears`, async () => {
-          await intlShip(); await shipRow().locator('select').first().selectOption({ label: 'Shipped' }); await k.settle(1200);
+          await intlShip(true); await shipRow().locator('select').first().selectOption({ label: 'Shipped' }); await k.settle(1200);
           const t = await anyToast(); s.observe(`Toast: ${t || '(none)'}`);
           expect(t, 'Status change gives no confirmation (OBS-SHP-2)').toBeTruthy();
         });
         noteSlowLoads(s);
       });
       await run.scenario(meta('SHP-REG-08', SHP, 'Required Date from procurement', 'Integration'), async s => {
-        await s.step(`International Shipments: read "Required Date" of the logged row → it is not "-"`, async () => { await intlShip(); const v = await col(shipRow(), 'Required Date'); s.observe(`Required Date: ${v}`); expect(v, 'Required Date is "-" (OBS-PL-19)').not.toBe('-'); });
+        await s.step(`International Shipments: read "Required Date" of the logged row → it is not "-"`, async () => { await intlShip(true); const v = await col(shipRow(), 'Required Date'); s.observe(`Required Date: ${v}`); expect(v, 'Required Date is "-" (OBS-PL-19)').not.toBe('-'); });
         noteSlowLoads(s);
       });
       await run.scenario(meta('SHP-REG-10', SHP, 'Search / filters', 'Positive', { navPath: ['Enterprise', ESH] }), async s => {
@@ -761,7 +775,7 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
     await run.scenario(meta('SHP-REG-11', SHP, 'Tabs render', 'Positive'), async s => {
       for (const t of ['Delay Alerts', 'Flag & Review', 'Shipments', 'Risk Dashboard']) {
         await s.step(`International Shipments${t === 'Delay Alerts' ? ' (opened first)' : ''}: click tab "${t}" → no "error" / "something went wrong" text on the page`, async () => {
-          if (t === 'Delay Alerts') await intlShip();
+          if (t === 'Delay Alerts') await intlShip(true);
           await main.getByRole('button', { name: new RegExp(`^${esc(t)}`) }).first().click(); await k.settle(1000);
           await expect(page.getByText(/error|something went wrong/i)).toHaveCount(0);
         });

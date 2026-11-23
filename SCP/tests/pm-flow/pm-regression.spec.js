@@ -489,7 +489,10 @@ test('Project Management – Regression (part 1: read-only and form-only)', asyn
     await sc('PM-REG-FDI-16', 'First Delivery Inspection Config', 'Invite – role options', async s => {
       await s.step(`Invite Users form: enter pm.reg.nosend@yopmail.com and open the "Choose Role" dropdown → All_Role_Access, Project Admin, Project Manager, Project Senior User, Project User, Subcontractor, Supplier`, async () => {
         await inviteEmail().fill('pm.reg.nosend@yopmail.com');
-        expect(await dropdownOptions(modal().getByRole('button', { name: 'Choose Role' }))).toEqual(
+        // "SCP Automation Test Role" is the automation's own test-only role (role suites, 22 Nov 2026); roles are platform-wide, so it is listed too.
+        const options = await dropdownOptions(modal().getByRole('button', { name: 'Choose Role' }));
+        s.observe(`roles: ${options.join(', ')}`);
+        expect(options.filter(o => o !== 'SCP Automation Test Role')).toEqual(
           ['All_Role_Access', 'Project Admin', 'Project Manager', 'Project Senior User', 'Project User', 'Subcontractor', 'Supplier']);
       });
     });

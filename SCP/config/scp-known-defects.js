@@ -299,10 +299,10 @@ const KNOWN_DEFECTS = [
     title: 'Files tab lists the component files',
     signature: /^Delivery table replaced by the files list/,
     summary: 'PENDING TEAM CONFIRMATION. Component view: clicking the "Files" tab keeps the delivery table (Location column) on screen; the files list does not appear (OBS-PL-30). Failed in every Procurement Log part 3 run (17–21 Nov 2026).' },
-  { id: 'SCP-DEF-067', recordedOn: '2026-11-21', modules: ['Procurement Log'], scenarioIds: ['PL-REG-EDT-07'], reportNotReproduced: true,
+  { id: 'SCP-DEF-067', recordedOn: '2026-11-21', modules: ['Procurement Log'], scenarioIds: ['PL-REG-EDT-07', 'SHP-REG-03', 'SHP-REG-08'], reportNotReproduced: true,
     confirmation: 'pending',
     title: 'International Shipments shows the procurement date and status',
-    signature: /^International Shipments row shows the component Required Date/,
+    signature: /^(International Shipments row shows the component Required Date|New shipment starts at Pending Order|Required Date is "-")/,
     summary: 'PENDING TEAM CONFIRMATION. After Flag International the International Shipments row shows Required Date "-" and status "Pending Order" although the component has a Required Date and is Ordered (OBS-PL-19). Failed in every Procurement Log part 3 run (17–21 Nov 2026).' },
   { id: 'SCP-DEF-068', recordedOn: '2026-11-21', modules: ['Procurement Log'], scenarioIds: ['PL-REG-ALR-02'], reportNotReproduced: true,
     confirmation: 'pending',
@@ -375,8 +375,34 @@ const KNOWN_DEFECTS = [
     confirmation: 'pending',
     title: 'A site that has deliveries and stock can be deleted',
     signature: /still listed \(delete of a site with deliveries must be refused\)/,
-    summary: 'PENDING TEAM CONFIRMATION. Site Details › run site "Site T2 Pmr2-2611211745" (it had received run deliveries; Inventory showed 4 units there) › Delete › the generic "Are you sure you want to proceed?" › Delete → "Site deleted successfully!". PM-REG-SITE-07 expects deleting a site in use to be blocked or warned (as Material Master does for a material with stock history: "This material can\'t be deleted because stock has already been received, issued, or moved for it"). PM decision cases, 22 Nov 2026 (run-created site; approved by the user).' }
+    summary: 'PENDING TEAM CONFIRMATION. Site Details › run site "Site T2 Pmr2-2611211745" (it had received run deliveries; Inventory showed 4 units there) › Delete › the generic "Are you sure you want to proceed?" › Delete → "Site deleted successfully!". PM-REG-SITE-07 expects deleting a site in use to be blocked or warned (as Material Master does for a material with stock history: "This material can\'t be deleted because stock has already been received, issued, or moved for it"). PM decision cases, 22 Nov 2026 (run-created site; approved by the user).' },
+  { id: 'SCP-DEF-082', recordedOn: '2026-11-23', modules: ['Project Management'], scenarioIds: ['PM-REG-INT-02'], reportNotReproduced: true,
+    confirmation: 'pending',
+    title: 'Booking Integration accepts Submit with an empty Booking System Project ID and shows no message',
+    signature: /^a validation message for the empty Booking ID/,
+    summary: 'PENDING TEAM CONFIRMATION. Project Management › Integrations › Booking Integration (NRVC_Hall): "Booking System Project ID" empty › Submit → no validation or error message is shown (after a reload the field is still empty, nothing linked). PM-REG-INT-02 expects a validation message for the required field (expectation confirmed by the user on 22 Nov 2026). PM decision cases, overnight run 22-23 Nov 2026.' },
+  { id: 'SCP-DEF-083', recordedOn: '2026-11-23', modules: ['International Shipments'], scenarioIds: ['SHP-REG-06'], reportNotReproduced: true,
+    confirmation: 'pending',
+    title: 'International Shipments status change gives no confirmation',
+    signature: /^Status change gives no confirmation/,
+    summary: 'PENDING TEAM CONFIRMATION. International Shipments › row status select › "Shipped" → no toast or other confirmation (OBS-SHP-2). Run again on 23 Nov 2026 at the user request (International Shipments back in scope for the demo).' },
+  { id: 'SCP-DEF-084', recordedOn: '2026-11-23', modules: ['International Shipments'], scenarioIds: ['SHP-REG-09'], reportNotReproduced: true,
+    confirmation: 'pending',
+    title: 'Enterprise Shipments "Open" goes to the shipments list, not the shipment',
+    signature: /^Open goes to the shipments list, not the shipment/,
+    summary: 'PENDING TEAM CONFIRMATION. Enterprise Shipments › search the run submittal › "Open" → the shipments list opens instead of that shipment (the URL does not name the submittal) (OBS-SHP-3). Run again on 23 Nov 2026 at the user request.' },
+  { id: 'SCP-DEF-085', recordedOn: '2026-11-23', modules: ['Supplier List'], scenarioIds: ['SL-REG-15'], reportNotReproduced: true,
+    confirmation: 'pending',
+    title: '"Promote to SSO Organisation" does nothing',
+    signature: /^Promote to SSO Organisation does nothing/,
+    summary: 'PENDING TEAM CONFIRMATION. Supplier List › run supplier row menu › "Promote to SSO Organisation" → no dialog, no message and no request to the server; the row (Type "Supplier", Source "-") is unchanged. Expected (user decision 22 Nov 2026: the system allows it): the supplier is promoted, with a confirmation. Checked twice on 23 Nov 2026 (supplier of run APR2611221727).' },
+  { id: 'SCP-DEF-086', recordedOn: '2026-11-23', modules: ['Project Management'], scenarioIds: ['PM-REG-CFG-13', 'PM-REG-CFG-15'], reportNotReproduced: true,
+    confirmation: 'pending',
+    title: 'Daily batch raises no not-ordered / lead-time alert inside the 1-week window',
+    signature: /^No daily-batch alert for/,
+    summary: 'PENDING TEAM CONFIRMATION. NRVC_Hall, alert week threshold 1. Seeded 22 Nov 2026: CFL2611221709-SUB-N (component not ordered) and CFL2611221709-SUB-L (ordered with PO, lead time not confirmed), both with Date Required on Site 28/11/2026. On 23 Nov 2026 after the 05:00-06:00 IST batch, Management Dashboard > Alerts searched by submittal number shows only the creation notice for each, no not-ordered or lead-time alert. Control CFL2611221709-SUB-C (13/12/2026) correctly has no alert. Team to confirm the batch ran and the threshold in effect.' }
 ];
+
 
 // Label for reports: "SCP-DEF-053 (pending confirmation)" for entries whose expected behaviour the client/team has not
 // confirmed yet, so a demo audience can tell them apart from agreed defects. Unknown IDs are returned unchanged.
