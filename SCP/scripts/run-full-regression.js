@@ -28,7 +28,8 @@ const SUITES = [
   { suite: 'fdi-settings', npm: 'fdi-settings', title: 'FDI settings → inspection form' },
   { suite: 'cfg-live', npm: 'cfg-live', title: 'Configuration Options live effects (Pre-Shipping, GRN, alert batch)' },
   { suite: 'roles', npm: 'roles', title: 'Role-based access (read-only)' },
-  { suite: 'e2e-smoke', npm: 'e2e:smoke', title: 'E2E smoke (TC-01 … TC-26)' }
+  { suite: 'ana-ent', npm: 'ana-ent', title: 'Analytics and Enterprise validation' },
+  { suite: 'e2e-smoke', npm: 'e2e:smoke', title: 'E2E smoke (TC-01 … TC-26, incl. Enterprise and International Shipments)' }
 ];
 const args = process.argv.slice(2);
 const only = ((args.find(a => a.startsWith('--only=')) || '').slice(7)).split(',').filter(Boolean);

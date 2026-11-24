@@ -47,7 +47,7 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
     // Every list scenario starts from a freshly loaded list so a failed filter can't leak into the next one.
     const fresh = async () => { await page.goto('/procurement-log', { waitUntil: 'domcontentloaded' }); await expect.poll(k.count, { timeout: 30000 }).toBeGreaterThan(0); };
     // Reopen run submittal P with no dialog left over from a failed scenario.
-    const openP = async () => { await fresh(); await k.search(P.number); await k.openSubmittal(P.description); await page.getByText('Other Actions').first().waitFor({ timeout: 30000 }); };
+    const openP = async () => { await fresh(); await k.search(P.number); await k.openSubmittal(P.description); await k.componentsLoaded(); };
 
     const login = await run.scenario(meta('PL-REG3-SETUP', `Sign in on ${config.projectName}`, 'Setup', { always: true }), async s => {
       await k.signIn(s, config);
@@ -192,14 +192,44 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
     });
     await run.scenario(meta('PL-REG-EDT-04', 'Bulk Assign Responsible on two run rows', 'Positive'), async s => {
       await s.step(`"Add Submittal": second run submittal ${Q.number} (spec, description, Schedule Id, supplier ${SUPPLIER}, material ${MATERIAL}) → toast "Submittal added successfully"`, async () => { await k.addSubmittal(Q); await k.toast('Submittal added successfully'); });
-      await s.step(`Reload, search ${RUN}, tick both run rows, "Assign Responsible" › "Choose user" ${config.username} › "Assign" → toast "Responsible user assigned to 2 submittal(s)."`, async () => {
+      // Since the staging release of 23 Nov 2026 (evening) "Bulk assign Responsible" opens its own page: a Submittals panel
+      // (the ticked rows pre-selected, "Selected only (2)"), a People panel with a filter, "Add to existing Responsible" /
+      // "Remove from selected submittals" and "Build list to review".
+      await s.step(`Reload, search ${RUN}, tick both run rows, "Bulk assign Responsible" → page "Bulk assign Responsible" with "Selected only (2)" submittals`, async () => {
         await fresh(); await k.search(RUN); await expect.poll(k.count).toBe(2);
         for (const d of [P, Q]) await row(d).getByRole('checkbox').check();
-        await btn('Assign Responsible').click();
-        await expect(page.getByText(/selected submittals, replacing anyone assigned before/)).toBeVisible();
-        await k.chooseUser(config.username);
-        await page.getByRole('button', { name: 'Assign', exact: true }).click();
-        await k.toast('Responsible user assigned to 2 submittal(s).');
+        await btn('Bulk assign Responsible').click();
+        await expect(page.getByText('Bulk assign Responsible', { exact: true }).last()).toBeVisible({ timeout: 15000 });
+        await expect(page.getByRole('button', { name: /^Selected only \(2\)$/ }).first()).toBeVisible({ timeout: 15000 });
+      }, { critical: true });
+      await s.step(`People panel: filter by the signed-in user, tick that person, keep "Add to existing Responsible", "Build list to review" → review lists both run submittals with the user; "Save" applies any change (or both are already "Already Responsible")`, async () => {
+        const filter = page.getByPlaceholder(/Filter by name or company/);
+        const user = config.username.split('@')[0];
+        const person = () => page.locator('tr, [role="row"], li, div').filter({ hasText: config.username }).filter({ has: page.getByRole('checkbox') }).last();
+        await filter.fill(user); await k.settle(1200);
+        if (!(await person().isVisible().catch(() => false))) { await filter.fill(''); await k.settle(1200); }
+        await person().getByRole('checkbox').first().check();
+        await expect(page.getByRole('button', { name: /^Selected only \(1\)$/ }).last()).toBeVisible();
+        await page.getByRole('button', { name: 'Build list to review', exact: true }).click(); await k.settle(2000);
+        const review = (await page.locator('main').innerText()).replace(/\s+/g, ' ');
+        s.observe(`Review: ${review.replace(config.username, '(signed-in user)').slice(0, 400)}`);
+        for (const d of [P, Q]) expect(review, `${d.number} in the review`).toContain(d.number);
+        // Review summary "<n> changes to save · <m> row(s) need no change"; "Save" is enabled only when something changes.
+        const summary = ((await page.getByText(/changes? to save/).last().innerText().catch(() => '')) || '').trim();
+        s.observe(`Review summary: "${summary}"`);
+        const save = page.getByRole('button', { name: 'Save', exact: true }).last();
+        if (await save.isEnabled().catch(() => false)) {
+          await save.click(); await k.settle(2500);
+          s.observe(`Message after Save: ${(await page.getByRole('status').allInnerTexts().catch(() => [])).join(' | ').replace(/\s+/g, ' ').slice(0, 200) || '(none)'}`);
+        } else s.observe('Nothing to change: the user is already Responsible for both run submittals');
+      });
+      await s.step(`Procurement Log › search ${RUN} → "Responsible" of both run submittals names a person (not "-")`, async () => {
+        await fresh(); await k.search(RUN);
+        for (const d of [P, Q]) {
+          const value = String(await cell(row(d), 'Responsible')).replace(/\s+(Edit|Assign)\s*$/, '').trim();
+          s.observe(`${d.number}: Responsible "${value.replace(config.username, '(signed-in user)')}"`);
+          expect(value, `${d.number} has a Responsible person`).not.toMatch(/^-?$/);
+        }
       });
     });
     await run.scenario(meta('PL-REG-EDT-11', 'Submittal No can be updated (PL-R12)', 'Positive'), async s => {
@@ -248,17 +278,17 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
 
     // ---------- 4. Component on the new material ----------
     const comp = await run.scenario(meta('PL-REG-CMP-04', 'Add Component defaults: primary material, UoM read-only', 'Positive'), async s => {
-      await s.step(`Submittal detail: click "Add Component" → dialog shows a "(primary)" material button; close the dialog`, async () => {
-        await page.getByRole('button', { name: 'Add Component', exact: true }).last().click();
+      await s.step(`Submittal detail: click "Add component" → dialog shows a "(primary)" material button; close the dialog`, async () => {
+        await k.addComponentButton().click();
         const m = k.dialog('Add Component', 'ADD');
         await expect(m.getByRole('button', { name: /\(primary\)/ })).toBeVisible();
         await k.closeDialog('Add Component');
       });
-      await s.step(`"Add Component": material ${NEW_MATERIAL}, Date Req. on Site today+28 days, QTY 10, Value 1000, PO no. ${RUN}-PO-P, PO Date today, "ADD" → toast "Schedule added successfully!"`, () => k.addComponent({ material: NEW_MATERIAL, rojDate: plusDays(28), qty: 10, value: 1000, po: `${RUN}-PO-P`, poDate: today }), { critical: true });
+      await s.step(`"Add component": material ${NEW_MATERIAL}, Date Req. on Site today+28 days, QTY 10, Value 1000, PO no. ${RUN}-PO-P, PO Date today, "ADD" → toast "Schedule added successfully!"`, () => k.addComponent({ material: NEW_MATERIAL, rojDate: plusDays(28), qty: 10, value: 1000, po: `${RUN}-PO-P`, poDate: today }), { critical: true });
     });
     await run.scenario(meta('PL-REG-CMP-05', 'Currency defaults to the project currency', 'Positive'), async s => {
-      await s.step(`Click "Add Component", read the currency select → "Project default (XXX)" is selected; close the dialog`, async () => {
-        await page.getByRole('button', { name: 'Add Component', exact: true }).last().click();
+      await s.step(`Click "Add component", read the currency select → "Project default (XXX)" is selected; close the dialog`, async () => {
+        await k.addComponentButton().click();
         const sel = k.dialog('Add Component', 'ADD').locator('select').last();
         expect(await sel.locator('option:checked').innerText()).toMatch(/^Project default \(\w{3}\)$/);
         await k.closeDialog('Add Component');
@@ -274,15 +304,15 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
     });
     await run.scenario(meta('PL-REG-LST-17', 'Deep link opens the submittal', 'Positive'), async s => {
       await s.step(`Click submittal ${P.description} → detail opens (URL has submittal=); URL is remembered`, async () => { await k.openSubmittal(P.description); ids.submittalUrl = page.url(); });
-      await s.step(`Open Procurement Log, then go to the remembered URL → "Add Component" button visible and ${P.number} shown`, async () => {
+      await s.step(`Open Procurement Log, then go to the remembered URL → "Add component" button visible and ${P.number} shown`, async () => {
         await k.openLog(); await page.goto(ids.submittalUrl, { waitUntil: 'domcontentloaded' });
-        await expect(page.getByRole('button', { name: 'Add Component' }).last()).toBeVisible({ timeout: 30000 });
+        await expect(k.addComponentButton()).toBeVisible({ timeout: 30000 });
         await expect(page.getByText(P.number).first()).toBeVisible();
       });
     });
     await run.scenario(meta('PL-REG-CMP-07', 'Order (Edit Component) changes the quantity', 'Positive'), async s => {
-      await s.step(`Component ${NEW_MATERIAL}: click "Order", set "QTY*" to 12, "Update" → component row shows 12`, async () => {
-        await k.componentRow(NEW_MATERIAL).getByRole('button', { name: 'Order', exact: true }).click();
+      await s.step(`Component ${NEW_MATERIAL}: "⋯" › "Record order (PO)" (Edit Component), set "QTY*" to 12, "Update" → component row shows 12`, async () => {
+        await k.componentAction(NEW_MATERIAL, 'Record order (PO)');
         const m = k.dialog('Edit Component', 'Update');
         await m.getByText('QTY*', { exact: true }).locator('xpath=following::input[1]').fill('12');
         await m.getByRole('button', { name: 'Update', exact: true }).click(); await k.settle(2000);
@@ -290,9 +320,8 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
       });
     });
     await run.scenario(meta('PL-REG-CMP-11', 'Audit Trail records the change', 'Positive'), async s => {
-      await s.step(`Component row › "Other Actions ▾" › "Audit Trail" → entries for "actual quantity" and the signed-in user are listed; close the panel`, async () => {
-        await k.componentRow(NEW_MATERIAL).getByRole('button', { name: 'Other Actions ▾' }).click();
-        await page.getByRole('menuitem', { name: 'Audit Trail' }).click();
+      await s.step(`Component row "⋯" › "Audit trail" → entries for "actual quantity" and the signed-in user are listed; close the panel`, async () => {
+        await k.componentAction(NEW_MATERIAL, 'Audit trail');
         const panel = page.getByRole('heading', { name: 'Audit Trail' }).locator('xpath=../..');
         await expect(panel.getByRole('cell', { name: 'actual quantity' }).first()).toBeVisible({ timeout: 15000 });
         await expect(panel.getByRole('cell', { name: config.username }).first()).toBeVisible();
@@ -300,9 +329,8 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
       });
     });
     await run.scenario(meta('PL-REG-CMP-09', 'Update Status to Ordered At Risk', 'Positive'), async s => {
-      await s.step(`Component row › "Other Actions ▾" › "Update Status": status "Ordered At Risk", comment "${RUN} at risk", "ADD"; reopen submittal → component status is "Ordered At Risk"`, async () => {
-        await k.componentRow(NEW_MATERIAL).getByRole('button', { name: 'Other Actions ▾' }).click();
-        await page.getByRole('menuitem', { name: 'Update Status' }).click();
+      await s.step(`Component row "⋯" › "Update status": status "Ordered At Risk", comment "${RUN} at risk", "ADD"; reopen submittal → component status is "Ordered At Risk"`, async () => {
+        await k.componentAction(NEW_MATERIAL, 'Update status');
         const m = k.dialog('Update Status', 'ADD');
         await k.pick('Choose Status', 'Ordered At Risk', m); await m.locator('textarea').fill(`${RUN} at risk`);
         await m.getByRole('button', { name: 'ADD', exact: true }).click(); await k.settle(2500);
@@ -314,7 +342,7 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
     await run.scenario(meta('PL-REG-CMP-14', 'Shift ROJ skips committed (ordered) lines', 'Boundary'), async s => {
       await s.step(`Reopen submittal, tick the component, "Shift ROJ Dates", offset 7 days, "Preview" → "0 will move · 1 skipped"; "Cancel", then "Clear"`, async () => {
         await openP();
-        await k.componentRow(NEW_MATERIAL).getByRole('checkbox', { name: 'Select this component' }).check();
+        await page.getByRole('checkbox', { name: `Select ${NEW_MATERIAL}`, exact: true }).last().check();
         await page.getByRole('button', { name: 'Shift ROJ Dates' }).click();
         await page.getByRole('spinbutton', { name: /Offset \(days\)/ }).fill('7');
         await page.getByRole('button', { name: 'Preview' }).click();
@@ -324,9 +352,9 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
       });
     });
     await run.scenario(meta('PL-REG-CMP-19', 'Values use the project currency symbol', 'Positive'), async s => {
-      await s.step(`Reopen submittal, expand the component row → "Value" starts with ₹ (project currency INR)`, async () => {
+      await s.step(`Reopen submittal, component row › "Show PO details" → "Value" starts with ₹ (project currency INR)`, async () => {
         await openP();
-        await k.componentRow(NEW_MATERIAL).getByRole('cell').nth(1).getByRole('button').click();
+        await k.componentRow(NEW_MATERIAL).getByRole('button', { name: 'Show PO details' }).click();
         const value = (await page.getByText('Value', { exact: true }).last().locator('xpath=following-sibling::*[1]').innerText()).trim();
         s.observe(`Expanded value: ${value}`);
         expect(value, 'Project currency is INR').toMatch(/^₹/);
@@ -334,15 +362,16 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
     });
 
     // ---------- 5. Delivery chain step by step ----------
-    // The delivery row is the one carrying the delivery action icons (the view also renders a hidden copy and other Edit icons).
-    const drow = () => page.getByRole('row').filter({ has: page.locator('img[title="Pre Shipping Info"], img[title="Approve Pre-Shipping Checklist"], img[title="Approved"], img[title="Rejected"], img[alt="Rejected"], img[title="Generate GRN"], img[title="Update Shipping Info"]') }).filter({ visible: true }).last();
+    // Redesigned component view (staging release of 23 Nov 2026 evening): the run delivery is the only delivery row; its
+    // former action icons are items of its "Delivery actions" (⋯) menu.
+    const drow = () => k.deliveryRows().last();
     const checklist = () => k.dialog('Add Pre-Shipping Details', 'Confirm Checklist');
-    // Delivery action icons are addressed directly (the component view also renders a hidden copy earlier in the DOM).
-    const icon = name => page.locator(`img[title="${name}"], img[alt="${name}"]`).last();
+    const act = item => k.deliveryAction(drow(), item);
+    const offers = item => expect.poll(async () => (await k.deliveryMenu(drow())).some(t => (item instanceof RegExp ? item.test(t) : t === item)), { timeout: 15000, message: `"Delivery actions" offers ${item}` }).toBe(true);
     await run.scenario(meta('PL-REG-DLV-01', 'Log a full delivery', 'Positive'), async s => {
-      await s.step(`Reopen submittal ${P.number}, click the ${NEW_MATERIAL} component → component view opens (URL has schedule=); URL is remembered`, async () => { await openP(); await k.componentRow(NEW_MATERIAL).getByRole('cell', { name: NEW_MATERIAL }).click(); await expect(page).toHaveURL(/[?&]schedule=/); ids.componentUrl = page.url(); });
-      await s.step(`"+ Log Delivery" › "Add Delivery": "Choose Item Name" lists the material items (PL-R5, PL-REG-DLV-15); pick ${NEW_MATERIAL}, date today, first location, quantity 4, "Add" → dialog closes, delivery row shows 4`, async () => {
-        await k.keepSite(); await page.getByRole('button', { name: '+ Log Delivery' }).last().click();
+      await s.step(`Reopen submittal ${P.number}, component ${NEW_MATERIAL} "⋯" › "Open component" → component view opens (URL has schedule=); URL is remembered`, async () => { await openP(); await k.keepSite(); await k.openComponent(NEW_MATERIAL); ids.componentUrl = page.url(); });
+      await s.step(`"Log delivery" › "Add Delivery": "Choose Item Name" lists the material items (PL-R5, PL-REG-DLV-15); pick ${NEW_MATERIAL}, date today, first location, quantity 4, "Add" → dialog closes, delivery row shows 4`, async () => {
+        await k.keepSite(); await k.logDeliveryButton().click();
         const d = k.dialog('Add Delivery', 'Add');
         await d.getByRole('button', { name: 'Choose Item Name' }).click();
         ids.items = await listbox().getByRole('option').allInnerTexts(); s.observe(`Item names: ${ids.items.join(', ')}`);
@@ -357,8 +386,8 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
       }, { attempts: 1 }); // creates a delivery: a retry could log a second one
     });
     await run.scenario(meta('PL-REG-DLV-19', 'Required Remaining Qty subtracts logged deliveries (PL-R15)', 'Boundary'), async s => {
-      await s.step(`Click "+ Log Delivery", read "Required Remaining Qty", close → value starts with 8 (12 ordered − 4 logged)`, async () => {
-        await k.keepSite(); await page.getByRole('button', { name: '+ Log Delivery' }).last().click();
+      await s.step(`Click "Log delivery", read "Required Remaining Qty", close → value starts with 8 (12 ordered − 4 logged)`, async () => {
+        await k.keepSite(); await k.logDeliveryButton().click();
         const d = k.dialog('Add Delivery', 'Add');
         const remaining = await d.getByText('Required Remaining Qty', { exact: true }).locator('xpath=following::input[1]').inputValue();
         await k.closeDialog('Add Delivery');
@@ -373,6 +402,9 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
       const enabled = [];
       await s.step('Left menu › Project Management › "PreShipping Checklist" → read the questions whose "Enabled" box is ticked', async () => {
         // By route: a component drawer can cover the left menu here.
+        // A retry starts from empty lists (24 Nov 2026: a first attempt read the list before it loaded and its "disabled"
+        // entries were kept by the retry).
+        enabled.length = 0; psc.disabled.length = 0;
         await page.goto('/preshipping-checklist', { waitUntil: 'domcontentloaded' });
         await page.locator('main tbody tr').first().waitFor({ timeout: 30000 }); await k.settle(1500);
         const rows = await page.locator('main tbody tr').evaluateAll(trs => trs.map(tr => ({ cells: [...tr.cells].map(c => c.innerText.trim()), on: !!tr.querySelector('input[type=checkbox]')?.checked })));
@@ -380,10 +412,10 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
         s.observe(`${enabled.length} enabled of ${rows.length}: ${enabled.join(' | ').slice(0, 300)}`);
         expect(enabled.length, 'enabled questions').toBeGreaterThan(0);
       }, { critical: true });
-      await s.step('Reload the component view, click the "Pre Shipping Info" icon → the checklist lists every enabled question; close it without answering', async () => {
+      await s.step('Reload the component view, "Delivery actions" › "Pre-shipping info" → the checklist lists every enabled question; close it without answering', async () => {
         await page.goto(ids.componentUrl, { waitUntil: 'domcontentloaded' });
-        await page.getByRole('button', { name: '+ Log Delivery' }).last().waitFor({ timeout: 30000 }); await k.settle(1500);
-        await icon('Pre Shipping Info').click();
+        await k.logDeliveryButton().waitFor({ timeout: 30000 }); await k.settle(1500);
+        await act('Pre-shipping info');
         await checklist().getByRole('button', { name: 'Y/N', exact: true }).first().waitFor({ timeout: 20000 });
         const text = (await checklist().innerText()).replace(/\s+/g, ' ');
         psc.checklist = text;
@@ -408,10 +440,10 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
       });
     });
     await run.scenario(meta('PL-REG-DLV-03', 'Checklist needs every answer and comment', 'Negative'), async s => {
-      await s.step(`Reload component view, click "Pre Shipping Info" icon, click "Confirm Checklist" with no answers → toast "Answer every Questions"`, async () => {
+      await s.step(`Reload component view, "Delivery actions" › "Pre-shipping info", click "Confirm Checklist" with no answers → toast "Answer every Questions"`, async () => {
         await page.goto(ids.componentUrl, { waitUntil: 'domcontentloaded' });
-        await page.getByRole('button', { name: '+ Log Delivery' }).last().waitFor({ timeout: 30000 }); await k.settle(1500);
-        await icon('Pre Shipping Info').click();
+        await k.logDeliveryButton().waitFor({ timeout: 30000 }); await k.settle(1500);
+        await act('Pre-shipping info');
         await checklist().getByRole('button', { name: 'Y/N', exact: true }).first().waitFor({ timeout: 20000 });
         await checklist().getByRole('button', { name: 'Confirm Checklist', exact: true }).click();
         await k.toast('Answer every Questions');
@@ -436,20 +468,20 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
       });
     });
     await run.scenario(meta('PL-REG-DLV-05', 'Confirm the checklist', 'Positive'), async s => {
-      await s.step(`Click "Confirm Checklist" → toast "Shipping Details updated successfully!" and "Approve Pre-Shipping Checklist" icon appears`, async () => {
+      await s.step(`Click "Confirm Checklist" → toast "Shipping Details updated successfully!" and "Delivery actions" offers "Approve pre-shipping checklist"`, async () => {
         await checklist().getByRole('button', { name: 'Confirm Checklist', exact: true }).click();
         await k.toast('Shipping Details updated successfully!');
-        await expect(icon('Approve Pre-Shipping Checklist')).toBeVisible();
+        await offers('Approve pre-shipping checklist');
       });
     });
     await run.scenario(meta('PL-REG-DLV-07', 'Reject and resubmit the checklist', 'Positive'), async s => {
-      await s.step(`Click "Approve Pre-Shipping Checklist" icon, click "Reject" → "Rejected" icon appears`, async () => {
-        await icon('Approve Pre-Shipping Checklist').click();
+      await s.step(`"Delivery actions" › "Approve pre-shipping checklist", click "Reject" → "Delivery actions" shows the checklist as rejected`, async () => {
+        await act('Approve pre-shipping checklist');
         await k.dialog('Approve Pre-Shipping Checklist', 'Reject').getByRole('button', { name: 'Reject', exact: true }).click();
-        await expect(icon('Rejected')).toBeVisible({ timeout: 15000 });
+        await offers(/rejected/i);
       });
-      await s.step(`Click "Rejected" icon › "Update Pre-Shipping Details": "Confirm Checklist" → toast "Shipping Details updated successfully!"`, async () => {
-        await icon('Rejected').click();
+      await s.step(`"Delivery actions" › rejected checklist item › "Update Pre-Shipping Details": "Confirm Checklist" → toast "Shipping Details updated successfully!"`, async () => {
+        await act(/rejected/i);
         const u = k.dialog('Update Pre-Shipping Details', 'Confirm Checklist');
         // 19 Nov 2026: after a rejection the dialog opens with every answer cleared (all required), so the checklist is
         // filled again (all YES, PL-R16) before resubmitting.
@@ -473,8 +505,8 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
       });
     });
     await run.scenario(meta('PL-REG-DLV-06', 'Approve the checklist', 'Positive'), async s => {
-      await s.step(`Click "Approve Pre-Shipping Checklist" icon, comment "${RUN} approved", "Approve" → toast "Checklist Generated Successfully!"`, async () => {
-        await icon('Approve Pre-Shipping Checklist').click();
+      await s.step(`"Delivery actions" › "Approve pre-shipping checklist", comment "${RUN} approved", "Approve" → toast "Checklist Generated Successfully!"`, async () => {
+        await act('Approve pre-shipping checklist');
         const a = k.dialog('Approve Pre-Shipping Checklist', 'Approve');
         await a.locator('textarea').last().fill(`${RUN} approved`);
         await a.getByRole('button', { name: 'Approve', exact: true }).click();
@@ -482,20 +514,17 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
       });
     });
     await run.scenario(meta('PL-REG-DLV-08', 'Set the actual delivery date', 'Positive'), async s => {
-      await s.step(`Reload component view, click delivery "Edit" icon › "Edit Delivery": set actual delivery date (second date box) to today, "Update" → dialog closes, "Generate GRN" icon appears`, async () => {
+      await s.step(`Reload component view, click the delivery's "Receive" › "Edit Delivery": set actual delivery date (second date box) to today, "Update" → the delivery moves to "Received" (RCV-…) and "Delivery actions" offers "Generate GRN"`, async () => {
         await page.goto(ids.componentUrl, { waitUntil: 'domcontentloaded' });
-        await page.getByRole('button', { name: '+ Log Delivery' }).last().waitFor({ timeout: 30000 }); await k.settle(1500);
-        await icon('Edit').click();
-        const e = k.dialog('Edit Delivery', 'Update');
-        await k.day(e.getByRole('textbox').nth(1), today);
-        await e.getByRole('button', { name: 'Update', exact: true }).click();
-        await expect(page.getByRole('heading', { name: 'Edit Delivery' })).toBeHidden({ timeout: 15000 }); await k.settle(1500);
-        await expect(icon('Generate GRN')).toBeVisible();
+        await k.logDeliveryButton().waitFor({ timeout: 30000 }); await k.settle(1500);
+        const { receipt } = await k.receive(k.expectedRows().last(), today);
+        ids.receipt = receipt; s.observe(`Receipt ${receipt}`);
+        await offers('Generate GRN');
       });
     });
     await run.scenario(meta('PL-REG-DLV-09', 'Shipping info', 'Positive'), async s => {
-      await s.step(`Click "Update Shipping Info" icon › "Add Shipping Info": mode "Other", ${RUN}-SHIP, "Origin", note ${RUN}, "Add" → toast "Shipping Details updated successfully!"`, async () => {
-        await icon('Update Shipping Info').click();
+      await s.step(`"Delivery actions" › "Update shipping info" › "Add Shipping Info": mode "Other", ${RUN}-SHIP, "Origin", note ${RUN}, "Add" → toast "Shipping Details updated successfully!"`, async () => {
+        await act('Update shipping info');
         const sh = k.dialog('Add Shipping Info', 'Add');
         await k.pick('Choose Shipping Mode', 'Other', sh);
         await sh.getByRole('textbox').nth(0).fill(`${RUN}-SHIP`); await sh.getByRole('textbox').nth(1).fill('Origin'); await sh.locator('textarea').fill(RUN);
@@ -504,8 +533,8 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
       });
     });
     await run.scenario(meta('PL-REG-DLV-10', 'Delivery conditions (all good)', 'Positive'), async s => {
-      await s.step(`Click "Update Delivery Condition" icon › "Add Delivery Conditions": first number (good quantity) 4, "Add" → toast "Delivery Conditions updated successfully!"`, async () => {
-        await icon('Update Delivery Condition').click();
+      await s.step(`"Delivery actions" › "Update delivery condition" › "Add Delivery Conditions": first number (good quantity) 4, "Add" → toast "Delivery Conditions updated successfully!"`, async () => {
+        await act('Update delivery condition');
         const dc = k.dialog('Add Delivery Conditions', 'Add');
         await dc.getByRole('spinbutton').nth(0).fill('4');
         await dc.getByRole('button', { name: 'Add', exact: true }).click();
@@ -513,26 +542,26 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
       });
     });
     const grn = await run.scenario(meta('PL-REG-DLV-11b', 'Generate GRN → Partial Delivery (4 of 12)', 'Positive'), async s => {
-      await s.step(`Click "Generate GRN" icon → toast "GRN Generated Successfully!" (partial delivery, 4 of 12)`, async () => { await icon('Generate GRN').click(); await k.toast('GRN Generated Successfully!', 30000); }, { attempts: 1 });
+      await s.step(`"Delivery actions" › "Generate GRN" → toast "GRN Generated Successfully!" (partial delivery, 4 of 12)`, async () => { await act('Generate GRN'); await k.toast('GRN Generated Successfully!', 30000); }, { attempts: 1 });
     });
     // Open the remembered component view unless it is already shown (scenarios must not rely on the previous one's page).
     const componentView = async () => {
-      if (/[?&]schedule=/.test(page.url()) && await page.getByRole('button', { name: '+ Log Delivery' }).last().isVisible().catch(() => false)) return;
+      if (/[?&]schedule=/.test(page.url()) && await k.logDeliveryButton().isVisible().catch(() => false)) return;
       await page.goto(ids.componentUrl, { waitUntil: 'domcontentloaded' });
-      await page.getByRole('button', { name: '+ Log Delivery' }).last().waitFor({ timeout: 30000 }); await k.settle(1500);
+      await k.logDeliveryButton().waitFor({ timeout: 30000 }); await k.settle(1500);
     };
     await run.scenario(meta('PL-REG-DLV-16', 'Component header shows the unit of measure', 'Positive'), async s => {
-      await s.step(`Reload component view, read "Required QTY" in the header → value shown with its unit (no "undefined")`, async () => {
+      await s.step(`Reload component view, read the "<quantity> <unit> required" line in the header → quantity shown with its unit (no "undefined")`, async () => {
         await page.goto(ids.componentUrl, { waitUntil: 'domcontentloaded' });
-        await page.getByRole('button', { name: '+ Log Delivery' }).last().waitFor({ timeout: 30000 }); await k.settle(1500);
-        const v = (await page.getByText('Required QTY', { exact: true }).last().locator('xpath=following-sibling::*[1]').innerText()).trim();
-        s.observe(`Required QTY: ${v}`); expect(v, 'Required QTY shows "undefined" instead of the unit').not.toContain('undefined');
+        await k.logDeliveryButton().waitFor({ timeout: 30000 }); await k.settle(1500);
+        const v = ((await page.getByText(/ required ·/).filter({ visible: true }).last().innerText()).match(/^\s*([\d.,]+\s+\S+)\s+required/) || [])[1] || '';
+        s.observe(`Required: ${v}`); expect(v, 'Required quantity with its unit').toMatch(/^[\d.,]+ \S+$/); expect(v, 'Required quantity shows "undefined" instead of the unit').not.toContain('undefined');
       });
     });
     await run.scenario(meta('PL-REG-DLV-17', 'QR label downloads (PNG and PDF)', 'Positive'), async s => {
-      await s.step(`Click "QR Label", download "PNG sticker" and "PDF sheet" → file names match submittal-<8 hex>-qr.png and .pdf; close the QR dialog`, async () => {
+      await s.step(`Click "QR label", download "PNG sticker" and "PDF sheet" → file names match submittal-<8 hex>-qr.png and .pdf; close the QR dialog`, async () => {
         await componentView(); // do not depend on PL-REG-DLV-16 leaving the component open
-        await page.getByRole('button', { name: 'QR Label', exact: true }).last().click();
+        await page.getByRole('button', { name: /^QR label$/i }).filter({ visible: true }).last().click();
         for (const [b, ext] of [['PNG sticker', '.png'], ['PDF sheet', '.pdf']]) {
           const dl = page.waitForEvent('download'); await page.getByRole('button', { name: b }).click();
           expect((await dl).suggestedFilename()).toMatch(new RegExp(`^submittal-[0-9a-f]{8}-qr\\${ext}$`));
@@ -541,10 +570,11 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
       });
     });
     await run.scenario(meta('PL-REG-DLV-18', 'Files tab lists the component files', 'Positive'), async s => {
-      await s.step(`Click the "Files" tab → delivery table (Location column) is replaced by the files list`, async () => {
+      await s.step(`Click the "All files" tab → the deliveries list ("Received · …") is replaced by the files list`, async () => {
         await componentView();
-        await page.getByText('Files', { exact: true }).last().click(); await k.settle(1500);
-        await expect(page.getByRole('columnheader', { name: 'Location' }).last(), 'Delivery table replaced by the files list').toBeHidden({ timeout: 5000 });
+        await page.getByRole('tab', { name: 'All files' }).last().click(); await k.settle(1500);
+        await expect(page.getByRole('tab', { name: 'All files' }).last()).toHaveAttribute('aria-selected', 'true');
+        await expect(page.getByRole('heading', { name: /^Received · / }).filter({ visible: true }), 'Deliveries replaced by the files list').toHaveCount(0, { timeout: 5000 });
       });
     });
     const int01 = meta('PL-REG-INT-01', 'First delivery of a new material creates one FDI record (FDI-R1)', 'Integration');
@@ -758,10 +788,10 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
 
     // ---------- 1. Deep link to a component ----------
     await run.scenario(meta('PL-REG-LST-18', 'Deep link opens the component view', 'Positive'), async s => {
-      await s.step(`Open the remembered component URL → "+ Log Delivery" button visible (fails if no component URL was captured)`, async () => {
+      await s.step(`Open the remembered component URL → "Log delivery" button visible (fails if no component URL was captured)`, async () => {
         if (!ids.componentUrl) throw new Error('No component URL: the delivery chain did not open the component view');
         await page.goto(ids.componentUrl, { waitUntil: 'domcontentloaded' });
-        await expect(page.getByRole('button', { name: '+ Log Delivery' }).last()).toBeVisible({ timeout: 30000 });
+        await expect(k.logDeliveryButton()).toBeVisible({ timeout: 30000 });
       });
     });
   } });

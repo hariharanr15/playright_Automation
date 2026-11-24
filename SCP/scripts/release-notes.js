@@ -27,7 +27,10 @@ const suiteRows = [...latest.entries()].map(([title, dir]) => {
   return `| ${title} | ${s.total ?? '-'} | ${s.passed ?? '-'} | ${s.knownDefects ?? '-'} | ${s.failed ?? '-'} | ${s.blocked ?? '-'} | ${s.skipped ?? '-'} | \`${dir.replace(/\\/g, '/')}\` |`;
 });
 const pending = KNOWN_DEFECTS.filter(d => d.confirmation === 'pending');
-const today = KNOWN_DEFECTS.filter(d => d.recordedOn === '2026-11-22');
+// Defects registered in this release cycle (22–23 Nov 2026), with their plain-language title when available.
+const plainDefectsFile = path.join(__dirname, '..', 'config', 'scp-plain-defects.json');
+const PLAIN_DEFECTS = fs.existsSync(plainDefectsFile) ? JSON.parse(fs.readFileSync(plainDefectsFile, 'utf8')) : {};
+const today = KNOWN_DEFECTS.filter(d => d.recordedOn === '2026-11-22' || d.recordedOn === '2026-11-23');
 const byGroup = Object.keys(GROUPS).map(g => ({ g, n: skipped.filter(x => (plan[x.id] || {}).group === g).length }));
 let commits = '';
 try { commits = execSync('git log --since="2026-11-21" --pretty=format:"%h|%ad|%s" --date=short', { cwd: root }).toString().trim().split('\n').map(l => { const [h, d, ...m] = l.split('|'); return `| ${h} | ${d} | ${m.join('|').replace(/\|/g, '/')} |`; }).join('\n'); } catch (e) { commits = '| – | – | git log not available |'; }
@@ -44,7 +47,7 @@ _Generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC by \`s
 | Application | Supply Chain Planner (SCP), staging – \`stg-supplychain-app.voyagecontrol.com\` |
 | Main project / site | NRVC_Hall / Warehoust _NR |
 | Framework | Playwright (Node.js), page objects + PM-flow runner (\`scripts/run-pm-flow.js\`), Google Chrome |
-| Branch | \`scp/automation-gap-report\` (local commits, not pushed) |
+| Source control | GitHub \`hariharanr15/playright_Automation\`, merged to \`main\` (pull request 1, 23 Nov 2026); later changes local until the next pull request |
 
 ## 1. Summary
 
@@ -66,10 +69,17 @@ _Generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC by \`s
 |---|---|---|---|---|---|---|---|
 ${suiteRows.join('\n')}
 
-## 3. What is new in this release (21–22 Nov 2026)
+## 3. What is new in this release (21–23 Nov 2026)
 
 | Area | Change |
 |---|---|
+| Plain-language reports (23 Nov) | Every test case (title, purpose, steps, expected and actual result) and every defect is written for business readers (\`config/scp-plain-language.json\`, \`config/scp-plain-defects.json\`); internal codes, record tags and raw error text no longer appear; each report has a glossary. |
+| Analytics and Enterprise (23 Nov) | New suite \`ana-ent\` (17 cases): Supplier Inbox overdue rows and Project filter, Supplier Performance 6/12 months, Lead Time Benchmarks = Lead Time Analysis, Aggregate Stats cumulative across venues, Inventory Reports follow the venue, and the findings of the 18 Nov Analytics validation (9 known defects). Part of the full regression. |
+| E2E smoke (23 Nov) | New steps with the run's own data: TC-14B Supplier Inbox lists the delivery awaiting its checklist; TC-14C log an international shipment and find it in both shipment lists; TC-24B after the approvals the delivery has left the pending list and the run supplier is in Enterprise View. |
+| International Shipments (23 Nov) | Back in scope: all 11 cases run (6-minute wait for the slow list); 4 known defects pending confirmation. |
+| Enterprise pending cases (23 Nov) | ENT-REG-02 / 03 run with stronger checks (filter by a run submittal; CSV compared with the supplier table) – both pass. |
+| Daily alert batch (23 Nov) | CFG-13/15/16 verified after the batch by searching the alerts: CFG-16 passes, CFG-13/15 recorded as SCP-DEF-086. |
+| Test closure (23 Nov) | \`docs/SCP_TEST_CLOSURE_REPORT.pdf\` – closure summary and the AI automation reference (framework, stack, plugins). |
 | Role-based access | New read-only suite \`roles\`: reads each role's enabled access in Voyage Control Admin › Roles and verifies the Supplier and Subcontractor menus, pages and buttons against it (ROLE-01/03/04/05/07/08/11/14/15/16/17/18/19/20/21/24, FDI-REG-01c). |
 | Role administration | New suite \`roles-write\` (run on demand): ROLE-02/06 on the test-only role "SCP Automation Test Role", ROLE-22 creates a test project; always restores the account's role (verified from its own session). |
 | FDI settings | New suite \`fdi-settings\`: the four FDI settings and their effect on the inspection form (notes, photos, mandatory photos, file types, thumbnails, spec documents, submitted report). Settings always restored. |
@@ -83,15 +93,15 @@ ${suiteRows.join('\n')}
 | Reports | Failed/Blocked/Skipped list, Known Defect cases with full flows, open Skipped cases by closure group and by module (A4 PDFs); duplicate skips counted once; covered cases counted by their covering result. |
 | Evidence | Every suite recorded as MP4 (H.264) and a screenshot after every step, collected per suite${evidence ? ` in \`${evidence}\`` : ''}. |
 
-## 4. Defects found and pending confirmation (registered 22 Nov 2026)
+## 4. Defects found in this cycle (registered 22–23 Nov 2026)
 
-| ID | Title | Status |
+| ID | Problem | Status |
 |---|---|---|
-${today.map(d => `| ${d.id} | ${cell(d.title)} | ${d.confirmation === 'pending' ? 'Pending confirmation' : 'Registered'} |`).join('\n')}
+${today.map(d => `| ${d.id} | ${cell((PLAIN_DEFECTS[d.id] || {}).title || d.title)} | ${d.confirmation === 'pending' ? 'Pending confirmation' : 'Registered'} |`).join('\n')}
 
 All defects, including the earlier ones, are listed with steps in \`docs/automation-gap-analysis/KNOWN_DEFECTS.md\`; open questions in \`PENDING_CONFIRMATIONS.md\`. Nothing was written to Jira.
 
-## 5. Decisions and confirmed rules applied (22 Nov 2026)
+## 5. Decisions and confirmed rules applied (22–23 Nov 2026)
 
 | Topic | Rule / decision |
 |---|---|
@@ -101,7 +111,8 @@ All defects, including the earlier ones, are listed with steps in \`docs/automat
 | BUGS-155 | A Subcontractor can fill the pre-shipping checklist and approve one the supplier filled. |
 | BUGS-548 | A bank question used in an organisation set of any project of the organisation cannot be deleted or edited. |
 | Pre-Shipping / GRN | Switched off → no longer available in the delivery; switched on → available again in the same delivery. |
-| Deferred scope | Procore, International Shipments and Document Management scenarios are out of scope for now. |
+| Deferred scope | Procore and part of Document Management (PO/BOM validation, EPD scan) stay out of scope; International Shipments back in scope from 23 Nov 2026. |
+| Analytics scope (18 Nov) | Aggregate Stats, SubContractor Issues, Supplier Issues and Lead Time Analysis are cumulative; Supply Chain Intelligence must follow the selected project and venue. |
 | Invitations | No manual step; YOPmail's human check is never bypassed. |
 
 ## 6. Open skipped cases by closure group
@@ -142,14 +153,14 @@ Before a run: no other automation run active (two runs on the same project inter
 | Item | Effect | Handling |
 |---|---|---|
 | Header site resets after a reload (SCP-DEF-058) | Deliveries can land on another site | Tests restore the site; INV-REG-21 skipped until delivery to a fixed site |
-| International Shipments loads slowly (up to ~160 s) | Long waits | Tests wait up to 3 min |
+| International Shipments loads slowly (about 200–250 s) | Long waits | Tests wait up to 6 min and report the slow load |
 | Runs between 00:00 and 05:30 IST | Server "today" is the previous day (SCP-DEF-074) | Tests use the server date in that window |
 | Invitation e-mail | YOPmail shows a human check; mail.tm did not receive SCP invitations | E2E uses the existing Subcontractor account; activation cases stay skipped |
 | Shared staging data | Lists grow, leftover test banners | System Messages cleanup (PM-REG-SYS-00); runs are tagged and use their own data |
 | Daily alert batch (05:00–06:00 IST) | CFG-13/15/16 results only the next day | Seeded by one run, verified by the next run after 06:00 |
 | "SCP Automation Test Role" | Stays listed in Voyage Control Admin (cannot be deactivated) | Holds a copy of the Supplier permissions; used only during role-change tests |
 
-## 10. Changes (local commits)
+## 10. Changes (commits)
 
 | Commit | Date | Description |
 |---|---|---|

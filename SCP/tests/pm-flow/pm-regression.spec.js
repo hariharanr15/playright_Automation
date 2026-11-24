@@ -8,6 +8,7 @@ const { test, expect } = require('@playwright/test');
 // FDI New Question Set category search: "Search categories" before 10 Nov 2026, now "Search or add a category".
 const CATEGORY_SEARCH = /^Search (or add a )?categor/;
 const { runPmSuite } = require('./support/pm-flow');
+const { prepareContext } = require('./support/app-shell');
 const { signIn } = require('./support/pm-session');
 const { pmUi } = require('./support/pm-ui');
 const { focus } = require('./support/pm-visuals');
@@ -1080,7 +1081,8 @@ test('Project Management – Regression (part 1: read-only and form-only)', asyn
       await s.step(`Left menu: review all pages opened so far → all ${expectedEntries.length} expected entries reached their route and were highlighted as active in the menu`, async () => {
         const seen = new Map(navigator.visited.map(v => [v.label, v]));
         const notReached = expectedEntries.filter(label => !seen.get(label)?.reached).map(label => `${label} → /${MENU[label].route}`);
-        const notActive = expectedEntries.filter(label => seen.get(label)?.reached && !seen.get(label)?.appActive);
+        // Pages that are no longer in the menu (opened by their route since 23 Nov 2026) cannot be highlighted.
+        const notActive = expectedEntries.filter(label => seen.get(label)?.reached && !seen.get(label)?.byRoute && !seen.get(label)?.appActive);
         const problems = [];
         if (notReached.length) problems.push(`Route not reached: ${notReached.join(', ')}`);
         if (notActive.length) problems.push(`Opened but not highlighted as active in the menu: ${notActive.join(', ')}`);
@@ -1098,7 +1100,7 @@ test('Project Management – Regression (part 1: read-only and form-only)', asyn
     });
     await sc('PM-REG-NAV-06', 'Navigation', 'Unauthenticated access is redirected', async s => {
       await s.step(`New signed-out browser context: open /material-master → redirected to login or no data rows shown`, async () => {
-        const context = await page.context().browser().newContext();
+        const context = await page.context().browser().newContext().then(prepareContext);
         try {
           const other = await context.newPage();
           await other.goto(new URL('/material-master', config.baseUrl).href, { waitUntil: 'domcontentloaded' });

@@ -336,7 +336,7 @@ Discovery facts used: row ticks survive navigation (untick first); choosing a ro
 
 ## 19. Overnight demo run and re-runs (22/23 Nov 2026)
 
-**Result (600 test cases, overnight full regression + decision suites + re-runs of 23 Nov):** 497 Passed · 60 Known Defect · 43 Skipped · **0 Failed · 0 Blocked**. Smoke suites: PM 19/20 (1 skipped), Procurement Log 18/18, All Modules 40/40. E2E smoke: 27 passed, 3 known defects (TC-23/24/25).
+**Result (620 test cases, overnight full regression + decision suites + re-runs of 23 Nov):** 510 Passed · 69 Known Defect · 41 Skipped · **0 Failed · 0 Blocked**. Smoke suites: PM 19/20 (1 skipped), Procurement Log 18/18, All Modules 40/40. E2E smoke: 27 passed, 3 known defects (TC-23/24/25).
 
 | Case | What happened overnight | Fix / outcome |
 |---|---|---|
@@ -349,6 +349,8 @@ Discovery facts used: row ticks survive navigation (untick first); choosing a ro
 | PM-REG-INT-02 | Empty Booking System Project ID › Submit shows no message | **SCP-DEF-082** (pending confirmation) |
 | SL-REG-15 | "Promote to SSO Organisation" does nothing (no dialog, message or request; checked 3 times) | **SCP-DEF-085** (pending confirmation) |
 | PM-REG-CFG-13 / 15 / 16 | Verified at 06:05 against the 22 Nov seeds. The first check read only 6 of 1,097 alert pages; it now searches the Alerts list by submittal number and ignores "New submittal … was added" notices | CFG-16 **Passed** (no alert three weeks out); CFG-13/15 **SCP-DEF-086** (no batch alert inside the 1-week window, pending confirmation). The 23 Nov seed is kept for the next morning |
+| ENT-REG-02 / 03 | Skipped since the 13 Nov triage; run on 23 Nov at the user's request. The old checks were weak (material names on the page; CSV rows vs table rows) | ENT-REG-02 **Passed**: run submittal CFL2611230035-SUB-L (lead time not confirmed) is listed under Supplier Inbox › Unconfirmed Lead Times after the Submittal filter. ENT-REG-03 **Passed**: the CSV (Metric, Key, Value; 252 rows, 9 metrics) holds all 116 suppliers of the Supplier table; % of total sums to 99.90 |
+| New suite `ana-ent` (16 cases) | Analytics findings of the 18 Nov hand validation and the Enterprise pages that had only smoke checks | Enterprise: Supplier Inbox overdue rows past due, Project filter, Supplier Performance 6/12 months, Lead Time Benchmarks = Lead Time Analysis → **Passed**. Analytics: LTA on-time %, Aggregate Stats cumulative across venues → **Passed**; 9 known defects (SCP-DEF-034, 087–094, pending confirmation) |
 | TC-24 (E2E) | Configuration Options read before the Currency dropdown loaded ("Choose" → "INR") | Snapshot re-reads until loaded → only the registered currency defect SCP-DEF-049 remains |
 
-**Left open on purpose:** T548-16 (the app has no visible action that deletes a bank question – needs the team to name the action), FDI-28a (would disable the admin's own inspector entry mid-flow), NAV-08/09 (a 9-step Setup Wizard not mapped yet), ENT-REG-02/03 (weak oracle – needs the Enterprise requirement), invite-based cases (SCP invites do not arrive at mail.tm; YOPmail shows a human check that is never bypassed).
+**Left open on purpose:** T548-16 (the app has no visible action that deletes a bank question – needs the team to name the action), FDI-28a (would disable the admin's own inspector entry mid-flow), NAV-08/09 (a 9-step Setup Wizard not mapped yet), invite-based cases (SCP invites do not arrive at mail.tm; YOPmail shows a human check that is never bypassed).

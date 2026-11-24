@@ -4,6 +4,7 @@ const path = require('path');
 const { getScpConfig } = require('../../../config/scp.config');
 const { maskEmail } = require('../../../utils/access/access-model');
 const { installVisuals, setBanner } = require('./pm-visuals');
+const { prepareContext } = require('./app-shell');
 const { PmNavigator } = require('./pm-navigator');
 const { PmRun } = require('./pm-runner');
 const { writeReport } = require('./pm-report');
@@ -19,6 +20,7 @@ async function runPmSuite({ page, browserName, suite, scenarios }) {
   const outDir = outputDirectory(suite);
   fs.mkdirSync(outDir, { recursive: true });
   await installVisuals(page.context());
+  await prepareContext(page.context());
   const navigator = new PmNavigator(page, config);
   const only = String(process.env.PM_FLOW_ONLY || '').split(',').map(item => item.trim()).filter(Boolean);
   const run = new PmRun({ suite, page, outDir, only, recover: () => navigator.recover() });

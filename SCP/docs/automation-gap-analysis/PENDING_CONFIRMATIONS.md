@@ -124,6 +124,17 @@ These failed in **every** full regression run from 17 to 21 Nov 2026 with the sa
 
 **33. SCP-DEF-086 (PM-REG-CFG-13 / CFG-15)** – Submittals seeded on 22 Nov 2026 with Date Required on Site 28/11/2026 (one component not ordered, one ordered with an unconfirmed lead time) got no not-ordered or lead-time alert from the 23 Nov 05:00–06:00 IST batch (Management Dashboard › Alerts, searched by submittal number: only the "New submittal … was added" notice). The control submittal three weeks out correctly has none (CFG-16 passed). Did the batch run on staging, and is the alert week threshold of 1 in effect for NRVC_Hall?
 
+**34. Analytics, re-checked automatically on 23 Nov 2026 (new suite `ana-ent`, findings of the 18 Nov validation)** – please confirm the expected behaviour for each:
+- SCP-DEF-087 (ANV-AGG-02): Aggregate Stats project table shows the project ID, not the name.
+- SCP-DEF-088 (ANV-AGG-03): Aggregate Stats Export gives the blank upload template, not the data.
+- SCP-DEF-089 (ANV-SUB-02): SubContractor Issues Project Name shows project IDs for 55 of 214 rows.
+- SCP-DEF-090 (ANV-SUB-03): SubContractor Issues repeats the project totals (1/1/13/0/14) on every NRVC_Hall subcontractor.
+- SCP-DEF-091 (ANV-SUP-01): Supplier Issues KPI cards 41/41/533/574 are the sum of those duplicated rows; one value per project gives 2/14/13/14.
+- SCP-DEF-092 (ANV-SUP-02): Supplier Issues Delivery Performance says "No delivery data" while 574 deliveries are impacted.
+- SCP-DEF-093 (ANV-SCI-01): Supply Chain Intelligence requests carry no venue (user decision 18 Nov: the page must follow project and venue).
+- SCP-DEF-094 (ANV-EMI-01): Emissions Report Export CSV has only a header while 76 shipments are listed.
+- ANV-SUB-01 matches the registered SCP-DEF-034 (Over-Deliveries value not rendered).
+
 **Note – International Shipments load time.** On 23 Nov 2026 the International Shipments list took about 200 seconds to appear (the "list-by-project" request). The tests now wait up to 6 minutes and record each slow load in the report as "SLOW PAGE". Is this load time expected on staging?
 
 ## Corrected test (not an application issue)

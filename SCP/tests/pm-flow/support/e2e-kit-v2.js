@@ -215,8 +215,12 @@ function e2eKitV2(page, { kit, navigator, outDir, config, site }) {
     async assignResponsible(number, email) {
       await fresh(); await k.search(number);
       await rowMenu(number, 'Assign Responsible');
-      const d = layer('Assign Responsible');
-      await expect(d, 'Assign Responsible dialog').toBeVisible({ timeout: 10000 });
+      // Since the staging release of 23 Nov 2026 (evening): dialog "Responsible — <number>" › "Add a Responsible person" ›
+      // "Add" › "Done" (k.addResponsible).
+      const d = k.responsibleDialog();
+      await expect(d, 'Responsible dialog').toBeVisible({ timeout: 10000 });
+      let label = '';
+      await k.addResponsible(email, async () => {
       await d.getByRole('button', { name: 'Choose user' }).click();
       // The list loads its users gradually; the user is found through the list's own Search box.
       const search = page.locator('input[placeholder^="Search"]:visible').filter({ hasNot: page.locator('[placeholder^="Search submittals"]') }).last();
@@ -225,10 +229,9 @@ function e2eKitV2(page, { kit, navigator, outDir, config, site }) {
       await expect.poll(() => options.count(), { timeout: 10000, message: `${email} offered` }).toBeGreaterThan(0).catch(() => null);
       const n = await options.count();
       if (n !== 1) { const all = (await listbox().getByRole('option').allInnerTexts()).length; throw new Error(`Assign Responsible: ${n} option(s) for ${email} among ${all} project users`); }
-      const label = clean(await options.first().innerText());
+      label = clean(await options.first().innerText());
       await options.first().click();
-      await d.getByRole('button', { name: 'Assign', exact: true }).click();
-      await toast(/Responsible user assigned/);
+      });
       return { label, name: clean(label.replace(/\(.*\)\s*$/, '')) };
     },
     async rowValue(number, column) { await fresh(); await k.search(number); return cellValue(number, column); },

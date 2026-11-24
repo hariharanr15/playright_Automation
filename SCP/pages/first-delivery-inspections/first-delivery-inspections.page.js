@@ -469,7 +469,32 @@ class FirstDeliveryInspectionsPage extends BasePage {
     await expect(this.photoThumbnails().first()).toBeVisible({ timeout: 30000 });
   }
 
+  // Staging release of 23 Nov 2026 (evening): the form ends with a required "Inspection outcome" section – "Does the
+  // product match the approved submittal?*" (select), "Quantity damaged" and "Inspection status*" (select). The match
+  // question is answered "Yes", damaged quantity 0, and the status a completed/passed value; the options offered are kept
+  // in this.lastOutcome for the report.
+  async fillOutcome() {
+    const section = this.page.getByText('Inspection outcome', { exact: true });
+    if (!(await section.isVisible().catch(() => false))) return null;
+    const select = label => this.page.getByText(label).first().locator('xpath=following::select[1]');
+    const choose = async (label, preferred) => {
+      const box = select(label);
+      if (!(await box.isVisible().catch(() => false))) return null;
+      const options = (await box.locator('option').allInnerTexts()).map(t => t.trim()).filter(t => t && !/^Choose/i.test(t));
+      const value = options.find(o => preferred.test(o)) || options[0];
+      if (value) await box.selectOption({ label: value });
+      return { options, value };
+    };
+    const match = await choose('Does the product match the approved submittal?', /^yes/i);
+    const damaged = this.page.getByText('Quantity damaged', { exact: true }).locator('xpath=following::input[1]');
+    if (await damaged.isVisible().catch(() => false) && !(await damaged.inputValue())) await damaged.fill('0');
+    const status = await choose('Inspection status', /complete|pass|accept|approved/i);
+    this.lastOutcome = { match, status };
+    return this.lastOutcome;
+  }
+
   async submit() {
+    await this.fillOutcome();
     await this.page.getByRole('button', { name: 'Submit Inspection' }).click();
     const confirm = this.page.getByRole('button', { name: /Confirm|Yes, submit/i });
     if (await confirm.isVisible().catch(() => false)) await confirm.click();

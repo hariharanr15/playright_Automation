@@ -145,9 +145,8 @@ test('Inventory Management – regression', async ({ page, browserName }) => {
       await procurement.openLog();
       await procurement.search(submittalNumber);
       await procurement.rows().first().getByRole('cell').nth(1).click();
-      await page.getByText('Other Actions').first().waitFor({ timeout: 30000 });
-      await procurement.componentRow(MATERIAL).getByRole('cell', { name: MATERIAL }).click();
-      await procurement.settle(1500);
+      await procurement.componentsLoaded();
+      await procurement.openComponent(MATERIAL);
     };
 
     // =================================================================================================================

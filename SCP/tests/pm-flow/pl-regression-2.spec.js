@@ -267,13 +267,14 @@ test('Procurement Log – regression part 2', async ({ page, browserName }) => {
 
     // ---------- 4. Not Ordered component, bulk actions, PO upload ----------
     const comp = await run.scenario(meta('PL-REG-CMP-03', 'Component without PO is Not Ordered', 'Positive'), async s => {
-      await s.step(`Search ${N.number}, click its description cell → submittal drawer opens with "Add Component" button`, async () => { await k.search(N.number); await k.openSubmittal(N.description); }, { critical: true });
-      await s.step(`Drawer › "Add Component": Date Req. on Site in 28 days, QTY 10, Value 500, no PO, click "ADD" → toast "Schedule added successfully!"`, () => k.addComponent({ rojDate: plusDays(28), qty: 10, value: 500 }), { critical: true });
-      await s.step(`Component row, status cell → status shows "Not Ordered"`, async () => expect(await k.componentStatus()).toBe('Not Ordered'));
+      await s.step(`Search ${N.number}, click its description cell → submittal page opens with the "Add component" button`, async () => { await k.search(N.number); await k.openSubmittal(N.description); }, { critical: true });
+      await s.step(`Submittal › "Add component": Date Req. on Site in 28 days, QTY 10, Value 500, no PO, click "ADD" → toast "Schedule added successfully!"`, () => k.addComponent({ rojDate: plusDays(28), qty: 10, value: 500 }), { critical: true });
+      // Redesigned row (23 Nov 2026 release): the status pill reads "Not ordered" (shows "—" for a moment while it loads).
+      await s.step(`Component row, status → status shows "Not ordered"`, async () => expect.poll(() => k.componentStatus(), { timeout: 15000 }).toBe('Not ordered'));
     });
     if (comp.status === 'Passed') {
       await run.scenario(meta('PL-REG-CMP-15', 'Shift ROJ: Apply disabled until Preview', 'Negative'), async s => {
-        await s.step(`Drawer: click "Select not-confirmed" → text "1 component selected"`, async () => { await page.getByRole('button', { name: 'Select not-confirmed' }).click(); await expect(page.getByText('1 component selected')).toBeVisible(); });
+        await s.step(`Submittal: click "Select not-confirmed" → text "1 component selected"`, async () => { await page.getByRole('button', { name: 'Select not-confirmed' }).click(); await expect(page.getByText('1 component selected')).toBeVisible(); });
         await s.step(`Click "Shift ROJ Dates", enter Offset (days) 7 without previewing → "Apply" button is disabled`, async () => {
           await page.getByRole('button', { name: 'Shift ROJ Dates' }).click();
           await page.getByRole('spinbutton', { name: /Offset \(days\)/ }).fill('7');
@@ -302,17 +303,18 @@ test('Procurement Log – regression part 2', async ({ page, browserName }) => {
         });
       });
       await run.scenario(meta('PL-REG-CMP-17', 'Upload PO File without a file', 'Negative'), async s => {
-        await s.step(`Expand the component row, click "Upload PO File", click "Upload" without choosing a file → toast "Missing file."`, async () => {
-          await k.componentRow().getByRole('cell').nth(1).getByRole('button').click();
-          await page.getByRole('button', { name: 'Upload PO File' }).click();
+        await s.step(`Component row › "Show PO details", click "Upload PO file", click "Upload" without choosing a file → toast "Missing file."`, async () => {
+          await k.componentRow().getByRole('button', { name: 'Show PO details' }).click();
+          await page.getByRole('button', { name: /^Upload PO file$/i }).last().click();
           await page.getByRole('heading', { name: 'Upload PO File' }).locator('xpath=../..').getByRole('button', { name: 'Upload', exact: true }).click();
           await k.toast('Missing file.');
         });
       });
       await run.scenario(meta('PL-REG-CMP-16', 'Upload PO File (PDF)', 'Positive'), async s => {
-        await s.step(`Click "Upload PO File", choose a generated PDF via "Click here to select the file", click "Upload" → toast "File uploaded successfully!" and the file name is listed`, async () => {
+        await s.step(`Click "Upload PO file" (PO details), choose a generated PDF via "Click here to select the file", click "Upload" → toast "File uploaded successfully!" and the file name is listed`, async () => {
           const file = path.join(tmp, `${RUN}-po.pdf`); writePdf(file);
-          await page.getByRole('button', { name: 'Upload PO File' }).click();
+          if (!(await page.getByRole('button', { name: /^Upload PO file$/i }).last().isVisible().catch(() => false))) await k.componentRow().getByRole('button', { name: 'Show PO details' }).click();
+          await page.getByRole('button', { name: /^Upload PO file$/i }).last().click();
           const chooser = page.waitForEvent('filechooser');
           await page.getByText('Click here to select the file').last().click();
           await (await chooser).setFiles(file);
@@ -322,9 +324,9 @@ test('Procurement Log – regression part 2', async ({ page, browserName }) => {
         });
       });
       await run.scenario(meta('PL-REG-DLV-02', 'Over-delivery is blocked', 'Negative'), async s => {
-        await s.step(`Click the component material cell, "+ Log Delivery": today, first location, item = material, QTY 20, click "Add" → error "Quantity exceeds available quantity"; close the dialog`, async () => {
-          await k.componentRow().getByRole('cell', { name: MATERIAL }).click();
-          await k.keepSite(); await page.getByRole('button', { name: '+ Log Delivery' }).last().click();
+        await s.step(`Component "⋯" › "Open component", "Log delivery": today, first location, item = material, QTY 20, click "Add" → error "Quantity exceeds available quantity"; close the dialog`, async () => {
+          await k.keepSite(); await k.openComponent(MATERIAL);
+          await k.logDeliveryButton().click();
           const d = k.dialog('Add Delivery', 'Add');
           await k.day(d.getByRole('textbox').first(), today);
           await d.getByRole('button', { name: /^(All Locations|Choose Location)$/ }).click(); await k.listbox().getByRole('option').filter({ hasNotText: /^(All Locations|Choose Location)$/ }).first().click();
@@ -336,17 +338,14 @@ test('Procurement Log – regression part 2', async ({ page, browserName }) => {
         });
       });
       await run.scenario(meta('PL-REG-CMP-18', 'Delete component', 'Positive'), async s => {
-        await s.step(`Reload the submittal page, component row "Other Actions ▾" › "Delete", confirm "Delete" → no component rows remain`, async () => {
+        await s.step(`Back to the submittal, component row "⋯" › "Delete component…", confirm "Delete" → no component rows remain`, async () => {
           await page.keyboard.press('Escape');
           await k.closeDialog('Add Delivery').catch(() => null);
-          await page.goto(page.url().replace(/&schedule=[^&]+/, ''), { waitUntil: 'domcontentloaded' });
-          await page.getByText('Other Actions').first().waitFor({ timeout: 30000 });
-          await k.componentRow().getByRole('button', { name: 'Other Actions ▾' }).click();
-          await page.getByRole('menuitem', { name: 'Delete' }).click();
-          await page.getByRole('button', { name: 'Delete', exact: true }).click();
+          await k.componentAction(MATERIAL, 'Delete component…');
+          await page.getByRole('button', { name: /^Delete( component)?$/ }).last().click();
           await page.getByRole('status').first().waitFor({ timeout: 8000 }).catch(() => null);
           s.observe(`Message after Delete: ${(await page.getByRole('status').allInnerTexts().catch(() => [])).filter(text => !/^\s*(Project notice|Platform-wide)/i.test(text)).join(' | ').replace(/\s+/g, ' ') || '(none)'}`);
-          await expect(page.getByRole('row').filter({ has: page.getByRole('checkbox', { name: 'Select this component' }) }), 'Component row still listed after Delete').toHaveCount(0, { timeout: 15000 });
+          await expect(k.componentRows(), 'Component row still listed after Delete').toHaveCount(0, { timeout: 15000 });
         });
       });
     } else for (const id of ['PL-REG-CMP-15', 'PL-REG-CMP-13', 'PL-REG-CMP-12', 'PL-REG-CMP-17', 'PL-REG-CMP-16', 'PL-REG-DLV-02', 'PL-REG-CMP-18']) run.skip(meta(id, 'Component scenario', 'Positive'), 'No Not Ordered component');

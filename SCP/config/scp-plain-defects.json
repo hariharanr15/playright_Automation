@@ -1,0 +1,653 @@
+{
+ "SCP-DEF-001": {
+  "title": "Fully failed bulk uploads show no status",
+  "where": "Project Management > Bulk Upload Status",
+  "what_happens": "When a bulk upload fails completely (only a failure file is produced), Bulk Upload Status shows no status for it. This was seen for 4 Materials uploads on NRVC_Hall on 26/10/2026.",
+  "expected": "A fully failed upload should show the status 'Failed'; partly successful uploads without a status are acceptable, as agreed with the team.",
+  "impact": "Users cannot tell from the list that an upload failed completely."
+ },
+ "SCP-DEF-002": {
+  "title": "Inventory activity date picker gets stuck in an update loop",
+  "where": "Inventory Management > Add Activity > activity date",
+  "what_happens": "Choosing an activity date makes the date picker enter an endless internal update loop, which the application reports as an error.",
+  "expected": "The selected activity date should stay visible until the activity is submitted.",
+  "impact": "Users may not be able to set the date of an inventory activity reliably."
+ },
+ "SCP-DEF-003": {
+  "title": "Dashboard task ageing ignores the selected date range",
+  "where": "Management Dashboard > Task Chart",
+  "what_happens": "The Task Chart does not apply the selected date range when it loads task ageing, so tasks outside the range are counted. The pie chart and status breakdown totals then differ from the in-range count, for example 35 against 33 on 31 Oct 2026.",
+  "expected": "Task ageing figures should follow the selected date range.",
+  "impact": "Dashboard task totals can disagree with each other and with the chosen period."
+ },
+ "SCP-DEF-004": {
+  "title": "Zero values are shown as a dash instead of 0",
+  "where": "Enterprise and Analytics > tables and cards",
+  "what_happens": "Where a value is zero, tables and cards show a dash ('—') instead of 0.",
+  "expected": "Zero values should be shown as 0.",
+  "impact": "Users cannot tell whether a figure is zero or missing."
+ },
+ "SCP-DEF-005": {
+  "title": "Supplier Inbox lists at most 100 records",
+  "where": "Enterprise > Supplier Inbox",
+  "what_happens": "The Supplier Inbox list stops at 100 records, although its summary counts more.",
+  "expected": "The full list should be available, not a shortened preview.",
+  "impact": "Records beyond the first 100 cannot be seen in the list."
+ },
+ "SCP-DEF-006": {
+  "title": "Page refresh resets the selected site to the default",
+  "where": "Enterprise > site selected in the header",
+  "what_happens": "A full page refresh resets the selected site to the application's default site.",
+  "expected": "The site selected before the refresh should stay selected.",
+  "impact": "Users may read figures for a different site than the one they chose."
+ },
+ "SCP-DEF-007": {
+  "title": "Supplier Inbox shows 'undefined' as the unit of measure",
+  "where": "Enterprise > Supplier Inbox > component details",
+  "what_happens": "Opening a component from the Supplier Inbox shows quantities with 'undefined' as the unit, for example '1000 undefined'.",
+  "expected": "The component details should keep the correct record details, including the unit of measure.",
+  "impact": "Users cannot see in which unit a quantity is given."
+ },
+ "SCP-DEF-008": {
+  "title": "Subcontractor Issues values appear under the wrong column headers",
+  "where": "Analytics > Subcontractor Issues",
+  "what_happens": "The table has six value headers but only five value cells per row. Values therefore sit under the wrong headers and Over-Deliveries has no value.",
+  "expected": "Each row should show one value under each header.",
+  "impact": "Users may read a figure as belonging to the wrong measure."
+ },
+ "SCP-DEF-009": {
+  "title": "Inventory calendar default date range is too short",
+  "where": "Inventory Management > Activity Calendar",
+  "what_happens": "The Activity Calendar opens on a range from one month ago to today.",
+  "expected": "By default it should cover from two calendar months back to one calendar month ahead, as confirmed on 28 Oct 2026.",
+  "impact": "Users do not see the required period without changing the dates by hand."
+ },
+ "SCP-DEF-010": {
+  "title": "Alerts section is missing its required charts",
+  "where": "Management Dashboard > Alerts",
+  "what_happens": "The Alerts section does not show the required distribution, category and ageing charts.",
+  "expected": "The Alerts section should show the distribution, category and ageing charts.",
+  "impact": "Users cannot get an overview of alerts by type and age."
+ },
+ "SCP-DEF-011": {
+  "title": "Existing specification documents cannot be downloaded",
+  "where": "Document Management > Spec Documents",
+  "what_happens": "Downloading an existing specification document fails with a 'not found' error (HTTP 404).",
+  "expected": "The document should download with its original file name and size.",
+  "impact": "Users cannot retrieve stored specification documents."
+ },
+ "SCP-DEF-012": {
+  "title": "FDI list labels the assign action 'Reassign' instead of 'Assign'",
+  "where": "First Delivery Inspection > FDI list",
+  "what_happens": "On assigned records, the admin action is labelled 'Reassign'.",
+  "expected": "The action should be labelled 'Assign', as required.",
+  "impact": "The wording differs from the agreed label, which can confuse admins."
+ },
+ "SCP-DEF-013": {
+  "title": "Subcontractor Issues search and sorting do not work",
+  "where": "Analytics > Subcontractor Issues",
+  "what_happens": "Searching by the name of an existing subcontractor returns no rows. Clicking the Subcontractor column header does not sort the records.",
+  "expected": "Search should return all matching records, and the Subcontractor column should sort in both directions.",
+  "impact": "Users cannot find or order subcontractors in this report."
+ },
+ "SCP-DEF-014": {
+  "title": "Subcontractor Issues Export produces no file",
+  "where": "Analytics > Subcontractor Issues > Export",
+  "what_happens": "The Export menu only offers 'Download Template', and clicking it does nothing: no file is produced.",
+  "expected": "The exported report should contain every record with all seven of its values.",
+  "impact": "Users cannot take the Subcontractor Issues data out of the application."
+ },
+ "SCP-DEF-015": {
+  "title": "Enterprise counts submittals that the Procurement Log does not list",
+  "where": "Enterprise > Enterprise View",
+  "what_happens": "For the same date range, Enterprise counted 296 submittals for project VC SCP 001 TEST while the Procurement Log listed 10 (28 Oct). On 29 Oct, LLE - Test had no submittals in the Procurement Log, yet Enterprise still counted 1 submittal and 8 deliveries for 28/09 to 28/10; this fits old values not being reset. NRVC_Hall matches.",
+  "expected": "Projects in scope, open submittals, the status chart and spend should be calculated from the source records and match the Procurement Log.",
+  "impact": "Enterprise totals may not reflect the actual procurement records."
+ },
+ "SCP-DEF-016": {
+  "title": "On-Time Delivery leaves out deliveries received through Inventory",
+  "where": "Enterprise > Enterprise View > On-Time Delivery",
+  "what_happens": "For NRVC_Hall, 30/07 to 28/10/2026, On-Time Delivery shows 48 of 67 deliveries, while the agreed calculation gives 53 of 74. The 7 deliveries received through Inventory (5 of them on time) account for the whole difference. The project team says this comes from old values that were not reset and that new records should be correct.",
+  "expected": "On-Time Delivery should count every delivery that has an Actual Delivery Date.",
+  "impact": "The on-time figure may be understated or overstated for affected periods."
+ },
+ "SCP-DEF-017": {
+  "title": "Lead-Time Variance leaves out deliveries received through Inventory",
+  "where": "Enterprise > Enterprise View > Lead-Time Variance",
+  "what_happens": "Deliveries received through Inventory are left out of the actual lead time. For NRVC_Hall, 30/07 to 28/10/2026, the page shows −32.2% while the agreed calculation gives −33.9% (37 deliveries in both).",
+  "expected": "Lead-Time Variance should compare the actual lead time, including Inventory receipts, against the confirmed or planned supplier-to-material lead time.",
+  "impact": "The lead-time figure is slightly off from the agreed calculation."
+ },
+ "SCP-DEF-018": {
+  "title": "Active Alerts does not match the number of unread alerts",
+  "where": "Enterprise > Enterprise View > Active Alerts",
+  "what_happens": "For NRVC_Hall, 30/07 to 28/10/2026, Active Alerts shows 236 while the user has 1 unread alert (earlier the same day, 365 against 5). The project team says this comes from old alert values that were not reset and that new records should be correct.",
+  "expected": "Active Alerts should show the unread alerts and the projects that have them.",
+  "impact": "Users may overestimate how many alerts need attention."
+ },
+ "SCP-DEF-019": {
+  "title": "A stocked material shows no location or unit details",
+  "where": "Inventory Management > material Location and UoM views",
+  "what_happens": "Steel Bar 255 (0007) is listed on site Warehoust _NR with a balance of 115, but its Location and UoM views say no data was found for that material and site. Other stocked materials, such as 43 Inches and Asian Paints, show their records. The team is to confirm whether this is old data or a defect.",
+  "expected": "The Location, Submittals and UoM views should show the records of the selected material.",
+  "impact": "Users cannot see where this material's stock is held."
+ },
+ "SCP-DEF-020": {
+  "title": "Organization Admin cannot change a user's organization",
+  "where": "User Management > user > Associated Organization",
+  "what_happens": "When an Organization Admin changes a user's Associated Organization and clicks Confirm, the server refuses with a 'permission denied' error (29 Oct 2026).",
+  "expected": "The admin should be able to make this change, if the team confirms the Organization Admin should hold this permission.",
+  "impact": "Admins cannot move users between organizations themselves."
+ },
+ "SCP-DEF-021": {
+  "title": "Enterprise figures change to zero after switching project",
+  "where": "Enterprise > Enterprise View (after changing the header project)",
+  "what_happens": "After the header project is changed to LLE - Test, the first Enterprise summary load (31 Jul to 29 Oct 2026) returns 3 projects, but every identical repeat returns 0 projects and all-zero figures. The page keeps showing the first result.",
+  "expected": "Changing the header project should not narrow the Enterprise scope, and repeated loads should return the same consolidated data.",
+  "impact": "Enterprise figures may depend on when the data was loaded."
+ },
+ "SCP-DEF-022": {
+  "title": "New FDI records can only be self-assigned by the admin",
+  "where": "First Delivery Inspection > FDI list",
+  "what_happens": "A newly generated inspection record ('Auditor Not Yet Assigned') offers the Organization Admin only 'Self Assign'; there is no action to assign another inspector (29 Oct 2026). Related to defect SCP-DEF-012.",
+  "expected": "The admin should be able to assign the inspection to another inspector.",
+  "impact": "Admins cannot hand inspections to their inspectors."
+ },
+ "SCP-DEF-023": {
+  "title": "Organization list in FDI invite shows duplicate names",
+  "where": "Project Management > FDI Config > Invite Users > Organization",
+  "what_happens": "The Organization list shows Amazon and Meta twice each on NRVC_Hall (30 Oct 2026).",
+  "expected": "Each organization should appear only once, as the product owner requires.",
+  "impact": "Duplicate entries make it unclear which organization to choose."
+ },
+ "SCP-DEF-024": {
+  "title": "Ticking a task's checkbox in XER Import does not select it",
+  "where": "Project Management > Integrations > XER Import > Manage tasks",
+  "what_happens": "In 'Select tasks to display', clicking a task's checkbox does not tick it; clicking elsewhere on the row does. The product owner accepts this for now but regards it as an issue.",
+  "expected": "Clicking the checkbox should select the task.",
+  "impact": "Users may think a task is selected when it is not."
+ },
+ "SCP-DEF-025": {
+  "title": "Site Details export does not match the sites on the page",
+  "where": "Project Management > Site Details > Export",
+  "what_happens": "The export file held 1 row (the upload template sample 'Location 1') while the page listed 13 sites on NRVC_Hall, and the Location Type column shows an internal ID instead of a type. On 31 Oct 2026 the export listed only sites that have locations, plus the template row, so it still differs from the page.",
+  "expected": "The export should list the sites shown on the page.",
+  "impact": "Users cannot rely on the export as a list of their sites."
+ },
+ "SCP-DEF-026": {
+  "title": "Cancel in Configuration Options shows the week values as 0",
+  "where": "Project Management > Configuration Options",
+  "what_happens": "Clicking Cancel sets the three week fields to 0 on screen, even without any edit, instead of restoring the saved values 1/1/1. Nothing is saved, and a reload shows the saved values again.",
+  "expected": "Cancel should restore the saved week values.",
+  "impact": "Users may think their settings were reset to 0."
+ },
+ "SCP-DEF-027": {
+  "title": "XER Import and Watched Materials are not highlighted in the menu",
+  "where": "Project Management > left menu",
+  "what_happens": "Opening XER Import or Watched Materials does not highlight their menu entry; the other 15 Project Management entries are highlighted when open.",
+  "expected": "The menu entry of the open page should be highlighted.",
+  "impact": "Users lose the visual cue showing which page they are on."
+ },
+ "SCP-DEF-028": {
+  "title": "Common Utilities accepts duplicate names in different letter case",
+  "where": "Project Management > Reference Data > Common Utilities",
+  "what_happens": "'Add' accepts a utility name that already exists in different letter case, for example the same test name once in capitals and once in mixed case, both of the same type, on NRVC_Hall.",
+  "expected": "Names should be unique, ignoring letter case and spaces, as the product owner requires.",
+  "impact": "Duplicate entries make it unclear which one to use."
+ },
+ "SCP-DEF-029": {
+  "title": "Common UoM accepts duplicate names with extra spaces or different case",
+  "where": "Project Management > Reference Data > Common UoM",
+  "what_happens": "'Add UOM' accepts an existing unit name typed with extra spaces; it is saved trimmed, so the list shows the same name twice. It also accepts the same name in different letter case (NRVC_Hall).",
+  "expected": "Names should be unique, ignoring letter case and spaces, as the product owner requires.",
+  "impact": "Duplicate units make it unclear which one to use."
+ },
+ "SCP-DEF-030": {
+  "title": "Configuration Options accepts negative week values",
+  "where": "Project Management > Configuration Options",
+  "what_happens": "Setting a week field to -1 and saving shows 'Project configuration updated successfully', and -1 is still there after a reload (NRVC_Hall; restored to 1 afterwards).",
+  "expected": "Negative values should be rejected; any other value is accepted, as the product owner states.",
+  "impact": "Invalid settings can be saved for the project."
+ },
+ "SCP-DEF-031": {
+  "title": "FDI question set accepts duplicate names in different letter case",
+  "where": "Project Management > FDI Config > New Question Set",
+  "what_happens": "A question set was created with the same name as an existing set but in capitals, so both now exist side by side (NRVC_Hall, 31 Oct).",
+  "expected": "Names should be unique, ignoring letter case and spaces, as the product owner requires.",
+  "impact": "Duplicate question sets make it unclear which one to use."
+ },
+ "SCP-DEF-032": {
+  "title": "System messages cannot be deleted",
+  "where": "Project Management > System Messages",
+  "what_happens": "After confirming Delete, the server returns an error (HTTP 500). The message stays in the list, and an active one keeps showing its project notice banner (NRVC_Hall, 31 Oct 2026).",
+  "expected": "Delete should remove the message.",
+  "impact": "Unwanted messages and their banners cannot be removed by deleting them."
+ },
+ "SCP-DEF-033": {
+  "title": "User status filter is empty or does not filter",
+  "where": "User Management > Filter > status",
+  "what_happens": "When the page loads, two server requests the filter needs fail with an error (HTTP 500), so the status tab is empty and Active and Invited users stay mixed (NRVC_Hall, 31 Oct 2026). In another run where the options did load, applying 'Active' still listed Invited users.",
+  "expected": "Filtering by status should show only users with that status, for example only active users.",
+  "impact": "Admins cannot separate active users from invited ones."
+ },
+ "SCP-DEF-034": {
+  "title": "Subcontractor Issues rows miss Over-Deliveries and show project IDs",
+  "where": "Analytics > Subcontractor Issues",
+  "what_happens": "The table has 8 column headers (Subcontractor, Project Name, Delays in Raising PO, Delays in Confirming PO, PO Schedule Impact, Delays in Booking, Delivery Impacted, Over-Deliveries) but each row has only 7 cells, so the Over-Deliveries value is missing. Project Name also shows the project ID (for example PRJSUPCHAPLA0000000099).",
+  "expected": "Each row should show all its values, including Over-Deliveries, and Project Name should show the project's name.",
+  "impact": "Users may misread values and cannot identify the project by name."
+ },
+ "SCP-DEF-035": {
+  "title": "Subcontractor Issues Export starts no download",
+  "where": "Analytics > Subcontractor Issues > Export",
+  "what_happens": "Clicking Export starts no download and shows no message (NRVC_Hall, 31 Oct 2026).",
+  "expected": "Export should produce a report of the Subcontractor Issues data.",
+  "impact": "Users cannot take this report out of the application."
+ },
+ "SCP-DEF-036": {
+  "title": "Supplier Issues and Lead Time Analysis show dashes for empty values",
+  "where": "Analytics > Supplier Issues and Analytics > Lead Time Analysis",
+  "what_happens": "Empty measures are shown as '—' instead of a number, for example a Supplier Issues row with six dashes, or 'Cement — — 0 — 0' in Lead Time Analysis. The team is to confirm whether the dash is intended for zero or no data.",
+  "expected": "Empty measures should show a number, unless the team confirms the dash is the intended display.",
+  "impact": "Users cannot tell whether a figure is zero or missing."
+ },
+ "SCP-DEF-037": {
+  "title": "Header site switches to the newest site after a reload",
+  "where": "Site selected in the header (seen in Enterprise)",
+  "what_happens": "The selected site is not kept on page reload: the application selects the first site in the list, which is the most recently created site (for example Warehoust _NR changed to a test site just created by another test). Confirmed manually on 31 Oct 2026.",
+  "expected": "The site selected before the reload should stay selected.",
+  "impact": "Users may work on, or read figures for, the wrong site without noticing."
+ },
+ "SCP-DEF-038": {
+  "title": "Site uploads show no status in Bulk Upload Status",
+  "where": "Project Management > Bulk Upload Status",
+  "what_happens": "Every Site Details upload is listed with status '-', even when it fully or partly succeeded. Material uploads correctly show Success, Failed or Partly successful (NRVC_Hall, 31 Oct 2026).",
+  "expected": "Site uploads should show their status, as Material uploads do.",
+  "impact": "Users cannot see whether a site upload worked."
+ },
+ "SCP-DEF-039": {
+  "title": "Site upload merges a duplicate site name instead of rejecting it",
+  "where": "Project Management > Site Details > Upload",
+  "what_happens": "Uploading a row whose site name matches an existing site in different letter case adds that row's location to the existing site instead of rejecting the row.",
+  "expected": "The row should be rejected as a duplicate, as the product owner requires.",
+  "impact": "Locations can end up on an existing site without the user intending it."
+ },
+ "SCP-DEF-040": {
+  "title": "Common units of measure are shared across projects",
+  "where": "Project Management > Reference Data > Common UoM",
+  "what_happens": "Units created on NRVC_Hall are also listed on project SCP_Testing_Ram (62 items there, 31 Oct 2026). Material Category is correctly kept per project.",
+  "expected": "Common UoM should belong to each project, as the product owner requires.",
+  "impact": "Projects see and may use units created for other projects."
+ },
+ "SCP-DEF-041": {
+  "title": "Procurement Log Configuration accepts a standard field name again",
+  "where": "Project Management > Procurement Log Configuration > Add Log Fields",
+  "what_happens": "Adding a field named like a standard field ('Spec Section No') is accepted. It is stored as a second standard-looking field without the '(Custom)' label, and the original standard field moves to the end of the column order (NRVC_Hall, 31 Oct 2026).",
+  "expected": "Field names should be unique, as the product owner requires.",
+  "impact": "The Procurement Log can show two columns with the same name and a changed column order."
+ },
+ "SCP-DEF-043": {
+  "title": "Delivered submittals show no Actual Delivery Date in the log",
+  "where": "Procurement Log > list",
+  "what_happens": "A submittal whose component is Delivered (actual delivery date 02/11/2026, GRN generated) still shows Actual Delivery Date '-'. All 25 older Delivered rows on NRVC_Hall show '-' too (2 Nov 2026).",
+  "expected": "The Actual Delivery Date should be shown, as the product owner requires.",
+  "impact": "Users cannot see from the log when materials actually arrived."
+ },
+ "SCP-DEF-044": {
+  "title": "Partial delivery shortage is calculated from the wrong quantity",
+  "where": "Procurement Log > delivery > Delivery Conditions",
+  "what_happens": "On a partial delivery, Shortage is calculated from the component quantity instead of the delivered quantity. With 4 delivered, Good 3 and Damage 1 gave Shortage 6 instead of 0 (NRVC_Hall, 2 Nov 2026).",
+  "expected": "Shortage should be calculated from the delivered quantity.",
+  "impact": "Shortages are overstated on partial deliveries."
+ },
+ "SCP-DEF-045": {
+  "title": "Inventory activity can save a schedule from another submittal",
+  "where": "Inventory Management > Add Activity",
+  "what_happens": "After the Submittal is changed, the Schedule list takes about 1 second to reload, so the previous submittal's schedule can still be picked, and the server saves the mismatched pair. This was seen on a Loss activity on NRVC_Hall (2 Nov 2026).",
+  "expected": "The schedule should belong to the selected submittal.",
+  "impact": "Stock movements can be linked to the wrong schedule."
+ },
+ "SCP-DEF-046": {
+  "title": "Setting a component to Delivered leaves it Ordered",
+  "where": "Procurement Log > component > Other Actions > Update Status",
+  "what_happens": "Choosing 'Delivered' gets a success reply from the server, but the status stays 'Ordered' and no message is shown (NRVC_Hall, 2 Nov 2026).",
+  "expected": "Delivered should show on both the submittal and the component page, as the product owner requires.",
+  "impact": "Users cannot mark a component as delivered this way."
+ },
+ "SCP-DEF-047": {
+  "title": "Procurement Log export does not match the grid",
+  "where": "Procurement Log > Export",
+  "what_happens": "The exported file has 47 columns in a different layout from the grid: custom fields are missing, 'Supplier' is empty while 'Supplier Name' is filled, some cells show the word 'None', and statuses and dates appear unformatted (NRVC_Hall, 2 Nov 2026).",
+  "expected": "The export should match the grid columns, including custom fields, as the product owner requires.",
+  "impact": "Users cannot use the export as a copy of what they see in the log."
+ },
+ "SCP-DEF-048": {
+  "title": "A new supplier cannot be linked to its supplier user",
+  "where": "Supplier List > row action 'Promote to SSO Organisation'",
+  "what_happens": "'Promote to SSO Organisation' shows no dialog and does nothing, so a supplier added in Supplier List never becomes a sign-in organisation. A user invited with role Supplier who sets up an organisation with the same name sees 0 submittals in the Procurement Log, even the supplier's own submittal and delivery, so cannot complete the pre-shipping checklist (NRVC_Hall, 11 Nov 2026).",
+  "expected": "A new supplier should be linkable to its supplier user, so that user sees the supplier's submittals.",
+  "impact": "New suppliers cannot work on their own submittals in the application."
+ },
+ "SCP-DEF-049": {
+  "title": "Dashboard spend differs from the Procurement Log value and currency",
+  "where": "Management Dashboard > Materials table > Spend",
+  "what_happens": "A category's Spend rises by quantity × component Value and is shown in $, while the Procurement Log treats the component Value as the total, in ₹. A test submittal with components of 10 × ₹1,000 and 5 × ₹500 raised its category's spend by $12,500, against ₹1,500 delivered (NRVC_Hall, 11 Nov 2026).",
+  "expected": "Spend should match the Procurement Log value in the project currency.",
+  "impact": "Spend figures on the dashboard can be much higher, and in a different currency, than the actual value."
+ },
+ "SCP-DEF-050": {
+  "title": "Inviting an already invited email is not rejected",
+  "where": "User Management > Invite",
+  "what_happens": "Inviting an email that is already invited (same address in capitals, another role) shows 'Invite Sent Successfully' (NRVC_Hall, 13 Nov 2026).",
+  "expected": "The duplicate invite should be rejected.",
+  "impact": "The same person can be invited twice with different roles."
+ },
+ "SCP-DEF-051": {
+  "title": "Removed user still appears in the project",
+  "where": "User Management > Remove From Project",
+  "what_happens": "'Remove From Project' shows 'User Removed Successfully', but the user is still listed after a reload (NRVC_Hall, 13 Nov 2026).",
+  "expected": "The user should no longer be listed in the project.",
+  "impact": "Admins cannot remove people from a project."
+ },
+ "SCP-DEF-052": {
+  "title": "User filter offers no status values",
+  "where": "User Management > Filter > status",
+  "what_happens": "The status tab of the Filter dialog offers no values (no 'Invited' option), so the list cannot be filtered by status (NRVC_Hall, 13 Nov 2026).",
+  "expected": "The filter should narrow the list to users with the chosen status.",
+  "impact": "Admins cannot find invited or active users quickly."
+ },
+ "SCP-DEF-053": {
+  "title": "Available stock hint differs from the location balance",
+  "where": "Inventory Management > Add Activity",
+  "what_happens": "Add Activity shows 'Available at Gate 5: 68 Pieces' while the material's Location view shows 94 at Gate 5, read 7 seconds apart with no activity in between (43 Inches, Warehoust _NR, NRVC_Hall, 21 Nov 2026). The save check uses the form figure, and the Location view rows add up to more than the site total.",
+  "expected": "The available stock shown should equal the location balance (still to be confirmed by the team).",
+  "impact": "Users may be blocked or misled when moving or issuing stock."
+ },
+ "SCP-DEF-054": {
+  "title": "Quantity with 3 decimals gives an unclear, repeated error message",
+  "where": "Inventory Management > Add Activity > QTY",
+  "what_happens": "A quantity of 1.555 is rejected and the stock is unchanged, but the only message is the generic 'Invalid data provided.', shown twice.",
+  "expected": "A clear message about the allowed decimals should be shown; the decimal limit and wording are still to be confirmed by the team.",
+  "impact": "Users do not know why their entry was refused or how to correct it."
+ },
+ "SCP-DEF-055": {
+  "title": "Inventory list does not refresh after an activity",
+  "where": "Inventory Management > list",
+  "what_happens": "After a Loss of 1, the list still shows the old quantity (587 instead of 586) until the page is fully reloaded.",
+  "expected": "The list should show the new quantity straight after the activity (still to be confirmed by the team).",
+  "impact": "Users may see out-of-date stock figures."
+ },
+ "SCP-DEF-056": {
+  "title": "Ledger 'Submittal' column shows the Spec Section No",
+  "where": "Inventory Management > material ledger",
+  "what_happens": "The ledger's 'Submittal' column shows the Spec Section No instead of the Submittal No of the test submittal. Either the column name or the value is wrong.",
+  "expected": "The column name and its value should match (still to be confirmed by the team).",
+  "impact": "Users may look up the wrong submittal from the ledger."
+ },
+ "SCP-DEF-057": {
+  "title": "Inventory Export downloads the activity log instead of balances",
+  "where": "Inventory Management > Export",
+  "what_happens": "Export downloads the activity log (activity ID, action, from and to location, quantity and so on) instead of the stock balance list.",
+  "expected": "Export should download the stock balance list (Material ID, Material Name, Inventory), as confirmed.",
+  "impact": "Users cannot export current stock levels."
+ },
+ "SCP-DEF-058": {
+  "title": "Header site changes to a different site after reload",
+  "where": "Inventory Management > site selected in the header",
+  "what_happens": "After choosing another site in the header and reloading, the header shows a different test site from the one chosen. Keeping locations separate per site works correctly.",
+  "expected": "The chosen site should stay selected after a reload (still to be confirmed by the team).",
+  "impact": "Users may record or read stock for the wrong site."
+ },
+ "SCP-DEF-059": {
+  "title": "System message with end before start fails without a message",
+  "where": "Project Management > System Messages > New message",
+  "what_happens": "When Ends is earlier than Starts, the message is not created, but no error or warning is shown (NRVC_Hall, 20 Nov 2026).",
+  "expected": "A message should tell the user the end cannot be earlier than the start, as the product owner confirmed.",
+  "impact": "Users do not know why their message was not created."
+ },
+ "SCP-DEF-060": {
+  "title": "Required Remaining Qty ignores deliveries already logged",
+  "where": "Procurement Log > component > '+ Log Delivery'",
+  "what_happens": "After 4 of 12 were logged as delivered, Required Remaining Qty still shows '12 Pieces'. This happened in every run up to 21 Nov 2026 (14 of 14), NRVC_Hall.",
+  "expected": "Required Remaining Qty should subtract logged deliveries, here giving 8.",
+  "impact": "Users see more outstanding quantity than is really left to deliver."
+ },
+ "SCP-DEF-061": {
+  "title": "Component value shows $ on a project that uses rupees",
+  "where": "Procurement Log > expanded component > Value",
+  "what_happens": "The component Value shows '$1,000.00' on a project whose currency is INR. This happened in every run up to 21 Nov 2026 (14 of 14), NRVC_Hall.",
+  "expected": "Values should use the project currency symbol (₹), as confirmed.",
+  "impact": "Values appear to be in the wrong currency."
+ },
+ "SCP-DEF-062": {
+  "title": "Material category list can return other projects' categories",
+  "where": "Material categories (data service behind the application)",
+  "what_happens": "When the material category list is requested without naming a project, it returns 757 categories from 15 projects instead of only the current project's (20 Nov 2026).",
+  "expected": "Only the current project's categories should be returned.",
+  "impact": "This may expose other projects' data; the team is to assess it."
+ },
+ "SCP-DEF-063": {
+  "title": "Disabling a pre-shipping checklist question is not saved",
+  "where": "Project Management > PreShipping Checklist",
+  "what_happens": "Unticking 'Enabled' on the last question shows no message, and the box is ticked again after a reload (both attempts, NRVC_Hall, 21 Nov 2026). Switching a question on was saved on 13 and 17 Nov.",
+  "expected": "Unticking 'Enabled' should be saved automatically; the team is to confirm whether a question already in use may be disabled.",
+  "impact": "Users cannot switch off a checklist question and get no explanation."
+ },
+ "SCP-DEF-064": {
+  "title": "'Greater than or equal' filter on custom number fields finds nothing",
+  "where": "Procurement Log > Filters > Add Condition",
+  "what_happens": "Filtering a custom number field ('Total Count …') with '>=' 7 returns no rows, although the test submittal holds 7. This happened in every run from 17 to 21 Nov 2026 (NRVC_Hall); the log has four custom fields named 'Total Count …'.",
+  "expected": "The filter should return records whose value is 7 or more; the team is to confirm whether this operator is supported on custom number fields.",
+  "impact": "Users cannot filter the log by custom numeric values."
+ },
+ "SCP-DEF-065": {
+  "title": "Component status cannot be changed to 'Ordered At Risk'",
+  "where": "Procurement Log > component > Other Actions > Update Status",
+  "what_happens": "Choosing 'Ordered At Risk' with a comment and clicking ADD leaves the status as 'Ordered' when the submittal is reopened. This happened in every run from 17 to 21 Nov 2026.",
+  "expected": "The status should change to 'Ordered At Risk'; the team is to confirm whether an Ordered component may move to this status.",
+  "impact": "Users cannot flag ordered components as at risk."
+ },
+ "SCP-DEF-066": {
+  "title": "Files tab of a component does not show its files",
+  "where": "Procurement Log > component view > Files tab",
+  "what_happens": "Clicking the 'Files' tab keeps the delivery table on screen; the list of files does not appear. This happened in every run from 17 to 21 Nov 2026.",
+  "expected": "The Files tab should list the component's files.",
+  "impact": "Users cannot see files attached to a component."
+ },
+ "SCP-DEF-067": {
+  "title": "International Shipments shows wrong date and status for flagged items",
+  "where": "Procurement Log > Flag International, then International Shipments",
+  "what_happens": "After a component is flagged as international, its International Shipments row shows Required Date '-' and status 'Pending Order', although the component has a Required Date and is Ordered. This happened in every run from 17 to 21 Nov 2026.",
+  "expected": "The row should show the component's procurement date and status.",
+  "impact": "Users tracking international shipments see outdated information."
+ },
+ "SCP-DEF-068": {
+  "title": "Create Alert gives a general error instead of field checks",
+  "where": "Procurement Log > row menu > Alert > Add Alert",
+  "what_happens": "Submitting the alert form with empty fields shows the server message 'Failed to create alert. Please try again.' instead of messages for the required fields. This happened in every run from 17 to 21 Nov 2026.",
+  "expected": "The form should show which required fields are missing.",
+  "impact": "Users do not know what to fill in to create an alert."
+ },
+ "SCP-DEF-069": {
+  "title": "Documents show 'Unknown' instead of who uploaded them",
+  "where": "Document Management > All Documents > Uploaded By",
+  "what_happens": "For category 'PO File' the Uploaded By column shows 'Unknown', and for category 'Pdf' it shows 'test', instead of the uploading user. This happened in every run from 17 to 21 Nov 2026.",
+  "expected": "Uploaded By should show the real user who uploaded the document.",
+  "impact": "Users cannot see who added a document."
+ },
+ "SCP-DEF-070": {
+  "title": "Triggered delivery alert does not reach the user's notifications",
+  "where": "Management Dashboard > Notifications",
+  "what_happens": "A 'Delivery for Item …' trigger alert set up by the test is not listed in Notifications, neither on the first page nor when searching with filter 'All'. This happened in every run from 17 to 21 Nov 2026.",
+  "expected": "The alert should appear as a notification; the team is to confirm whether and when it is delivered.",
+  "impact": "Users may miss alerts they set up for deliveries."
+ },
+ "SCP-DEF-071": {
+  "title": "Site export has fewer sites and includes another project's row",
+  "where": "Project Management > Site Details > Export",
+  "what_happens": "The exported file has fewer distinct sites than the page (79 against 92 on 21 Nov 2026), includes a row from another project and shows an internal ID in the Location Type column. This happened in every run from 17 to 21 Nov 2026.",
+  "expected": "The export should list the same sites as the page, for this project only.",
+  "impact": "The export is incomplete and may contain another project's data; the team is to assess this."
+ },
+ "SCP-DEF-072": {
+  "title": "Deleting a component does nothing and shows no message",
+  "where": "Procurement Log > submittal page > component > Other Actions > Delete",
+  "what_happens": "After confirming Delete, no message appears and the component is still listed after a reload. The component had a confirmed lead time and was not ordered. This failed in 4 of the last 5 runs (17 to 21 Nov 2026) and passed on 18 Nov.",
+  "expected": "The component should be deleted, or, if a component with a confirmed lead time may not be deleted, a message should say so (to be confirmed by the team).",
+  "impact": "Users cannot tell whether the delete worked or why it was refused."
+ },
+ "SCP-DEF-073": {
+  "title": "Component header sometimes shows 'undefined' as the unit",
+  "where": "Procurement Log > component view > header",
+  "what_happens": "Sometimes, after the component view is reloaded, the header shows 'Required QTY: 12 undefined' instead of '12 Pieces' (both attempts in the 21 Nov 2026 17:02 run; other runs passed, sometimes only on a second attempt).",
+  "expected": "The header should show the unit of measure, for example '12 Pieces'.",
+  "impact": "Users occasionally cannot see the unit of the required quantity."
+ },
+ "SCP-DEF-074": {
+  "title": "Today's PO date is refused between midnight and 05:30 IST",
+  "where": "Procurement Log > Add Component > PO Date",
+  "what_happens": "Between 00:00 and 05:30 IST, adding a component with PO Date set to today (as offered by the date picker) is refused with 'Invalid data provided.'; the server says the PO date cannot be in the future because it still uses the previous day's date (UTC). In the same window, the log's 'Start date' = today filter hides records created today, and alerts and notifications created that night show the previous day's date. Found by the overnight run of 21/22 Nov 2026 and confirmed by a check at 02:15 IST.",
+  "expected": "To be confirmed by the team: 'today' should probably follow the user's or project's time zone.",
+  "impact": "Users in India working early in the morning cannot enter today's PO date and may see wrong dates."
+ },
+ "SCP-DEF-075": {
+  "title": "Bulk Edit Roll Back does not restore 'Lead Time Confirmed'",
+  "where": "Procurement Log > Bulk Edit > Roll Back",
+  "what_happens": "After a bulk edit of Supplier Name on a submittal whose component lead time was confirmed (2 weeks), 'Roll Back' restores the supplier and the 2-week lead time, but 'Lead Time Confirmed' stays False although it was True before (22 Nov 2026).",
+  "expected": "Roll Back should restore the supplier, lead times and confirmed flags.",
+  "impact": "After a roll back, confirmed lead times appear unconfirmed."
+ },
+ "SCP-DEF-076": {
+  "title": "Supplier user can reach the material bulk upload by web address",
+  "where": "Project Management > Material Master > Upload (signed in as a Supplier)",
+  "what_happens": "Signed in as a Supplier, the left menu has no Project Management, but typing the Material Master address opens the page with 'Upload' available. The Supplier role has the material list, add, edit and delete permissions ticked.",
+  "expected": "The material bulk upload should not be available to roles other than Project Admin; the team is to confirm whether it should follow the role permissions instead, and whether the page should open without the menu.",
+  "impact": "Suppliers may be able to upload materials they are not meant to manage."
+ },
+ "SCP-DEF-077": {
+  "title": "Project Management pages open by web address without permission",
+  "where": "Project Management pages (Supplier and Subcontractor roles)",
+  "what_happens": "The Supplier and Subcontractor roles do not have access to the Project Management menu or screen, and the menu is hidden, but both can open Material Master and Site Details by typing the address. The Subcontractor can also open Inventory Control and Watched Materials. System Messages is correctly blocked (22 Nov 2026).",
+  "expected": "Every Project Management page should be refused without Project Management access (to be confirmed by the team).",
+  "impact": "Users can see pages their role is not meant to give them."
+ },
+ "SCP-DEF-078": {
+  "title": "Subcontractor sees the Enterprise menu its role does not allow",
+  "where": "Left menu > Enterprise (Subcontractor role)",
+  "what_happens": "The Subcontractor role does not enable the Enterprise menu, but the Subcontractor's left menu shows 'Enterprise'. For the Supplier role, which enables it, the menu shows as expected (22 Nov 2026).",
+  "expected": "The Enterprise menu should follow the role permission; the team is to confirm whether it is meant to show regardless.",
+  "impact": "Subcontractors may see enterprise information their role does not grant."
+ },
+ "SCP-DEF-079": {
+  "title": "Submitted inspection report loses its notes after a setting change",
+  "where": "Project Management > FDI Config > 'Need Overall Notes', then Inspection Detail",
+  "what_happens": "An inspection was submitted with notes while 'Need Overall Notes to be captured' was Yes, and Inspection Detail showed them. After the setting was switched to No, the same submitted report no longer shows the notes (22 Nov 2026).",
+  "expected": "A submitted report should stay as it was submitted; only new reports should follow the new setting.",
+  "impact": "Recorded inspection notes can disappear from past reports."
+ },
+ "SCP-DEF-080": {
+  "title": "Inspection form shows only images, not pdf, xlsx or csv files",
+  "where": "First Delivery Inspection > inspection form > 'Add photo'",
+  "what_happens": "With photo upload enabled, one .jpg, .png, .pdf, .xlsx and .csv file were each added through 'Add photo'. No error appears, but only the two images are listed; the other three files are not (22 Nov 2026).",
+  "expected": "All five file types should be accepted and listed; if only images are meant to be accepted, the others should be refused with a message (to be confirmed by the team).",
+  "impact": "Users may believe documents were attached to an inspection when they were not."
+ },
+ "SCP-DEF-081": {
+  "title": "A site with deliveries and stock can be deleted without warning",
+  "where": "Project Management > Site Details > Delete",
+  "what_happens": "A test site that had received deliveries and held 4 units of stock was deleted after only the general 'Are you sure you want to proceed?' prompt, with the message 'Site deleted successfully!' (22 Nov 2026).",
+  "expected": "Deleting a site in use should be blocked or warned, as Material Master does for a material with stock history.",
+  "impact": "Sites with stock and delivery history can be removed by mistake."
+ },
+ "SCP-DEF-082": {
+  "title": "Booking Integration submits with an empty project ID and no message",
+  "where": "Project Management > Integrations > Booking Integration",
+  "what_happens": "Clicking Submit with 'Booking System Project ID' empty shows no validation or error message; after a reload the field is still empty and nothing is linked (NRVC_Hall, overnight run 22 to 23 Nov 2026).",
+  "expected": "A message should say the required field is missing, as the user confirmed on 22 Nov 2026.",
+  "impact": "Users get no feedback that the integration was not set up."
+ },
+ "SCP-DEF-083": {
+  "title": "Changing a shipment's status gives no confirmation",
+  "where": "International Shipments > row status",
+  "what_happens": "Changing a row's status to 'Shipped' shows no confirmation message (re-checked 23 Nov 2026).",
+  "expected": "A confirmation should show that the status change was saved.",
+  "impact": "Users cannot tell whether the status change took effect."
+ },
+ "SCP-DEF-084": {
+  "title": "Enterprise Shipments 'Open' shows the list, not the shipment",
+  "where": "Enterprise > Shipments > 'Open'",
+  "what_happens": "Searching for the test submittal and clicking 'Open' opens the shipments list instead of that shipment (re-checked 23 Nov 2026).",
+  "expected": "'Open' should go to the selected shipment.",
+  "impact": "Users have to find the shipment again by hand."
+ },
+ "SCP-DEF-085": {
+  "title": "'Promote to SSO Organisation' does nothing",
+  "where": "Supplier List > row menu > 'Promote to SSO Organisation'",
+  "what_happens": "Choosing 'Promote to SSO Organisation' for the test supplier shows no dialog or message and does not contact the server; the row (Type 'Supplier', Source '-') is unchanged. Checked twice on 23 Nov 2026.",
+  "expected": "The supplier should be promoted, with a confirmation, as decided by the user on 22 Nov 2026.",
+  "impact": "Suppliers cannot be turned into organisations that can sign in."
+ },
+ "SCP-DEF-086": {
+  "title": "Daily check raises no not-ordered or lead-time alerts",
+  "where": "Daily alert check, seen in Management Dashboard > Alerts",
+  "what_happens": "On NRVC_Hall, with an alert threshold of 1 week, two test submittals were set up on 22 Nov 2026 with Date Required on Site 28/11/2026: one not ordered, one ordered with an unconfirmed lead time. After the daily check of 05:00 to 06:00 IST on 23 Nov, Alerts shows only the creation notice for each, with no not-ordered or lead-time alert. A control submittal due 13/12/2026 correctly has no alert.",
+  "expected": "Alerts should be raised for items inside the 1-week window; the team is to confirm the daily check ran and which threshold applied.",
+  "impact": "Users may not be warned about materials that are not ordered or not confirmed in time."
+ },
+ "SCP-DEF-087": {
+  "title": "Aggregate Stats shows the project ID instead of its name",
+  "where": "Analytics > Aggregate Stats > project table",
+  "what_happens": "The first column shows the project ID (PRJSUPCHAPLA0000000095) instead of the project name NRVC_Hall (re-checked 23 Nov 2026).",
+  "expected": "The table should show the project name.",
+  "impact": "Users cannot easily tell which project a row is about."
+ },
+ "SCP-DEF-088": {
+  "title": "Aggregate Stats Export gives a blank template, not the data",
+  "where": "Analytics > Aggregate Stats > Export",
+  "what_happens": "The only export option is 'Download Template', which downloads a fixed blank template file instead of the figures on the page (re-checked 23 Nov 2026).",
+  "expected": "Export should give a file with the data shown.",
+  "impact": "Users cannot export the aggregate figures."
+ },
+ "SCP-DEF-089": {
+  "title": "Subcontractor Issues shows project IDs instead of names",
+  "where": "Analytics > SubContractor Issues > Project Name",
+  "what_happens": "55 of 214 rows show a project ID (for example PRJSUPCHAPLA0000000063) instead of the project name, although the name is available to the page (re-checked 23 Nov 2026).",
+  "expected": "The column should show the project name.",
+  "impact": "Users cannot easily tell which project a row is about."
+ },
+ "SCP-DEF-090": {
+  "title": "Subcontractor Issues repeats project totals on every subcontractor",
+  "where": "Analytics > SubContractor Issues",
+  "what_happens": "All 36 NRVC_Hall subcontractor rows show the same values 1/1/13/0/14, which are the project totals repeated on each row (re-checked 23 Nov 2026).",
+  "expected": "Each row should show that subcontractor's own figures.",
+  "impact": "Users cannot compare subcontractors' performance."
+ },
+ "SCP-DEF-091": {
+  "title": "Supplier Issues totals are inflated by duplicated rows",
+  "where": "Analytics > Supplier Issues > summary cards",
+  "what_happens": "The cards for Raising PO, Confirming PO, Schedule impact and Deliveries impacted show 41, 41, 533 and 574, which is the sum of duplicated subcontractor rows. Counting each project once, the totals are 2, 14, 13 and 14 (re-checked 23 Nov 2026).",
+  "expected": "The cards should show the totals counting each project once.",
+  "impact": "Supplier issues appear far larger than they are."
+ },
+ "SCP-DEF-092": {
+  "title": "Delivery Performance shows no data while deliveries are impacted",
+  "where": "Analytics > Supplier Issues > Delivery Performance",
+  "what_happens": "The Delivery Performance panel says 'No delivery data' while the summary card shows 574 deliveries impacted (re-checked 23 Nov 2026).",
+  "expected": "The panel should show the delivery data behind the impacted deliveries.",
+  "impact": "Users cannot see delivery performance details."
+ },
+ "SCP-DEF-093": {
+  "title": "Supply Chain Intelligence ignores the selected venue",
+  "where": "Analytics > Supply Chain Intelligence",
+  "what_happens": "The page loads its data using only the project and date range, without the venue or site, so it cannot follow the selected venue (re-checked 23 Nov 2026).",
+  "expected": "The page should follow the selected project and venue, as decided by the user on 18 Nov 2026.",
+  "impact": "Figures shown may not belong to the venue the user selected."
+ },
+ "SCP-DEF-094": {
+  "title": "Emissions Report CSV export contains no data rows",
+  "where": "Analytics > Emissions Report > Export CSV",
+  "what_happens": "76 shipments are listed, but the exported CSV contains only the header row. The export works per transport leg, and the listed shipments have no legs (re-checked 23 Nov 2026).",
+  "expected": "The export should contain a row for each listed shipment.",
+  "impact": "Users cannot export emissions data."
+ }
+}

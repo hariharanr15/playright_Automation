@@ -107,21 +107,23 @@ test('Procurement Log – smoke', async ({ page, browserName }) => {
         await k.rows().first().getByRole('cell').nth(1).click();
         await expect(page).toHaveURL(/[?&]submittal=/);
       }, { critical: true });
-      await s.step(`Submittal drawer → labels Spec section no., Spec Description, Material, Submittal no., Required QTY, Received QTY and button "Add Component" are visible; component table loads ("Other Actions" appears)`, async () => {
-        for (const l of ['Spec section no.', 'Spec Description', 'Material', 'Submittal no.', 'Required QTY', 'Received QTY']) await expect(page.getByText(l, { exact: true }).last()).toBeVisible();
-        await expect(page.getByRole('button', { name: 'Add Component' }).last()).toBeVisible();
-        await page.getByText('Other Actions').first().waitFor({ timeout: 20000 }); // table fills ~1 s after "No data found"
-        s.observe(`Drawer opened for "${description}"`);
+      // Redesigned submittal page (staging release of 23 Nov 2026 evening).
+      await s.step(`Submittal page → heading with the submittal, buttons "Import components", "Add component", "Add shipment", "Select not-confirmed", section "International shipping" and the component list ("Select all components") are shown`, async () => {
+        await expect(page.getByRole('heading', { level: 1 }).filter({ hasText: description }).last()).toBeVisible({ timeout: 20000 });
+        for (const b of [/Import components/, /^Add component$/i, /^Add shipment$/, /^Select not-confirmed$/]) await expect(page.getByRole('button', { name: b }).last()).toBeVisible();
+        await expect(page.getByRole('heading', { name: /^International shipping/ }).last()).toBeVisible();
+        await k.componentsLoaded();
+        s.observe(`Submittal page opened for "${description}"`);
       });
     });
 
     await run.scenario(meta('PL-SMK-011', 'Component actions and Audit Trail'), async s => {
-      await s.step(`Drawer: click "Other Actions ▾" on the first component → menu lists Trigger Alert, Update Status, Audit Trail, Delete`, async () => {
-        await page.getByRole('button', { name: 'Other Actions ▾' }).first().click();
-        expect((await page.getByRole('menuitem').allInnerTexts()).map(t => t.trim())).toEqual(['Trigger Alert', 'Update Status', 'Audit Trail', 'Delete']);
+      await s.step(`Click "⋯" (More actions) on the first component → menu lists Lead time, Record order (PO), Log delivery, Open component, Edit component, Trigger alert, Update status, Audit trail, Delete component…`, async () => {
+        await page.getByRole('button', { name: /^More actions for / }).first().click();
+        expect((await page.getByRole('menuitem').allInnerTexts()).map(t => t.trim())).toEqual(['Lead time', 'Record order (PO)', 'Log delivery', 'Open component', 'Edit component', 'Trigger alert', 'Update status', 'Audit trail', 'Delete component…']);
       });
-      await s.step(`Choose "Audit Trail" → panel with columns Date, Edited By, Action, Field, Old Value, New Value opens; close it with its close button`, async () => {
-        await page.getByRole('menuitem', { name: 'Audit Trail' }).click();
+      await s.step(`Choose "Audit trail" → panel with columns Date, Edited By, Action, Field, Old Value, New Value opens; close it with its close button`, async () => {
+        await page.getByRole('menuitem', { name: 'Audit trail' }).click();
         await expect(page.getByRole('heading', { name: 'Audit Trail' })).toBeVisible();
         for (const c of ['Date', 'Edited By', 'Action', 'Field', 'Old Value', 'New Value']) await expect(page.getByRole('columnheader', { name: c }).last()).toBeVisible();
         await page.getByRole('heading', { name: 'Audit Trail' }).locator('xpath=../../button').click();
@@ -129,25 +131,28 @@ test('Procurement Log – smoke', async ({ page, browserName }) => {
     });
 
     await run.scenario(meta('PL-SMK-012', 'Component view (deliveries)'), async s => {
-      await s.step(`Click the item cell of the first component row → URL contains ?schedule=; buttons "+ Log Delivery", "QR Label" and delivery columns (Location, Item name, Good/Damage/Shortage QTY, Base UOM QTY, Actual Date of Delivery) are visible`, async () => {
-        await page.getByRole('row').filter({ has: page.getByRole('checkbox', { name: 'Select this component' }) }).first().getByRole('cell').nth(3).click();
+      await s.step(`First component "⋯" › "Open component" → URL contains ?schedule=; buttons "Log delivery", "QR label", tabs Deliveries / Files / All files / Stock and the sections "Expected" and "Received" are visible`, async () => {
+        await page.getByRole('button', { name: /^More actions for / }).first().click();
+        await page.getByRole('menuitem', { name: 'Open component', exact: true }).click();
         await expect(page).toHaveURL(/[?&]schedule=/);
-        for (const b of ['+ Log Delivery', 'QR Label']) await expect(page.getByRole('button', { name: b }).last()).toBeVisible();
-        for (const c of ['Location', 'Item name', 'Good QTY', 'Damage QTY', 'Shortage QTY', 'Base UOM QTY', 'Actual Date of Delivery']) await expect(page.getByRole('columnheader', { name: c }).last()).toBeVisible();
+        await expect(k.logDeliveryButton()).toBeVisible({ timeout: 20000 });
+        await expect(page.getByRole('button', { name: /^QR label$/i }).filter({ visible: true }).last()).toBeVisible();
+        for (const t of ['Deliveries', 'Files', 'All files', 'Stock']) await expect(page.getByRole('tab', { name: t, exact: true }).last()).toBeVisible();
+        for (const h of [/^Expected · /, /^Received · /]) await expect(page.getByRole('heading', { name: h }).last()).toBeVisible();
       });
     });
 
     await run.scenario(meta('PL-SMK-013', 'Add Delivery form opens'), async s => {
-      await s.step(`Click "+ Log Delivery" → "Add Delivery" form shows Expected Date Of Delivery*, Actual Date Of Delivery, Location*, Item Name*, Required Remaining Qty, QTY*; close the dialog`, async () => {
-        await page.getByRole('button', { name: '+ Log Delivery' }).last().click();
+      await s.step(`Click "Log delivery" → "Add Delivery" form shows Expected Date Of Delivery*, Actual Date Of Delivery, Location*, Item Name*, Required Remaining Qty, QTY*; close the dialog`, async () => {
+        await k.logDeliveryButton().click();
         for (const l of ['Expected Date Of Delivery*', 'Actual Date Of Delivery', 'Location*', 'Item Name*', 'Required Remaining Qty', 'QTY*']) await expect(page.getByText(l, { exact: true }).last()).toBeVisible();
         await k.closeDialog('Add Delivery');
       });
     });
 
     await run.scenario(meta('PL-SMK-014', 'QR Label dialog'), async s => {
-      await s.step(`Click "QR Label" → "Submittal QR" dialog with "PNG sticker", "PDF sheet" buttons and a /s/<uuid> link is visible; close it`, async () => {
-        await page.getByRole('button', { name: 'QR Label', exact: true }).last().click();
+      await s.step(`Click "QR label" → "Submittal QR" dialog with "PNG sticker", "PDF sheet" buttons and a /s/<uuid> link is visible; close it`, async () => {
+        await page.getByRole('button', { name: /^QR label$/i }).filter({ visible: true }).last().click();
         await expect(page.getByText(/^submittal qr$/i)).toBeVisible();
         for (const b of ['PNG sticker', 'PDF sheet']) await expect(page.getByRole('button', { name: b })).toBeVisible();
         await expect(page.getByText(/\/s\/[0-9a-f-]{36}/)).toBeVisible();

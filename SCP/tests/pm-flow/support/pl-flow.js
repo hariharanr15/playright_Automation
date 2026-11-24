@@ -9,6 +9,16 @@ const { SiteSelectorPage } = require('../../../pages/site-selector.page');
 const SITE = process.env.SCP_PL_SITE || process.env.SCP_DEMO_SITE || 'Warehoust _NR';
 const SUPPLIER = process.env.SCP_PL_SUPPLIER || 'LG';
 const MATERIAL = process.env.SCP_PL_MATERIAL || '43 Inches';
+// Menu layout of the staging release of 23 Nov 2026 (evening): the label shown in the menu, and the Project Management
+// sub-group that holds the entry.
+const MENU_LABEL = { 'Site Details': 'Sites & Storage' };
+const MENU_GROUP = {
+  'Configuration Options': 'Project Settings', 'Procurement Log Configuration': 'Project Settings', 'First Delivery Inspection Config': 'Project Settings', 'System Messages': 'Project Settings',
+  'Material Master': 'Materials', 'Material Category': 'Materials', 'Common UoM': 'Materials', 'Common Utilities': 'Materials', 'Watched Materials': 'Materials',
+  'Inventory Control': 'Inventory Settings', 'Inventory Rebuild': 'Inventory Settings',
+  'Excel Import': 'Imports', 'Bulk Upload Status': 'Imports', 'Submittal Manager': 'Imports',
+  'Booking Integration': 'Integrations', 'TheLink Integration': 'Integrations', 'XER Import': 'Integrations'
+};
 // The server checks "PO date cannot be in the future" against its own UTC date, so from 00:00 to 05:30 IST the browser's
 // "today" is rejected (SCP-DEF-074, confirmed by a probe on 22 Nov 2026 at 02:15 IST). PO dates therefore use the earlier
 // of the browser date and the server date; outside that window both are the same day.
@@ -53,6 +63,23 @@ function plKit(page) {
       if (await search.isVisible().catch(() => false)) { await search.fill(email.split('@')[0]); await settle(1000); }
       await listbox().getByRole('option', { name: new RegExp(email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') }).first().click();
     },
+    // Row "Assign Responsible" opens, since the staging release of 23 Nov 2026 (evening), the dialog "Responsible — <number>":
+    // a list of the people already responsible, "Add a Responsible person" (user chooser) with "Add", and "Done".
+    responsibleDialog() {
+      return page.getByRole('heading', { name: /^Responsible — / }).last().locator('xpath=ancestor::div[.//button[normalize-space()="Done"]][1]');
+    },
+    async addResponsible(email, choose = () => kit.chooseUser(email)) {
+      const d = kit.responsibleDialog();
+      await expect(d, '"Responsible" dialog').toBeVisible({ timeout: 10000 });
+      const label = await choose();
+      await d.getByRole('button', { name: 'Add', exact: true }).click();
+      await expect(d, 'person listed as Responsible').not.toContainText('Nobody is Responsible', { timeout: 10000 });
+      await settle(800);
+      const listed = (await d.innerText()).replace(/\s+/g, ' ');
+      await d.getByRole('button', { name: 'Done', exact: true }).click();
+      await expect(page.getByRole('heading', { name: /^Responsible — / })).toHaveCount(0, { timeout: 10000 });
+      return { label, listed };
+    },
     // Location lists follow the header venue, which resets after every reload (OBS-INV-12): put it back before using them.
     keepSite: () => new SiteSelectorPage(page).keepSite(SITE),
     // Menu groups collapse after each navigation, so the parent is re-expanded when the child is hidden.
@@ -60,15 +87,34 @@ function plKit(page) {
       const nav = page.locator('nav');
       // Menu items can carry a counter badge (e.g. "International Shipments 38", 19 Nov 2026): allow a trailing number.
       const label = n => new RegExp(`^\\s*${n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s+\\d+\\+?)?\\s*$`);
-      let item = nav.getByRole('button', { name: label(name) }).last();
-      if (group && !(await item.isVisible().catch(() => false))) { await nav.getByRole('button', { name: label(group) }).first().click(); item = nav.getByRole('button', { name: label(name) }).last(); }
-      await item.click({ timeout: 8000 });
+      // Staging release of 23 Nov 2026 (evening): "Site Details" is listed as "Sites & Storage", Project Management is
+      // grouped one level deeper, and some pages (PreShipping Checklist, International Shipments) are no longer in the
+      // menu. When the entry cannot be clicked, the page is opened by its route (page name in lower case with dashes,
+      // e.g. "Site Details" → /site-details); a removed page then shows up as a redirect in the scenario.
+      const shown = MENU_LABEL[name] || name;
+      try {
+        let item = nav.getByRole('button', { name: label(shown) }).last();
+        if (group && !(await item.isVisible().catch(() => false))) { await nav.getByRole('button', { name: label(group) }).first().click(); item = nav.getByRole('button', { name: label(shown) }).last(); }
+        if (!(await item.isVisible().catch(() => false)) && MENU_GROUP[name]) {
+          const sub = nav.getByRole('button', { name: label(MENU_GROUP[name]) }).first();
+          if (await sub.isVisible().catch(() => false)) await sub.click();
+          item = nav.getByRole('button', { name: label(shown) }).last();
+        }
+        await item.click({ timeout: 8000 });
+      } catch {
+        const route = '/' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        await page.goto(route, { waitUntil: 'domcontentloaded' });
+      }
       await settle(1500);
     },
     async openLog() {
       // A leftover drawer or dialog can cover the menu; fall back to the route.
       await kit.menu('Procurement Log').catch(() => page.goto('/procurement-log', { waitUntil: 'domcontentloaded' }));
       await expect(page).toHaveURL(/\/procurement-log/);
+      // Since the 23 Nov 2026 (evening) release the page has view tabs (List / By submittal / By material / Inventory) and
+      // keeps the last one; the old Inventory Management route opens the "Inventory" tab. Switch back to "List".
+      const list = page.getByRole('tab', { name: 'List', exact: true });
+      if (await list.isVisible().catch(() => false) && (await list.getAttribute('aria-selected')) !== 'true') { await list.click(); await settle(1000); }
       // After a load the grid briefly shows "0 items" until the site resolves.
       await expect.poll(count, { message: 'Procurement Log item count', timeout: 30000 }).toBeGreaterThan(0);
     },
@@ -120,17 +166,21 @@ function plKit(page) {
     async openSubmittal(description) {
       await main.getByRole('cell', { name: description, exact: true }).click();
       await expect(page).toHaveURL(/[?&]submittal=/);
-      await page.getByRole('button', { name: 'Add Component', exact: true }).last().waitFor({ timeout: 30000 });
+      await kit.addComponentButton().waitFor({ timeout: 30000 });
     },
+    // Staging release of 23 Nov 2026 (evening): the submittal page is redesigned and the button reads "Add component";
+    // the dialog it opens is still headed "Add Component".
+    addComponentButton() { return page.getByRole('button', { name: /^Add component$/i }).last(); },
     async addComponent({ rojDate, qty, value, po, poDate, material }) {
-      await page.getByRole('button', { name: 'Add Component', exact: true }).last().click();
+      await kit.addComponentButton().click();
       const m = kit.dialog('Add Component', 'ADD');
       if (material) { await m.getByRole('button', { name: /\(primary\)/ }).click(); await listbox().getByRole('option', { name: material }).click(); }
       // Fields are located by their labels: the number of read-only textboxes varies with the material.
       const field = label => m.getByText(label, { exact: true }).locator('xpath=following::input[1]');
       await kit.day(field('Date Req. on Site*'), rojDate);
       await field('QTY*').fill(String(qty));
-      if (value) await field('Value').fill(String(value));
+      // The value label now carries the project currency ("Value INR").
+      if (value) await m.getByText(/^Value( [A-Z]{3})?$/).first().locator('xpath=following::input[1]').fill(String(value));
       // Some forms ask for a required Sub Material (the item) instead of pre-filling it (seen 2 Nov on the regression run).
       const sub = m.getByRole('button', { name: 'Choose Sub Material' });
       if (await sub.isVisible().catch(() => false)) {
@@ -150,81 +200,157 @@ function plKit(page) {
         throw error;
       }
     },
+    // ---------- Submittal and component pages as redesigned by the staging release of 23 Nov 2026 (evening) ----------
+    // The component list is a grid (no table roles): one row per component with a "Select <material>" checkbox, the
+    // status pill in the 4th column, a "Next step" button and a "More actions for <material>" (⋯) menu with Lead time,
+    // Record order (PO), Log delivery, Open component, Edit component, Trigger alert, Update status, Audit trail, Delete.
     componentRow(material = MATERIAL) {
-      return page.getByRole('row').filter({ has: page.getByRole('checkbox', { name: 'Select this component' }) }).filter({ hasText: material }).first();
+      return page.getByRole('checkbox', { name: `Select ${material}`, exact: true }).last().locator('xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " grid ")][1]');
+    },
+    componentRows() {
+      return page.getByRole('checkbox', { name: /^Select (?!all components$)/ }).locator('xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " grid ")][1]');
+    },
+    async componentsLoaded() { await page.getByRole('checkbox', { name: 'Select all components' }).last().waitFor({ timeout: 30000 }); await settle(1000); },
+    // From the component view back to its submittal with the panel's back arrow (the unlabeled button before the
+    // "<submittal> › Component" breadcrumb), or browser Back. No reload: a reload resets the header site (OBS-INV-12).
+    async backToSubmittal() {
+      if (!/[?&]schedule=/.test(page.url())) return;
+      const back = page.getByText(/› Component$/).filter({ visible: true }).last().locator('xpath=preceding::button[1]');
+      if (await back.isVisible().catch(() => false)) await back.click(); else await page.goBack();
+      if (/[?&]schedule=/.test(page.url())) await expect(page).not.toHaveURL(/[?&]schedule=/, { timeout: 10000 }).catch(() => page.goBack());
+      await kit.componentsLoaded();
     },
     async componentStatus(material = MATERIAL) {
-      await page.getByText('Other Actions').first().waitFor({ timeout: 30000 });
-      return (await kit.componentRow(material).getByRole('cell').nth(5).innerText()).trim();
+      await kit.backToSubmittal();
+      const row = kit.componentRow(material);
+      await row.waitFor({ timeout: 30000 });
+      // The pill shows "—" for a moment after the component is added or the page opens.
+      const read = async () => (await row.locator('xpath=./*[4]').innerText()).split('\n')[0].trim();
+      let status = await read();
+      for (let i = 0; i < 20 && (!status || status === '—' || status === '-'); i++) { await page.waitForTimeout(500); status = await read(); }
+      return status;
     },
-    deliveryRow() { return page.getByRole('row').filter({ has: page.locator('img[title="View Delivery Details"], img[alt="Edit"]') }).last(); },
-    // Full receipt chain: delivery → checklist (all YES, PL-R16) → approve → reload → actual date → shipping → conditions → GRN.
-    async deliverToGrn({ material = MATERIAL, qty, good = qty, damage = 0, today = new Date(), tag, stopBeforeGrn = false }) {
-      // Restore the header site BEFORE opening the component: when the site has reverted (after a reload, OBS-INV-12),
-      // restoring it collapses the open drawers, which would close the component view again.
-      await kit.keepSite();
-      await kit.componentRow(material).getByRole('cell', { name: material }).click();
-      await page.getByRole('button', { name: '+ Log Delivery' }).last().click();
+    async componentAction(material, item) {
+      await kit.backToSubmittal();
+      await page.getByRole('button', { name: `More actions for ${material}`, exact: true }).last().click();
+      await page.getByRole('menuitem', { name: item, exact: true }).click();
+    },
+    logDeliveryButton() { return page.getByRole('button', { name: 'Log delivery', exact: true }).last(); },
+    // Component view (URL has schedule=): heading = material, "Log delivery", tabs Deliveries / Files / All files / Stock.
+    async openComponent(material = MATERIAL) {
+      await kit.componentAction(material, 'Open component');
+      await expect(page).toHaveURL(/[?&]schedule=/, { timeout: 20000 });
+      await kit.logDeliveryButton().waitFor({ timeout: 30000 }); await settle(1000);
+    },
+    // Delivery rows of the component view: "Expected" rows offer "Receive"; "Received" rows start with the receipt
+    // number (RCV-…). Each row has a "Delivery actions" (⋯) menu: Pre-shipping info, Approve pre-shipping checklist,
+    // Edit delivery details, Delete delivery, Files; after receipt also Update shipping info, Update delivery
+    // condition, Generate GRN, Correct delivery, View delivery details, Raise NCR….
+    deliveryRows() {
+      return page.getByRole('button', { name: 'Delivery actions', exact: true }).filter({ visible: true }).locator('xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " grid ")][1]');
+    },
+    expectedRows() { return kit.deliveryRows().filter({ has: page.getByRole('button', { name: 'Receive', exact: true }) }); },
+    // Located from the receipt number itself: its nearest grid ancestor is the delivery row.
+    receivedRow(receipt) { return page.getByText(receipt).filter({ visible: true }).last().locator('xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " grid ")][1]'); },
+    async receipts() { return (await kit.deliveryRows().allInnerTexts()).map(t => (t.match(/RCV-\d+/) || [])[0]).filter(Boolean); },
+    async deliveryMenu(row) {
+      await row.getByRole('button', { name: 'Delivery actions', exact: true }).click();
+      const items = (await page.getByRole('menuitem').allInnerTexts()).map(t => t.trim());
+      await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+      return items;
+    },
+    async deliveryAction(row, item) {
+      await row.getByRole('button', { name: 'Delivery actions', exact: true }).click();
+      await page.getByRole('menuitem', typeof item === 'string' ? { name: item, exact: true } : { name: item }).first().click();
+    },
+    async addDelivery({ material = MATERIAL, qty, date = new Date() }) {
+      await kit.logDeliveryButton().click();
       const d = kit.dialog('Add Delivery', 'Add');
-      await kit.day(d.getByRole('textbox').first(), today);
+      await kit.day(d.getByRole('textbox').first(), date);
       await d.getByRole('button', { name: /^(All Locations|Choose Location)$/ }).click();
-      await listbox().getByRole('option').filter({ hasNotText: /^(All Locations|Choose Location)$/ }).first().click();
+      const location = listbox().getByRole('option').filter({ hasNotText: /^(All Locations|Choose Location)$/ }).first();
+      const locationName = (await location.innerText()).trim();
+      await location.click();
       await d.getByRole('button', { name: 'Choose Item Name' }).click(); await listbox().getByRole('option', { name: material, exact: true }).first().click();
       await d.getByRole('spinbutton').first().fill(String(qty));
       await d.getByRole('button', { name: 'Add', exact: true }).click();
       await expect(page.getByRole('heading', { name: 'Add Delivery', exact: true })).toBeHidden({ timeout: 20000 });
       await settle(1500);
-      // The pending delivery is the row that offers the next action's icon. Completed deliveries never show these icons,
-      // and the new delivery is not always the last row (22 Nov 2026 it was listed above an earlier, completed one).
-      const action = selector => page.getByRole('row').filter({ has: page.locator(selector) }).last().locator(selector);
-      // Position of the new delivery among the delivery rows (rows with any delivery action icon); the order is kept
-      // after a reload.
-      const deliveryRows = () => page.getByRole('row').filter({ has: page.locator('img[alt="Edit"], img[title="Pre Shipping Info"], img[title="Approved"], img[title="View Delivery Details"]') });
-      const pendingIndex = await deliveryRows().evaluateAll(rows => rows.findIndex(r => r.querySelector('img[title="Pre Shipping Info"]')));
-      if (pendingIndex < 0) throw new Error('New delivery row (with "Pre Shipping Info") not found');
-      await action('img[title="Pre Shipping Info"]').click();
+      return { location: locationName, row: kit.expectedRows().last() };
+    },
+    // Supplier side: every question YES with a comment, supplier note, Confirm Checklist (PL-R16, BUGS-155).
+    async preShipping(row, tag) {
+      await kit.deliveryAction(row, 'Pre-shipping info');
       const c = kit.dialog('Add Pre-Shipping Details', 'Confirm Checklist');
       await c.getByRole('button', { name: 'Y/N', exact: true }).first().waitFor({ timeout: 20000 }); // questions load after the dialog opens
       const inputs = c.locator('input:visible:not([type="checkbox"]):not([type="radio"]):not([type="hidden"])');
-      for (let i = 0, n = await inputs.count(); i < n; i++) await inputs.nth(i).fill(`${tag} answer ${i + 1}`);
+      const count = await inputs.count();
+      for (let i = 0; i < count; i++) await inputs.nth(i).fill(`${tag} answer ${i + 1}`);
       const yn = page.getByRole('button', { name: 'Y/N', exact: true });
-      for (let k = 0; (await yn.count()) > 0 && k < 60; k++) { await yn.first().click(); await page.getByRole('option', { name: 'YES', exact: true }).click(); }
+      let answered = 0;
+      for (; (await yn.count()) > 0 && answered < 60; answered++) { await yn.first().click(); await page.getByRole('option', { name: 'YES', exact: true }).click(); }
       await c.locator('textarea:visible').first().fill(`${tag} supplier note`);
       await c.getByRole('button', { name: 'Confirm Checklist', exact: true }).click();
       await toast('Shipping Details updated successfully!');
-      await action('img[title="Approve Pre-Shipping Checklist"]').click();
+      return { comments: count, answered };
+    },
+    async approveChecklist(row, note) {
+      await kit.deliveryAction(row, 'Approve pre-shipping checklist');
       const a = kit.dialog('Approve Pre-Shipping Checklist', 'Approve');
-      await a.locator('textarea').last().fill(`${tag} approved`);
+      await a.locator('textarea').last().fill(note);
       await a.getByRole('button', { name: 'Approve', exact: true }).click();
       await toast('Checklist Generated Successfully!');
-      // The edit form keeps the pre-approval state until the page reloads (OBS-PL-26).
-      await page.reload({ waitUntil: 'domcontentloaded' });
-      await page.getByRole('button', { name: '+ Log Delivery' }).last().waitFor({ timeout: 30000 }); await settle(1500);
-      // Edit THE NEW delivery, found by its position among the delivery rows (recorded when it offered "Pre Shipping
-      // Info"); a completed delivery can also carry an Edit icon, whose dialog has no actual-date box.
-      await deliveryRows().nth(pendingIndex).locator('img[alt="Edit"]').last().click();
+    },
+    // "Receive" opens "Edit Delivery": the actual date is set and the delivery moves to "Received" with a new RCV number.
+    async receive(row, date = new Date()) {
+      const before = await kit.receipts();
+      await row.getByRole('button', { name: 'Receive', exact: true }).click();
       const e = kit.dialog('Edit Delivery', 'Update');
-      await kit.day(e.getByRole('textbox').nth(1), today);
+      await kit.day(e.getByRole('textbox').nth(1), date);
       await e.getByRole('button', { name: 'Update', exact: true }).click();
-      await expect(page.getByRole('heading', { name: 'Edit Delivery' })).toBeHidden({ timeout: 15000 }); await settle(1500);
-      await action('img[title="Update Shipping Info"]').click();
+      await expect(page.getByRole('heading', { name: 'Edit Delivery' })).toBeHidden({ timeout: 15000 });
+      let receipt = null;
+      await expect.poll(async () => (receipt = (await kit.receipts()).find(r => !before.includes(r)) || null), { timeout: 20000, message: 'New receipt (RCV-…) listed under "Received"' }).not.toBeNull();
+      await settle(1000);
+      return { receipt, row: kit.receivedRow(receipt) };
+    },
+    async shippingInfo(row, tag) {
+      await kit.deliveryAction(row, 'Update shipping info');
       const sh = kit.dialog('Add Shipping Info', 'Add');
       await kit.pick('Choose Shipping Mode', 'Other', sh);
       await sh.getByRole('textbox').nth(0).fill(`${tag}-SHIP`); await sh.getByRole('textbox').nth(1).fill('Origin'); await sh.locator('textarea').fill(tag);
       await sh.getByRole('button', { name: 'Add', exact: true }).click();
       await toast('Shipping Details updated successfully!');
-      await action('img[title="Update Delivery Condition"]').click();
+    },
+    async deliveryConditions(row, { good, damage = 0 }) {
+      await kit.deliveryAction(row, 'Update delivery condition');
       const dc = kit.dialog('Add Delivery Conditions', 'Add');
       await dc.getByRole('spinbutton').nth(0).fill(String(good));
       await dc.getByRole('spinbutton').nth(1).fill(String(damage));
       const shortage = Number(await dc.getByRole('spinbutton').nth(2).inputValue());
       await dc.getByRole('button', { name: 'Add', exact: true }).click();
       await toast('Delivery Conditions updated successfully!');
-      // Optionally stop at the GRN step (Configuration Options › GRN check, PM-REG-CFG-10).
-      if (stopBeforeGrn) return { shortage, stoppedBeforeGrn: true };
-      await action('img[title="Generate GRN"]').click();
-      await toast('GRN Generated Successfully!', 30000);
       return { shortage };
+    },
+    async generateGrn(row) {
+      await kit.deliveryAction(row, 'Generate GRN');
+      await toast('GRN Generated Successfully!', 30000);
+    },
+    // Full receipt chain: open component → log delivery → checklist (all YES, PL-R16) → approve → Receive (actual date)
+    // → shipping → conditions → GRN.
+    async deliverToGrn({ material = MATERIAL, qty, good = qty, damage = 0, today = new Date(), tag, stopBeforeGrn = false }) {
+      // Restore the header site BEFORE opening the component: restoring it collapses open drawers (OBS-INV-12).
+      const onComponent = /[?&]schedule=/.test(page.url()) && await page.getByRole('heading', { name: material, level: 1, exact: true }).isVisible().catch(() => false);
+      if (!onComponent) { await kit.backToSubmittal(); await kit.keepSite(); await kit.openComponent(material); }
+      const { row } = await kit.addDelivery({ material, qty, date: today });
+      await kit.preShipping(row, tag);
+      await kit.approveChecklist(row, `${tag} approved`);
+      const { receipt, row: received } = await kit.receive(row, today);
+      await kit.shippingInfo(received, tag);
+      const { shortage } = await kit.deliveryConditions(received, { good, damage });
+      if (stopBeforeGrn) return { shortage, receipt, stoppedBeforeGrn: true };
+      await kit.generateGrn(received);
+      return { shortage, receipt };
     }
   };
   return kit;

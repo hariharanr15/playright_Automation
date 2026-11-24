@@ -49,12 +49,15 @@ KEEP=(); for d in "${EXTRA[@]}"; do case "$d" in *cfg-live-*) ;; *) KEEP+=("$d")
 node scripts/non-pass-report.js "$FULL" "${EXTRA[@]}" --evidence=reports/pm-flow/enterprise-2026-11-22T08-21-36-933Z >>"$LOG" 2>&1
 node scripts/skipped-cases-report.js "$FULL" >>"$LOG" 2>&1
 node scripts/testcase-register.js "$FULL" >>"$LOG" 2>&1
+node scripts/narrative-register.js "$FULL" >>"$LOG" 2>&1
+node scripts/md-to-pdf.js "$FULL/KNOWN_DEFECTS_BY_MODULE.md" --title="SCP Known Defects by module" >>"$LOG" 2>&1
+node scripts/md-to-pdf.js "$FULL/SKIPPED_BY_MODULE.md" --title="SCP Skipped test cases by module" >>"$LOG" 2>&1
 node scripts/known-defects-report.js >>"$LOG" 2>&1
 for d in NON_PASSED_TEST_CASES KNOWN_DEFECT_TEST_CASES OPEN_SKIPPED_TEST_CASES OPEN_SKIPPED_TEST_CASES_BY_MODULE; do node scripts/md-to-pdf.js "$FULL/$d.md" >>"$LOG" 2>&1; done
 for d in TEST_CASES_PASSED TEST_CASES_KNOWN_DEFECTS TEST_CASES_SKIPPED; do node scripts/md-to-pdf.js "$FULL/$d.md" --landscape >>"$LOG" 2>&1; done
 VIDEOS="reports/demo-videos-$(date +%Y-%m-%d)"
 node scripts/collect-videos.js "$VIDEOS" "$FULL" "${EXTRA[@]}" "${SMOKE[@]}" >>"$LOG" 2>&1
-node scripts/release-notes.js "$FULL" --version=1.1 --evidence="$VIDEOS" >>"$LOG" 2>&1
+node scripts/release-notes.js "$FULL" --version=1.2 --evidence="$VIDEOS" >>"$LOG" 2>&1
 node scripts/md-to-pdf.js "$FULL/AUTOMATION_RELEASE_NOTES.md" --title="SCP Test Automation Release Notes" >>"$LOG" 2>&1
 log "Reports – done. Folder: $FULL · Videos and screenshots: $VIDEOS"
 echo "$FULL|$VIDEOS" > "$OUT/DONE"

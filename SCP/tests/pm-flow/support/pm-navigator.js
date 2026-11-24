@@ -5,26 +5,30 @@ const { expect } = require('@playwright/test');
 const { focus, setNavPath } = require('./pm-visuals');
 
 const PM = 'Project Management';
-// Menu label → route and the groups that contain it (outermost first).
+// Page name used by the scenarios → route, the menu groups that contain it (outermost first) and, when it differs, the
+// entry's label in the menu. Menu layout of the staging release of 23 Nov 2026 (evening): Project Management is grouped
+// into Project Settings / Materials / Inventory Settings / Imports / Integrations, "Site Details" is listed as
+// "Sites & Storage", and PreShipping Checklist is no longer in the menu (groups: null → opened by its route).
 const MENU = {
   'Booking Integration': { route: 'booking-integration', groups: [PM, 'Integrations'] },
   'TheLink Integration': { route: 'thelink-integration', groups: [PM, 'Integrations'] },
   'XER Import': { route: 'xer-import', groups: [PM, 'Integrations'] },
-  'Common Utilities': { route: 'common-utilities', groups: [PM, 'Reference Data'] },
-  'Common UoM': { route: 'common-uom', groups: [PM, 'Reference Data'] },
-  'Material Category': { route: 'material-category', groups: [PM, 'Reference Data'] },
-  'Configuration Options': { route: 'configuration-options', groups: [PM] },
-  'First Delivery Inspection Config': { route: 'first-delivery-inspection-config', groups: [PM] },
-  'Inventory Control': { route: 'inventory-control', groups: [PM] },
-  'Material Master': { route: 'material-master', groups: [PM] },
-  'PreShipping Checklist': { route: 'preshipping-checklist', groups: [PM] },
-  'Bulk Upload Status': { route: 'bulk-upload-status', groups: [PM] },
-  'Procurement Log Configuration': { route: 'procurement-log-configuration', groups: [PM] },
-  'Site Details': { route: 'site-details', groups: [PM] },
-  'Submittal Manager': { route: 'submittal-manager', groups: [PM] },
-  'System Messages': { route: 'system-messages', groups: [PM] },
-  'Watched Materials': { route: 'watched-materials', groups: [PM] }
+  'Common Utilities': { route: 'common-utilities', groups: [PM, 'Materials'] },
+  'Common UoM': { route: 'common-uom', groups: [PM, 'Materials'] },
+  'Material Category': { route: 'material-category', groups: [PM, 'Materials'] },
+  'Configuration Options': { route: 'configuration-options', groups: [PM, 'Project Settings'] },
+  'First Delivery Inspection Config': { route: 'first-delivery-inspection-config', groups: [PM, 'Project Settings'] },
+  'Inventory Control': { route: 'inventory-control', groups: [PM, 'Inventory Settings'] },
+  'Material Master': { route: 'material-master', groups: [PM, 'Materials'] },
+  'PreShipping Checklist': { route: 'preshipping-checklist', groups: null },
+  'Bulk Upload Status': { route: 'bulk-upload-status', groups: [PM, 'Imports'] },
+  'Procurement Log Configuration': { route: 'procurement-log-configuration', groups: [PM, 'Project Settings'] },
+  'Site Details': { route: 'site-details', groups: [PM], menu: 'Sites & Storage' },
+  'Submittal Manager': { route: 'submittal-manager', groups: [PM, 'Imports'] },
+  'System Messages': { route: 'system-messages', groups: [PM, 'Project Settings'] },
+  'Watched Materials': { route: 'watched-materials', groups: [PM, 'Materials'] }
 };
+const menuLabel = label => (MENU[label] && MENU[label].menu) || label;
 const OVERLAY = 'div.fixed.inset-0';
 
 class PmNavigator {
@@ -41,7 +45,7 @@ class PmNavigator {
   }
 
   navPath(label) {
-    return [...(MENU[label]?.groups || [PM]), label];
+    return [...(MENU[label]?.groups || [PM]), menuLabel(label)];
   }
 
   onRoute(route) {
@@ -55,7 +59,13 @@ class PmNavigator {
     await setNavPath(this.page, this.navPath(label));
     await this.clearLayers();
     if (this.onRoute(entry.route)) return false;
-    const chain = [...entry.groups, label];
+    if (!entry.groups) {
+      // Not in the menu (since 23 Nov 2026): open the page by its route.
+      await this.gotoRoute(entry.route);
+      this.visited.push({ label, route: entry.route, reached: this.onRoute(entry.route), appActive: false, byRoute: true });
+      return true;
+    }
+    const chain = [...entry.groups, menuLabel(label)];
     for (let index = 1; index < chain.length; index += 1) {
       const next = this.menuItem(chain[index]);
       if (await next.isVisible().catch(() => false)) continue;
@@ -65,7 +75,7 @@ class PmNavigator {
       await group.click();
       await expect(next, `${chain[index]} menu entry`).toBeVisible({ timeout: 10000 });
     }
-    const item = this.menuItem(label);
+    const item = this.menuItem(menuLabel(label));
     await focus(item, 300);
     await item.click();
     await this.page.waitForURL(url => url.pathname.replace(/\/+$/, '') === `/${entry.route}`, { timeout: 30000 });
@@ -91,7 +101,12 @@ class PmNavigator {
     const entry = MENU[label];
     if (!entry) throw new Error(`Unknown Project Management page: ${label}`);
     await this.clearLayers();
-    const chain = [...entry.groups, label];
+    if (!entry.groups) {
+      // Not in the menu (since 23 Nov 2026): the page is offered when its route opens without a redirect.
+      await this.gotoRoute(entry.route);
+      return this.onRoute(entry.route);
+    }
+    const chain = [...entry.groups, menuLabel(label)];
     for (let index = 1; index < chain.length; index += 1) {
       const next = this.menuItem(chain[index]);
       if (await next.isVisible().catch(() => false)) continue;

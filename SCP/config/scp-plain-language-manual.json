@@ -1,0 +1,880 @@
+{
+ "ANV-AGG-01": {
+  "title": "Aggregate Stats are cumulative across venues",
+  "description": "Checks that Aggregate Stats show cumulative figures that do not change when a different venue is selected in the header, as decided on 18 Nov 2026.",
+  "steps": [
+   "Open Analytics > Aggregate Stats with venue 'Warehoust _NR' selected and read Submittals, Materials, Suppliers and Locations.",
+   "Choose another venue in the header site selector and read the same four figures again (the venue is switched back afterwards)."
+  ],
+  "expected": [
+   "The four figures are shown.",
+   "The four figures are the same as on 'Warehoust _NR'."
+  ],
+  "actual": "As expected. The figures stayed the same after switching to another venue (for example Submittals 498, Suppliers 170, Locations 131)."
+ },
+ "ANV-INR-01": {
+  "title": "Inventory Reports follow the selected venue",
+  "description": "Checks that Inventory Reports load their figures for the venue selected in the header, since it is the only Analytics page meant to be location-based.",
+  "steps": [
+   "Open Analytics > Inventory Reports and note the data the page loads."
+  ],
+  "expected": [
+   "The page asks for its data for the selected venue."
+  ],
+  "actual": "As expected. The consumption figures are requested for the selected venue."
+ },
+ "PL-REG-ALR-03": {
+  "title": "Edit an alert rule",
+  "description": "Checks that an existing alert rule's value can be changed.",
+  "steps": [
+   "Reload, search for the test submittal, choose 'Alert' then 'Add Alert' in the row menu; choose the first field, condition '>=', value 999, a message, and click 'Submit'; then click the rule's edit (pencil) button, change the value to 998 and submit."
+  ],
+  "expected": [
+   "The message 'Alert created successfully!' appears and, after the edit, the row shows 998."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-ALR-04": {
+  "title": "Delete an alert rule",
+  "description": "Checks that an alert rule can be deleted from the submittal's alert list.",
+  "steps": [
+   "Click the delete (bin) button on the test alert row and confirm if asked."
+  ],
+  "expected": [
+   "The row disappears."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-CMP-01": {
+  "title": "Add component requires date and quantity",
+  "description": "Checks that a component cannot be added without a required-on-site date and a quantity, so incomplete components are not created.",
+  "steps": [
+   "Open Procurement Log, search for a test submittal created by this run and click its Spec Description cell.",
+   "Click 'Add component', then click 'ADD' with all fields empty. Close the dialog afterwards."
+  ],
+  "expected": [
+   "The submittal page opens and its address points to the submittal.",
+   "The messages 'Date Req. on Site is required' and 'Quantity is required' appear."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-CMP-02": {
+  "title": "Component with a PO is Ordered with the supplier lead time",
+  "description": "Checks that a component added with a purchase order is shown as 'Ordered' with the supplier's lead time, its PO number and its required-on-site (ROJ) date. The component row no longer shows an Expected Delivery date, so these values are checked instead.",
+  "steps": [
+   "On the submittal page, click 'Add component'; enter Date Req. on Site 28 days from today, QTY 10, Value 1000, a test PO number and PO Date today, and click 'ADD'.",
+   "Look at the new component row."
+  ],
+  "expected": [
+   "A message 'Schedule added successfully!' appears.",
+   "Status is 'Ordered', lead time is '1 week', and the PO number and the ROJ date (today plus 28 days) are shown."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-CMP-03": {
+  "title": "Component without a PO is Not ordered",
+  "description": "Checks that a component added without a purchase order is shown as 'Not ordered', so users can see what still needs ordering.",
+  "steps": [
+   "Open Procurement Log, search for a test submittal created by this run and click its description cell.",
+   "On the submittal page, click 'Add component', enter Date Req. on Site 28 days from today, QTY 10 and Value 500, leave the PO empty and click 'ADD'.",
+   "Look at the status of the new component row."
+  ],
+  "expected": [
+   "The submittal page opens with an 'Add component' button.",
+   "A message 'Schedule added successfully!' appears.",
+   "The status shows 'Not ordered'."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-CMP-04": {
+  "title": "Add component defaults to the primary material",
+  "description": "Checks that the Add component dialog offers the submittal's primary material and that a component can then be added with it.",
+  "steps": [
+   "On the submittal page, click 'Add component' and look at the material options, then close the dialog.",
+   "Click 'Add component' again; choose the run's test material, enter Date Req. on Site 28 days from today, QTY 10, Value 1000, a test PO number and PO Date today, and click 'ADD'."
+  ],
+  "expected": [
+   "The dialog shows a material button marked '(primary)'.",
+   "A message 'Schedule added successfully!' appears."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-CMP-05": {
+  "title": "Currency defaults to the project currency",
+  "description": "Checks that a new component uses the project's currency by default, so values are recorded in the right currency.",
+  "steps": [
+   "Click 'Add component' and look at the currency selection, then close the dialog."
+  ],
+  "expected": [
+   "'Project default' with the project currency is selected."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-CMP-06": {
+  "title": "Lead time update is saved and confirmed",
+  "description": "Checks that updating a component's lead time saves the new number of weeks and marks it confirmed, so delivery forecasts stay current. The component row no longer shows an Expected Delivery date, so the lead time and 'Confirmed' are checked instead.",
+  "steps": [
+   "In the component row's '⋯' menu choose 'Lead time', enter 3, tick the confirm checkbox and click 'Submit'."
+  ],
+  "expected": [
+   "The row shows lead time '3 weeks' and 'Confirmed'."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-CMP-07": {
+  "title": "Record order (PO) changes the quantity",
+  "description": "Checks that a component's quantity can be changed through 'Record order (PO)', so order quantities can be corrected.",
+  "steps": [
+   "In the run's test component '⋯' menu choose 'Record order (PO)', set 'QTY' to 12 and click 'Update'."
+  ],
+  "expected": [
+   "The component row shows 12."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-CMP-08": {
+  "title": "Update component status to Delivered",
+  "description": "Checks that setting a component's status to 'Delivered' is shown on the component and on the submittal, so delivery progress is visible.",
+  "steps": [
+   "In the component row's '⋯' menu choose 'Update status', choose status 'Delivered', enter a note and click 'ADD'."
+  ],
+  "expected": [
+   "The component status becomes 'Delivered'."
+  ],
+  "actual": "The component status did not change to 'Delivered'; it stayed 'Ordered' and no message was shown. Recorded as defect SCP-DEF-046."
+ },
+ "PL-REG-CMP-09": {
+  "title": "Update component status to Ordered At Risk",
+  "description": "Checks that an ordered component can be flagged as 'Ordered At Risk', so users can highlight orders that may be late.",
+  "steps": [
+   "In the component row's '⋯' menu choose 'Update status', choose 'Ordered At Risk', enter a comment and click 'ADD'; then reopen the submittal and look at the component status."
+  ],
+  "expected": [
+   "The component status is 'Ordered At Risk'."
+  ],
+  "actual": "After reopening the submittal the component status was still 'Ordered'. The team is asked to confirm whether an ordered component may move to 'Ordered At Risk'. Recorded as defect SCP-DEF-065."
+ },
+ "PL-REG-CMP-10": {
+  "title": "Trigger alert sends a notification",
+  "description": "Checks that a user can send an alert notification about a component, so the people involved are informed.",
+  "steps": [
+   "In the component row's '⋯' menu choose 'Trigger alert'; in the 'Send Notification' window click 'Send'."
+  ],
+  "expected": [
+   "A message 'Notification sent successfully' appears."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-CMP-11": {
+  "title": "Audit trail records the change",
+  "description": "Checks that changes to a component are recorded in its audit trail with the user who made them, so changes can be traced.",
+  "steps": [
+   "In the component row's '⋯' menu choose 'Audit trail', then close the panel."
+  ],
+  "expected": [
+   "Entries for 'actual quantity' and the signed-in user are listed."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-CMP-15": {
+  "title": "Shift ROJ Apply stays disabled until Preview",
+  "description": "Checks that required-on-site dates cannot be shifted before the user has previewed the change, which prevents unintended date changes.",
+  "steps": [
+   "On the submittal page, click 'Select not-confirmed'.",
+   "Click 'Shift ROJ Dates' and enter Offset (days) 7 without clicking 'Preview'."
+  ],
+  "expected": [
+   "The text '1 component selected' appears.",
+   "The 'Apply' button is disabled."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-CMP-18": {
+  "title": "Delete a component",
+  "description": "Checks that a component can be deleted from a submittal, so components added in error can be removed.",
+  "steps": [
+   "Go back to the submittal; in the component row's '⋯' menu choose 'Delete component…' and confirm 'Delete'."
+  ],
+  "expected": [
+   "The component is removed and no component rows remain."
+  ],
+  "actual": "No message was shown and the component row was still listed after Delete. The component had a confirmed lead time and was not ordered; the team is asked to confirm whether such a component may be deleted. Recorded as defect SCP-DEF-072."
+ },
+ "PL-REG-CMP-19": {
+  "title": "Component values use the project currency symbol",
+  "description": "Checks that component values are shown with the project's currency symbol, so users are not misled about the currency.",
+  "steps": [
+   "Reopen the submittal and click 'Show PO details' on the component row."
+  ],
+  "expected": [
+   "'Value' starts with ₹, as the project currency is INR."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-DLV-01": {
+  "title": "Log a delivery for a component",
+  "description": "Checks that a delivery can be logged against a component with the right material item, so received goods are recorded.",
+  "steps": [
+   "Reopen the run's test submittal and choose 'Open component' in the component's '⋯' menu.",
+   "Click 'Log delivery', then 'Add Delivery'; open 'Choose Item Name', pick the material, enter today's date, the first location and quantity 4, and click 'Add'."
+  ],
+  "expected": [
+   "The component view opens and its address points to the component.",
+   "'Choose Item Name' lists the material items; the dialog closes and the delivery shows 4."
+  ],
+  "actual": "As expected. The item list showed the run's test material."
+ },
+ "PL-REG-DLV-02": {
+  "title": "Delivering more than ordered is blocked",
+  "description": "Checks that a delivery larger than the quantity still available cannot be logged, which keeps delivery records accurate.",
+  "steps": [
+   "On the test submittal, choose 'Open component' in the component's '⋯' menu, then click 'Log delivery'; enter today's date, the first location, the material as item and QTY 20, and click 'Add'. Close the dialog afterwards."
+  ],
+  "expected": [
+   "An error 'Quantity exceeds available quantity' appears."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-DLV-03": {
+  "title": "Pre-shipping checklist needs every answer and comment",
+  "description": "Checks that the pre-shipping checklist cannot be confirmed until every question is answered and every comment is filled in, so checklists are complete.",
+  "steps": [
+   "Reload the component view, choose 'Delivery actions' > 'Pre-shipping info' and click 'Confirm Checklist' without answering anything.",
+   "Set every Y/N answer to 'YES' and click 'Confirm Checklist' without entering comments."
+  ],
+  "expected": [
+   "A message 'Answer every Questions' appears.",
+   "A message 'Please complete all fields before submitting.' appears."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-DLV-05": {
+  "title": "Confirm the pre-shipping checklist",
+  "description": "Checks that a completed pre-shipping checklist can be confirmed and is then ready for approval.",
+  "steps": [
+   "Click 'Confirm Checklist'."
+  ],
+  "expected": [
+   "A message 'Shipping Details updated successfully!' appears and 'Delivery actions' offers 'Approve pre-shipping checklist'."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-DLV-06": {
+  "title": "Approve the pre-shipping checklist",
+  "description": "Checks that a confirmed pre-shipping checklist can be approved with a comment, so the delivery can move on.",
+  "steps": [
+   "In 'Delivery actions' choose 'Approve pre-shipping checklist', enter an approval comment and click 'Approve'."
+  ],
+  "expected": [
+   "A message 'Checklist Generated Successfully!' appears."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-DLV-07": {
+  "title": "Reject and resubmit the pre-shipping checklist",
+  "description": "Checks that a pre-shipping checklist can be rejected and then updated and confirmed again, so mistakes can be corrected.",
+  "steps": [
+   "In 'Delivery actions' choose 'Approve pre-shipping checklist' and click 'Reject'.",
+   "In 'Delivery actions' choose the rejected checklist, open 'Update Pre-Shipping Details', fill in the checklist again and click 'Confirm Checklist'."
+  ],
+  "expected": [
+   "'Delivery actions' shows the checklist as rejected.",
+   "A message 'Shipping Details updated successfully!' appears."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-DLV-08": {
+  "title": "Set the actual delivery date",
+  "description": "Checks that the actual delivery date can be entered on a delivery with 'Receive', after which a goods received note can be generated.",
+  "steps": [
+   "Reload the component view and click the delivery's 'Receive' button; in 'Edit Delivery' set the actual delivery date (second date box) to today and click 'Update'."
+  ],
+  "expected": [
+   "The delivery moves to 'Received' with a receipt number, and 'Delivery actions' offers 'Generate GRN'."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-DLV-09": {
+  "title": "Add shipping information to a delivery",
+  "description": "Checks that shipping details can be added to a delivery, so the shipment can be tracked.",
+  "steps": [
+   "In 'Delivery actions' choose 'Update shipping info'; in 'Add Shipping Info' choose mode 'Other', enter a test shipping reference, 'Origin' and a note, and click 'Add'."
+  ],
+  "expected": [
+   "A message 'Shipping Details updated successfully!' appears."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-DLV-10": {
+  "title": "Record delivery conditions with all goods in good order",
+  "description": "Checks that the condition of delivered goods can be recorded, so damage and shortages are captured.",
+  "steps": [
+   "In 'Delivery actions' choose 'Update delivery condition'; in 'Add Delivery Conditions' enter good quantity 4 and click 'Add'."
+  ],
+  "expected": [
+   "A message 'Delivery Conditions updated successfully!' appears."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-DLV-11": {
+  "title": "Delivering the remaining 6 marks the submittal Delivered",
+  "description": "Checks that once the remaining quantity is delivered and its goods received note is generated, the Procurement Log list shows the status 'Delivered'.",
+  "steps": [
+   "Open the test submittal, choose 'Open component' in the component's '⋯' menu and click 'Log delivery' with QTY 6; then complete the same steps as before: checklist, approval, 'Receive', shipping info, delivery conditions and 'Generate GRN'.",
+   "Go back to the submittal, then search for the test submittal in Procurement Log and read its 'Status'."
+  ],
+  "expected": [
+   "The GRN is generated.",
+   "The 'Status' is 'Delivered'."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-DLV-11b": {
+  "title": "Generate GRN for a partial delivery (4 of 12)",
+  "description": "Checks that a goods received note can be generated for a partial delivery of 4 out of 12, confirming receipt of the goods.",
+  "steps": [
+   "In 'Delivery actions' choose 'Generate GRN'."
+  ],
+  "expected": [
+   "A message 'GRN Generated Successfully!' appears (partial delivery, 4 of 12)."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-DLV-12": {
+  "title": "Delivered submittal shows its actual delivery date",
+  "description": "Checks that a delivered submittal shows an actual delivery date in the Procurement Log list, so users can see when goods arrived.",
+  "steps": [
+   "Open 'Procurement Log' from the menu and search for the test submittal created by this run."
+  ],
+  "expected": [
+   "The submittal row has a value in 'Actual Delivery Date' (not empty or '-')."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-DLV-13": {
+  "title": "Partial delivery of 4 of 10 and shortage quantity",
+  "description": "Checks that delivering 4 of 10 shows the submittal as 'Partial Delivery' and that the shortage is calculated from the delivered quantity, so delivery conditions are reported correctly.",
+  "steps": [
+   "Choose 'Open component' in the component's '⋯' menu and click 'Log delivery' with QTY 4 (today, first location, item name). Through 'Delivery actions' fill in 'Pre-shipping info' and approve the checklist; click 'Receive' with today's actual date; then add shipping info, enter delivery conditions Good 3 and Damage 1, and choose 'Generate GRN'.",
+   "Go back to the submittal, then search for the test submittal in Procurement Log and read its 'Status'.",
+   "Check the Shortage QTY shown in Delivery Conditions."
+  ],
+  "expected": [
+   "A message 'GRN Generated Successfully!' appears.",
+   "The 'Status' is 'Partial Delivery'.",
+   "Shortage QTY is 0, because all 4 delivered items are accounted for as good or damaged."
+  ],
+  "actual": "The GRN was generated and the status became 'Partial Delivery', but Shortage QTY showed 6 instead of 0. It was calculated from the component quantity rather than the delivered quantity. Recorded as defect SCP-DEF-044."
+ },
+ "PL-REG-DLV-16": {
+  "title": "Component header shows the unit of measure",
+  "description": "Checks that the required quantity in the component header is shown with its unit of measure, so users can read the quantity correctly.",
+  "steps": [
+   "Reload the component view and read the required quantity line in the header (for example '12 Pieces required')."
+  ],
+  "expected": [
+   "The quantity is shown with its unit, with no 'undefined' text."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-DLV-17": {
+  "title": "Download QR label as PNG and PDF",
+  "description": "Checks that the submittal's QR label can be downloaded as a PNG sticker and a PDF sheet, so goods can be labelled.",
+  "steps": [
+   "Click 'QR label', download 'PNG sticker' and 'PDF sheet', then close the QR window."
+  ],
+  "expected": [
+   "Both files download with names in the form 'submittal-…-qr.png' and 'submittal-…-qr.pdf'."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-DLV-18": {
+  "title": "'All files' tab lists the component files",
+  "description": "Checks that the 'All files' tab in the component view shows the files, so users can find documents attached to the component.",
+  "steps": [
+   "In the component view, click the 'All files' tab."
+  ],
+  "expected": [
+   "The list of received deliveries is replaced by the list of files."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-DLV-19": {
+  "title": "Required Remaining Qty subtracts logged deliveries",
+  "description": "Checks that the remaining quantity shown when logging a delivery takes earlier deliveries into account, so users know how much is still due.",
+  "steps": [
+   "Click 'Log delivery', read 'Required Remaining Qty', then close the dialog."
+  ],
+  "expected": [
+   "The value is 8 (12 ordered minus 4 already logged)."
+  ],
+  "actual": "Required Remaining Qty showed '12 Pieces' after 4 of 12 had been logged. Recorded as defect SCP-DEF-060."
+ },
+ "PL-REG-EDT-02": {
+  "title": "Edit Submittal may give a submittal the same Submittal No and material as another",
+  "description": "Checks that editing a submittal saves the change even when it gives the submittal the same Submittal No and material as another submittal. The dev team confirmed on 24 Nov 2026 that this is allowed (Add Submittal still refuses such a pair).",
+  "steps": [
+   "Search for a test submittal that shares its number with another one, choose 'Edit' in the row actions, replace its material with the other submittal's material, click 'Update', then close the dialog if it is still open."
+  ],
+  "expected": [
+   "The change is saved and the message 'Submittal updated successfully' appears."
+  ],
+  "actual": "As expected. The change was saved."
+ },
+ "PL-REG-EDT-03": {
+  "title": "Assign a responsible user to a submittal",
+  "description": "Checks that a responsible user can be assigned from a submittal's row actions.",
+  "steps": [
+   "On a test submittal row choose 'Assign Responsible'; in the 'Responsible — <submittal>' dialog, under 'Add a Responsible person', pick the signed-in user, click 'Add' and then 'Done'."
+  ],
+  "expected": [
+   "The user is listed as Responsible."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-EDT-04": {
+  "title": "Assign a responsible user to two submittals at once",
+  "description": "Checks that one responsible user can be assigned to several selected submittals in one action, using the bulk assign page.",
+  "steps": [
+   "Click 'Add Submittal' and create a second test submittal (spec, description, Schedule Id, supplier 'LG', material '43 Inches').",
+   "Reload, search for this run's test submittals, tick both rows and click 'Bulk assign Responsible'.",
+   "In the people panel, filter by the signed-in user, tick that person, keep 'Add to existing Responsible', click 'Build list to review' and then 'Save'.",
+   "Search for this run's test submittals in Procurement Log."
+  ],
+  "expected": [
+   "The message 'Submittal added successfully' appears.",
+   "The 'Bulk assign Responsible' page opens with 'Selected only (2)' submittals.",
+   "The review lists both test submittals with the user, and 'Save' applies any change (or both are already shown as 'Already Responsible').",
+   "The 'Responsible' column of both submittals names a person (not '-')."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-EDT-07": {
+  "title": "International Shipments shows the component's required date",
+  "description": "Checks that a submittal flagged as international appears once in International Shipments with the component's required date.",
+  "steps": [
+   "Open Procurement Log, search for the test submittal, choose 'Flag International' in the row menu, enter country 'South Korea' and click 'Flag' (done twice).",
+   "Open International Shipments from the left menu.",
+   "Check the submittal's row."
+  ],
+  "expected": [
+   "The message 'Submittal flagged as international shipment.' appears each time.",
+   "Exactly one row is shown for the submittal.",
+   "The row contains the component's required date (today plus 28 days)."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-LST-06": {
+  "title": "Status filter shows only the chosen status",
+  "description": "Checks that the Status filter limits the list to the ticked status and can be removed again.",
+  "steps": [
+   "Click the 'Status' filter, tick 'Delivered' and close the list.",
+   "Click the 'Status1' filter, untick 'Delivered' and close the list."
+  ],
+  "expected": [
+   "Every row shows Status 'Delivered' and the button reads 'Status1'.",
+   "The filter is removed."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-LST-17": {
+  "title": "A saved link opens the submittal",
+  "description": "Checks that a link to a submittal opens that submittal directly, so users can share or bookmark it.",
+  "steps": [
+   "Click the test submittal's delivery chain to open its detail, and note the page address.",
+   "Open Procurement Log, then go to the noted address."
+  ],
+  "expected": [
+   "The submittal page opens and its address points to the submittal.",
+   "The 'Add component' button is visible and the test submittal is shown."
+  ],
+  "actual": "As expected."
+ },
+ "PL-REG-LST-18": {
+  "title": "A saved link opens the component view",
+  "description": "Checks that a link to a component opens the component view directly.",
+  "steps": [
+   "Go to the saved address of the test component."
+  ],
+  "expected": [
+   "The 'Log delivery' button is visible."
+  ],
+  "actual": "As expected."
+ },
+ "PM-REG-CFG-09": {
+  "title": "Pre-Shipping setting turns the delivery checklist off and on",
+  "description": "Checks that switching off 'Pre-Shipping Checklist' in Configuration Options removes the checklist from a delivery and switching it on brings it back.",
+  "steps": [
+   "On a test submittal created by this run (material '43 Inches'), choose 'Open component' in the component's '⋯' menu and log a delivery of quantity 1 with 'Log delivery'.",
+   "In Configuration Options set 'Pre-Shipping Checklist' to Off, click 'Save' and reopen the same delivery.",
+   "Set 'Pre-Shipping Checklist' back to On, click 'Save' and reopen the same delivery."
+  ],
+  "expected": [
+   "The delivery's 'Delivery actions' menu offers 'Pre-shipping info'.",
+   "'Pre-shipping info' is no longer offered.",
+   "'Pre-shipping info' is offered again."
+  ],
+  "actual": "As expected."
+ },
+ "PM-REG-PSC-03": {
+  "title": "Enabled PreShipping questions appear on deliveries",
+  "description": "Checks that every question enabled on the PreShipping Checklist page is asked in a delivery's pre-shipping checklist.",
+  "steps": [
+   "Open Project Management > 'PreShipping Checklist' and note the questions with 'Enabled' ticked.",
+   "Reload the component view, choose 'Delivery actions' > 'Pre-shipping info', check the questions and close it without answering."
+  ],
+  "expected": [
+   "The enabled questions are noted.",
+   "The checklist lists every enabled question."
+  ],
+  "actual": "As expected."
+ },
+ "T155-01": {
+  "title": "Subcontractor can fill the pre-shipping checklist",
+  "description": "Checks that the fix for ticket BUGS-155 lets a subcontractor open and fill the pre-shipping checklist of a delivery.",
+  "steps": [
+   "As the subcontractor, open Procurement Log, search for a test submittal from an earlier end-to-end run, open it and choose 'Open component' in the component's '⋯' menu.",
+   "In 'Delivery actions' choose 'Pre-shipping info', look at the checklist, then close it without confirming.",
+   "For the record, open the delivery on this run's submittal G (supplier 'LG')."
+  ],
+  "expected": [
+   "The delivery's 'Delivery actions' menu offers 'Pre-shipping info'.",
+   "The checklist opens with its questions and an enabled 'Confirm Checklist' button.",
+   "Note whether 'Pre-shipping info' is offered there too."
+  ],
+  "actual": "As expected."
+ },
+ "T155-02": {
+  "title": "Subcontractor approves a supplier's checklist",
+  "description": "Checks that the fix for ticket BUGS-155 lets a subcontractor approve a pre-shipping checklist that the supplier has filled.",
+  "steps": [
+   "Fill the pre-shipping checklist on this run's submittal F as the supplier (using the admin account).",
+   "As the subcontractor, open 'Delivery actions', choose 'Approve pre-shipping checklist', then click 'Approve'."
+  ],
+  "expected": [
+   "The checklist is filled.",
+   "The message 'Checklist Generated Successfully!' appears."
+  ],
+  "actual": "As expected."
+ },
+ "T517-13": {
+  "title": "Bulk Edit supplier change asks once",
+  "description": "Checks that the fix for ticket BUGS-517 shows one notice for the whole batch when Bulk Edit changes the supplier of several submittals, and resets the affected lead times.",
+  "steps": [
+   "Open test submittal B; in the component row's '⋯' menu choose 'Lead time', enter 2, tick the confirm box and click 'Submit'.",
+   "In the submittal list, tick submittals A and B (both on the same test supplier), choose 'Supplier Name', pick 'LG' and click 'Preview Changes'.",
+   "Click 'Confirm & Apply' once.",
+   "While the batch is in review, check submittals A and B."
+  ],
+  "expected": [
+   "B's component lead time is 2 weeks and marked 'Confirmed'.",
+   "The preview says 2 records will be updated, none are skipped, and one notice explains that the lead times of all 1 component(s) on 1 submittal(s) will change and 'Lead Time Confirmed' will be set to False.",
+   "At most one confirmation appears for the whole batch, and a banner shows the bulk update under review.",
+   "A and B show 'LG'; B's lead time is LG's (1 week) and not confirmed."
+  ],
+  "actual": "As expected. No separate confirmation appeared."
+ },
+ "T543-04": {
+  "title": "Edit shows the linked categories ticked",
+  "description": "Checks that the fix for ticket BUGS-543 shows a question set's linked categories as selected when the set is edited.",
+  "steps": [
+   "Select the question set created in T543-07 and click its edit (✎) button."
+  ],
+  "expected": [
+   "The category linked to the set is ticked."
+  ],
+  "actual": "As expected."
+ },
+ "TC-10": {
+  "title": "Add components and confirm lead times",
+  "description": "Checks that a component can be added for each material, that the lead time from the supplier set-up can be confirmed, and that the expected delivery (PO date plus lead time) is not later than the required-on-site date. The component row no longer shows an Expected Delivery date, so the test checks the status, the lead time in weeks and 'Confirmed', and works out the expected delivery from the PO date.",
+  "steps": [
+   "On the submittal page click 'Add component' for the primary material: required on site 22/12/2026, quantity 10, value 1000, a new PO number, PO date 24/11/2026.",
+   "Click 'Add component' for '43 Inches': required on site 29/12/2026, quantity 5, value 500, a second PO number, PO date 24/11/2026.",
+   "Check the components on the submittal.",
+   "For the primary material, check the lead time shown.",
+   "In the primary material's '⋯' menu choose 'Lead time', keep 1 week, tick the confirmation and click 'Submit'.",
+   "Compare the primary material's expected delivery with its required-on-site date.",
+   "For '43 Inches', check the lead time shown.",
+   "In the '43 Inches' '⋯' menu choose 'Lead time', keep 2 weeks, tick the confirmation and click 'Submit'.",
+   "Compare the '43 Inches' expected delivery with its required-on-site date."
+  ],
+  "expected": [
+   "The message 'Schedule added successfully!' appears and the status is 'Ordered'.",
+   "The message 'Schedule added successfully!' appears and the status is 'Ordered'.",
+   "There are exactly 2 components, one per material.",
+   "Lead time is 1 week (from the supplier set-up), so the expected delivery is 01/12/2026 (PO date plus 1 week); this date is booked in the next case.",
+   "The lead time shows 'Confirmed' and is still 1 week.",
+   "Expected delivery 01/12/2026 is on or before the required date 22/12/2026, so the component is not 'At Risk'.",
+   "Lead time is 2 weeks (from the supplier set-up), so the expected delivery is 08/12/2026 (PO date plus 2 weeks); this date is booked in the next case.",
+   "The lead time shows 'Confirmed' and is still 2 weeks.",
+   "Expected delivery 08/12/2026 is on or before the required date 29/12/2026, so the component is not 'At Risk'."
+  ],
+  "actual": "As expected."
+ },
+ "TC-10B": {
+  "title": "Book a delivery for each component",
+  "description": "Checks that one delivery booking can be logged for each component on its confirmed expected date.",
+  "steps": [
+   "For the primary material choose 'Open component' in its '⋯' menu and click 'Log delivery': date 01/12/2026 (the confirmed expected date), the first location of site Warehoust _NR, the primary material, quantity 10, then click 'Add'.",
+   "Reopen the primary material's component.",
+   "For '43 Inches' choose 'Open component' in its '⋯' menu and click 'Log delivery': date 08/12/2026 (the confirmed expected date), the first location of site Warehoust _NR, '43 Inches', quantity 5, then click 'Add'.",
+   "Reopen the '43 Inches' component."
+  ],
+  "expected": [
+   "The booking is created and 'Delivery actions' offers 'Pre-shipping info'.",
+   "Exactly one booking, dated 01/12/2026, on the test submittal; the submittal shows it as 'Next delivery'.",
+   "The booking is created and 'Delivery actions' offers 'Pre-shipping info'.",
+   "Exactly one booking, dated 08/12/2026, on the test submittal; the submittal shows it as 'Next delivery'."
+  ],
+  "actual": "As expected."
+ },
+ "TC-12": {
+  "title": "Assign a responsible user",
+  "description": "Checks that a responsible user can be assigned to a submittal and is shown in the list.",
+  "steps": [
+   "On the test submittal row click '⋮', then 'Assign Responsible'; in the 'Responsible — <submittal>' dialog choose the Project Admin under 'Add a Responsible person', click 'Add' once, then 'Done'.",
+   "Look at the test submittal in Procurement Log."
+  ],
+  "expected": [
+   "The Project Admin is listed as Responsible.",
+   "The 'Responsible' column shows the assigned user."
+  ],
+  "actual": "As expected."
+ },
+ "TC-14B": {
+  "title": "Supplier Inbox shows the delivery awaiting its checklist",
+  "description": "Checks that the run delivery, booked but with its pre-shipping checklist not yet filled, appears in Enterprise > Supplier Inbox under Pending Pre-Shipping Checklists.",
+  "steps": [
+   "Open Enterprise > Supplier Inbox and type the run submittal number in the Submittal filter.",
+   "Open the Pending Pre-Shipping Checklists section."
+  ],
+  "expected": [
+   "The sections show counts for that submittal only.",
+   "The run submittal is listed with its deliveries."
+  ],
+  "actual": "As expected. 1 submittal with 2 deliveries was pending a checklist."
+ },
+ "TC-14C": {
+  "title": "Log an international shipment for the run submittal",
+  "description": "Checks that a shipment can be logged for the run submittal in Enterprise Shipments and then appears in both shipment lists.",
+  "steps": [
+   "Open Enterprise > Enterprise Shipments, click '+ Log Shipment', choose project NRVC_Hall and the run submittal, enter manufacturer, country South Korea, container number and ports Busan to Chennai, then click 'Log shipment'.",
+   "Search the run submittal in Enterprise Shipments.",
+   "Open International Shipments and wait for the list to load."
+  ],
+  "expected": [
+   "A message 'Shipment logged.' appears.",
+   "A row for the run submittal is listed.",
+   "The run submittal is listed."
+  ],
+  "actual": "As expected. International Shipments needed about 247 seconds to show its list."
+ },
+ "TC-15": {
+  "title": "Supplier completes the pre-shipping checklist",
+  "description": "Checks that after switching to the Supplier account, the supplier can fill in the pre-shipping checklist for each booking, which then waits for subcontractor approval.",
+  "steps": [
+   "Log out the Project Admin from the avatar menu.",
+   "Wait for the login page and log in as the Supplier account.",
+   "Open Supply Chain Planner and select NRVC_Hall and Warehoust _NR.",
+   "Open Procurement Log > the run's submittal > 'Material 5 20261124'.",
+   "On that booking open 'Delivery actions' > 'Pre-shipping info', answer YES with a comment for every question, add a supplier note and click 'Confirm Checklist'.",
+   "Reopen the component and look at the booking.",
+   "Open Procurement Log > the run's submittal > '43 Inches'.",
+   "On that booking open 'Delivery actions' > 'Pre-shipping info', answer YES with a comment for every question, add a supplier note and click 'Confirm Checklist'.",
+   "Reopen the component and look at the booking."
+  ],
+  "expected": [
+   "The login page is shown.",
+   "The Supplier account is the active user.",
+   "The role shown is 'Supplier'.",
+   "The booking is listed.",
+   "A message 'Shipping Details updated successfully!' appears.",
+   "The booking waits for subcontractor approval.",
+   "The booking is listed.",
+   "A message 'Shipping Details updated successfully!' appears.",
+   "The booking waits for subcontractor approval."
+  ],
+  "actual": "As expected."
+ },
+ "TC-16": {
+  "title": "Subcontractor approves the pre-shipping checklist",
+  "description": "Checks that after switching to the Subcontractor account, the subcontractor can approve the pre-shipping checklist of each booking.",
+  "steps": [
+   "Log out the Supplier from the avatar menu.",
+   "Wait for the login page and log in as the Subcontractor account.",
+   "Open Supply Chain Planner and select NRVC_Hall and Warehoust _NR.",
+   "Open Procurement Log > the run's submittal > 'Material 5 20261124'.",
+   "On that booking open 'Delivery actions' > 'Approve pre-shipping checklist', add a comment and click 'Approve'.",
+   "Reopen the component and look at the booking.",
+   "Open Procurement Log > the run's submittal > '43 Inches'.",
+   "On that booking open 'Delivery actions' > 'Approve pre-shipping checklist', add a comment and click 'Approve'.",
+   "Reopen the component and look at the booking."
+  ],
+  "expected": [
+   "The login page is shown.",
+   "The Subcontractor account is the active user.",
+   "The role shown is 'Subcontractor', organisation Voyage Control.",
+   "The booking waits for approval.",
+   "A message 'Checklist Generated Successfully!' appears.",
+   "The booking shows 'Pre-shipping checklist (approved)'.",
+   "The booking waits for approval.",
+   "A message 'Checklist Generated Successfully!' appears.",
+   "The booking shows 'Pre-shipping checklist (approved)'."
+  ],
+  "actual": "As expected."
+ },
+ "TC-17": {
+  "title": "Project Admin completes both deliveries",
+  "description": "Checks that after switching from the Subcontractor to the Project Admin, each approved delivery can be received with its actual date ('Receive') and completed with shipping details and delivery condition.",
+  "steps": [
+   "Log out the Subcontractor from the avatar menu.",
+   "Wait for the login page and log in as the Project Admin.",
+   "Open Supply Chain Planner and select NRVC_Hall and Warehoust _NR.",
+   "For 'Material 5 20261124', check the lead time.",
+   "Check the 'Material 5 20261124' booking.",
+   "On the booking click 'Receive', set Actual Date Of Delivery 24/11/2026 and click 'Update'.",
+   "On the received delivery choose 'Delivery actions' > 'Update shipping info' and enter mode 'Other', a reference, origin and note.",
+   "Choose 'Delivery actions' > 'Update delivery condition' and enter Goods 10 and Damage 0.",
+   "Read the Shortage for the complete delivery.",
+   "For '43 Inches', check the lead time.",
+   "Check the '43 Inches' booking.",
+   "On the booking click 'Receive', set Actual Date Of Delivery 24/11/2026 and click 'Update'.",
+   "On the received delivery choose 'Delivery actions' > 'Update shipping info' and enter mode 'Other', a reference, origin and note.",
+   "Choose 'Delivery actions' > 'Update delivery condition' and enter Goods 5 and Damage 0.",
+   "Read the Shortage for the complete delivery."
+  ],
+  "expected": [
+   "The login page is shown.",
+   "The Project Admin is the active user.",
+   "The role shown is 'Admin'.",
+   "The lead time is 'Confirmed' and the next delivery is 01/12/2026.",
+   "Supplier and subcontractor approvals are done ('Pre-shipping checklist (approved)', no checklist action pending), and the component is not 'Received' before its actual delivery date is entered.",
+   "The delivery moves to 'Received' with a receipt number.",
+   "A message 'Shipping Details updated successfully!' appears.",
+   "A message 'Delivery Conditions updated successfully!' appears.",
+   "Shortage is 0.",
+   "The lead time is 'Confirmed' and the next delivery is 08/12/2026.",
+   "Supplier and subcontractor approvals are done ('Pre-shipping checklist (approved)', no checklist action pending), and the component is not 'Received' before its actual delivery date is entered.",
+   "The delivery moves to 'Received' with a receipt number.",
+   "A message 'Shipping Details updated successfully!' appears.",
+   "A message 'Delivery Conditions updated successfully!' appears.",
+   "Shortage is 0."
+  ],
+  "actual": "As expected."
+ },
+ "TC-17B": {
+  "title": "Generate GRNs and mark the submittal delivered",
+  "description": "Checks that a GRN can be generated for each delivery with the correct details, that each component becomes 'Received', and that the submittal becomes 'Delivered' only once every delivery has its actual date.",
+  "steps": [
+   "On the 'Material 5 20261124' received delivery choose 'Delivery actions' > 'Generate GRN'.",
+   "Download the GRN PDF from the submittal's 'Files' (the GRN entry of the receipt, then 'Download') and read it.",
+   "Open the 'Material 5 20261124' component view.",
+   "On the '43 Inches' received delivery choose 'Delivery actions' > 'Generate GRN'.",
+   "Download the GRN PDF from the submittal's 'Files' (the GRN entry of the receipt, then 'Download') and read it.",
+   "Open the '43 Inches' component view.",
+   "Look at the test submittal in Procurement Log.",
+   "Open User Management and find the Subcontractor user."
+  ],
+  "expected": [
+   "The message 'GRN Generated Successfully!' appears and a GRN PDF is created.",
+   "The PDF is a 'GOODS RECEIVED NOTE' with a receipt number, the component's PO number, shipping reference, supplier ID, received date 24/11/2026 and 'Material 5 20261124' with quantity 10.",
+   "Received in good order 10, nothing remaining, value delivered recorded, and component status 'Received'.",
+   "The message 'GRN Generated Successfully!' appears and a GRN PDF is created.",
+   "The PDF is a 'GOODS RECEIVED NOTE' with a receipt number, the component's PO number, shipping reference, supplier ID, received date 24/11/2026 and '43 Inches' with quantity 5.",
+   "Received in good order 5, nothing remaining, value delivered recorded, and component status 'Received'.",
+   "The submittal status is 'Delivered', which happened only after the actual delivery date 24/11/2026 was entered on every booking (before that, both showed 'Delivery booked').",
+   "The user is listed with role Subcontractor in organisation Voyage Control (the invite was not accepted; the existing Subcontractor account was used)."
+  ],
+  "actual": "As expected."
+ },
+ "TC-19": {
+  "title": "Set up FDI question set, category, group and questions",
+  "description": "Checks that a new inspection question set, with a category, a group and two questions, can be set up for the run's material.",
+  "steps": [
+   "Open First Delivery Inspection Config and pick the next free names for the question set, FDI category and FDI group.",
+   "Click 'New Question Set', enter the name, choose the run's material category and a new FDI category, and click 'Create Question Set'.",
+   "Check the FDI categories.",
+   "In the set, open 'Manage Groups' > 'Add Group' and add the new group.",
+   "Click 'Add Question' and add 'Delivered quantity matches the PO' with Answer Type 'Text'.",
+   "Put that question in the new group.",
+   "Click 'Add Question' and add 'Packaging and labels are intact' with Answer Type 'Text'.",
+   "Put that question in the new group.",
+   "Review the question set.",
+   "Check how the set is linked to the supplier."
+  ],
+  "expected": [
+   "Free names are found.",
+   "The set appears as a tab.",
+   "The new FDI category was created with the set.",
+   "The group is listed in the groups table.",
+   "The question is listed in the set.",
+   "The question keeps its group.",
+   "The question is listed in the set.",
+   "The question keeps its group.",
+   "Both questions are in the group, of type text and Enabled, and the set covers the run's material category.",
+   "The set has no supplier field; it applies by material category, so it covers deliveries of the run's material from any supplier."
+  ],
+  "actual": "As expected."
+ },
+ "TC-24": {
+  "title": "Analytics and settings after the run",
+  "description": "Checks that after the run the configuration is unchanged, the run's data appears correctly in Analytics, every Analytics page is compared with the baseline, and dashboard spend uses the project currency.",
+  "steps": [
+   "Open Configuration Options and compare every setting with the baseline.",
+   "In Project Management > Configuration Options note the 'Currency Type'.",
+   "Open Reference Data > Common Utilities.",
+   "Open Reference Data > Common UoM.",
+   "Read the Procurement Log 'Value Delivered' of the run's components.",
+   "Open Analytics > Status Report, click 'Generate' and find the row for the run's submittal.",
+   "Check where the delivered units are counted in the Status Report.",
+   "Open Analytics > Lead Time Analysis and look for the new material category.",
+   "Open Analytics > Aggregate Stats with the same project, location and filters as the baseline; visit every sub-tab and scroll to the end with screenshots.",
+   "Open Analytics > Lead Time Analysis with the same project, location and filters as the baseline; visit every sub-tab and scroll to the end with screenshots.",
+   "Open Analytics > Supply Chain Intelligence with the same project, location and filters as the baseline; visit every sub-tab and scroll to the end with screenshots.",
+   "Open Analytics > Emissions Report with the same project, location and filters as the baseline; visit every sub-tab and scroll to the end with screenshots.",
+   "Open Analytics > Inventory Reports with the same project, location and filters as the baseline; visit every sub-tab and scroll to the end with screenshots.",
+   "Open Analytics > Status Report with the same project, location and filters as the baseline; visit every sub-tab and scroll to the end with screenshots.",
+   "Open Analytics > SubContractor Issues with the same project, location and filters as the baseline; visit every sub-tab and scroll to the end with screenshots.",
+   "Open Analytics > Supplier Issues with the same project, location and filters as the baseline; visit every sub-tab and scroll to the end with screenshots.",
+   "Open Analytics > TOV Analytics with the same project, location and filters as the baseline; visit every sub-tab and scroll to the end with screenshots.",
+   "Compare every Analytics page with the baseline.",
+   "Open the Management Dashboard and read the Spend of the new material category."
+  ],
+  "expected": [
+   "No setting has changed.",
+   "The configured currency is noted.",
+   "The configured currency is listed as a currency type.",
+   "The materials' units (Board Feet, Pieces) are listed.",
+   "The values are in the configured currency.",
+   "The row shows the run's material and supplier, with 15 units across its quantity columns (both components).",
+   "All 15 delivered units are under 'QTY Delivered On Time'.",
+   "The category is listed.",
+   "The values of the page are recorded.",
+   "The values of the page are recorded.",
+   "The values of the page are recorded.",
+   "The values of the page are recorded.",
+   "The values of the page are recorded.",
+   "The values of the page are recorded.",
+   "The values of the page are recorded.",
+   "The values of the page are recorded.",
+   "The values of the page are recorded.",
+   "The differences are listed and highlighted in the report.",
+   "The Spend is shown in the configured currency (₹)."
+  ],
+  "actual": "All other checks passed and the differences from the baseline were listed. The dashboard showed the new category's Spend in dollars ($), although the configured currency is INR - Indian Rupees. Recorded as defect SCP-DEF-049."
+ },
+ "TC-24B": {
+  "title": "Enterprise pages after the checklist and deliveries",
+  "description": "Checks that, after the supplier and subcontractor approved the checklist and the deliveries were completed, the run delivery has left the pending checklist section and the run supplier appears in Enterprise View.",
+  "steps": [
+   "Open Enterprise > Supplier Inbox and filter by the run submittal.",
+   "Open Enterprise > Enterprise View and find the run supplier in the supplier table."
+  ],
+  "expected": [
+   "The run submittal is no longer under Pending Pre-Shipping Checklists.",
+   "The run supplier is listed with a spend value."
+  ],
+  "actual": "As expected. The run supplier is listed with spend shown as $12,500, in dollars, like the dashboard spend of defect SCP-DEF-049."
+ }
+}

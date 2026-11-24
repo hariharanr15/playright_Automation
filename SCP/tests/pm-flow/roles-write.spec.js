@@ -6,6 +6,7 @@
 //   PM-REG-ROLE-22 Org Admin creates a project (Voyage Control Admin › New Project) – one "SCP Auto Test <run>" project.
 const { test, expect } = require('@playwright/test');
 const { runPmSuite } = require('./support/pm-flow');
+const { prepareContext } = require('./support/app-shell');
 const { LoginPage } = require('../../pages/login.page');
 const { PlatformChooserPage } = require('../../pages/platform-chooser.page');
 const { ProjectSelectorPage } = require('../../pages/project-selector.page');
@@ -77,7 +78,7 @@ test('Role-based access – admin changes', async ({ page, browserName }) => {
     const sessionRole = async () => (((await new ProjectSelectorPage(st.sup, config).sessionProjects()).find(x => x.name.trim().toLowerCase() === config.projectName.toLowerCase()) || {}).role || {}).name;
     const supplierSignIn = async () => {
       if (st.sup) await st.sup.context().close().catch(() => null);
-      const ctx = await browser.newContext({ baseURL: config.baseUrl, viewport: { width: 1440, height: 900 } });
+      const ctx = await browser.newContext({ baseURL: config.baseUrl, viewport: { width: 1440, height: 900 } }).then(prepareContext);
       st.sup = await ctx.newPage();
       await st.sup.goto(config.loginUrl, { waitUntil: 'domcontentloaded' });
       await new LoginPage(st.sup).login(SUP.email, SUP.password);

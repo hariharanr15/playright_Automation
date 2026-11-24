@@ -35,10 +35,15 @@ const lines = [
   `**Total:** ${KNOWN_DEFECTS.length} entries · ${KNOWN_DEFECTS.length - pending.length} registered · ${pending.length} pending confirmation. Nothing here is raised in Jira.`,
   ''
 ];
+// Plain-language wording for business readers (config/scp-plain-defects.json, 23 Nov 2026); the technical summary is the fallback.
+const plainFile = path.join(__dirname, '..', 'config', 'scp-plain-defects.json');
+const PLAIN = fs.existsSync(plainFile) ? JSON.parse(fs.readFileSync(plainFile, 'utf8')) : {};
 for (const [module, defects] of byModule) {
-  lines.push(`## ${module}`, '', '| ID | Status | Recorded | Applies to | Test / title | What happens |', '|---|---|---|---|---|---|');
+  lines.push(`## ${module}`, '', '| ID | Status | Where | Problem | What happens today | What should happen | Why it matters | Test cases |', '|---|---|---|---|---|---|---|---|');
   for (const defect of defects) {
-    lines.push(`| ${defect.id} | ${statusOf(defect)} | ${cell(defect.recordedOn)} | ${cell(scopeOf(defect))} | ${cell(titleOf(defect))} | ${cell(defect.summary)} |`);
+    const P = PLAIN[defect.id];
+    if (P) lines.push(`| ${defect.id} | ${statusOf(defect)} (${cell(defect.recordedOn)}) | ${cell(P.where)} | **${cell(P.title)}** | ${cell(P.what_happens)} | ${cell(P.expected)} | ${cell(P.impact)} | ${cell(scopeOf(defect))} |`);
+    else lines.push(`| ${defect.id} | ${statusOf(defect)} (${cell(defect.recordedOn)}) | ${cell(module)} | **${cell(titleOf(defect))}** | ${cell(defect.summary)} | – | – | ${cell(scopeOf(defect))} |`);
   }
   lines.push('');
 }

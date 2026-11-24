@@ -77,7 +77,8 @@
     "tickets:regression": "node scripts/run-pm-flow.js tickets",
     "defects:report": "node scripts/known-defects-report.js",
     "e2e:smoke": "node scripts/run-pm-flow.js e2e-smoke",
-    "full:regression": "node scripts/run-full-regression.js"
+    "full:regression": "node scripts/run-full-regression.js",
+    "ana-ent": "node scripts/run-pm-flow.js ana-ent"
   },
   "keywords": [
     "playwright",

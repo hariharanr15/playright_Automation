@@ -119,7 +119,7 @@ function e2eKit(page, { config, navigator, outDir }) {
     // Unread count shown inside the Alerts / Notifications / Tasks tab ("336 alerts").
     async inboxCount(tab) {
       await openPage('/management-dashboard', 'Management Dashboard');
-      const control = main.getByRole('button', { name: new RegExp(`^${tab}(\\s+\\d+\\+?)?$`) }).or(main.getByRole('tab', { name: new RegExp(`^${tab}`) })).first();
+      const control = main.getByRole('button', { name: new RegExp(`^${tab}(\\s+\\d+\\+?)?$`) }).or(main.getByRole('tab', { name: new RegExp(`^${tab}`) })).last(); // the dashboard's "Urgent issues" strip also has an "Alerts <n>" pill above the tabs (23 Nov 2026 release)
       await control.click(); await settle(2500);
       const label = main.getByText(new RegExp(`^\\s*\\d+\\s+${tab}\\s*$`, 'i')).first();
       await expect(label, `${tab} count`).toBeVisible({ timeout: 20000 });
@@ -128,7 +128,7 @@ function e2eKit(page, { config, navigator, outDir }) {
     // Rows of the Alerts / Notifications / Tasks tab (first pages, newest first) that match `pattern`.
     async inboxRows(tab, pattern, { pages = 3 } = {}) {
       await openPage('/management-dashboard', 'Management Dashboard');
-      const control = main.getByRole('button', { name: new RegExp(`^${tab}(\\s+\\d+\\+?)?$`) }).or(main.getByRole('tab', { name: new RegExp(`^${tab}`) })).first();
+      const control = main.getByRole('button', { name: new RegExp(`^${tab}(\\s+\\d+\\+?)?$`) }).or(main.getByRole('tab', { name: new RegExp(`^${tab}`) })).last(); // the dashboard's "Urgent issues" strip also has an "Alerts <n>" pill above the tabs (23 Nov 2026 release)
       await control.click(); await settle(2500);
       await expect(main.getByText(new RegExp(`\\d+\\s+${tab}`, 'i')).first(), `${tab} list`).toBeVisible({ timeout: 20000 });
       const found = [];
@@ -504,160 +504,125 @@ function e2eKit(page, { config, navigator, outDir }) {
       const listed = await expect.poll(() => k.rows().filter({ hasText: number }).count(), { timeout: 15000 }).toBeGreaterThan(0).then(() => true, () => false);
       return { listed, count: ((await main.innerText()).match(/\d+ items?/) || ['?'])[0] };
     },
+    // Submittal and component pages as redesigned by the staging release of 23 Nov 2026 (evening): the component opens
+    // through its "⋯" menu › "Open component"; deliveries are listed as "Expected" (with "Receive") and "Received"
+    // (RCV-…) rows with a "Delivery actions" (⋯) menu. Every E2E component has exactly one delivery.
     async openComponent({ number, description, material }) {
       const { listed, count } = await kit.findSubmittal(number);
       expect(listed, `${number} listed (${count})`).toBe(true);
       await k.openSubmittal(description);
-      await k.componentRow(material).getByRole('cell', { name: material }).click();
-      await page.getByRole('button', { name: '+ Log Delivery' }).last().waitFor({ timeout: 30000 });
-      await settle(1000);
+      await k.openComponent(material);
     },
-    // Header → cell values of the component row (dates, status, lead time) for the lead-time checks.
+    // Component row (grid) columns: Component, Qty, Status, Lead time (weeks + confirmation), Order (PO + state),
+    // Next delivery, ROJ (date + check), Next step.
     async componentInfo(material) {
       const row = k.componentRow(material);
       await expect(row).toBeVisible({ timeout: 20000 });
-      const heads = (await row.locator('xpath=ancestor::table[1]').locator('thead th').allInnerTexts()).map(clean);
-      const cells = (await row.getByRole('cell').allInnerTexts()).map(clean);
-      return { heads, cells, values: Object.fromEntries(heads.map((h, i) => [h, cells[i]]).filter(([h]) => h)), text: clean(await row.innerText()) };
+      const heads = ['', 'Component', 'Qty', 'Status', 'Lead time', 'Order', 'Next delivery', 'ROJ', 'Next step'];
+      const cols = await row.locator('xpath=./*').allInnerTexts();
+      const parts = cols.map(c => c.split('\n').map(clean).filter(Boolean));
+      return { heads, cells: cols.map(clean), parts, values: Object.fromEntries(heads.map((h, i) => [h, clean(cols[i])]).filter(([h]) => h)), text: clean(await row.innerText()) };
     },
-    // Lead-time columns of the component row, read by header ("Lead time status" is "Not Confirmed" or "Confirmed":
-    // a plain text check for "Confirmed" also matches "Not Confirmed").
+    // The redesigned row shows the lead time in weeks and "Confirmed" / "Not confirmed"; it no longer shows an
+    // "Expected Delivery" date (PO date + lead time) – `expected` is the booked "Next delivery" date when one exists.
     async leadTime(material) {
-      const { values } = await kit.componentInfo(material);
-      const pick = re => Object.entries(values).find(([h]) => re.test(h))?.[1] || '';
-      return { weeks: pick(/^Lead time in weeks$/i), status: pick(/^Lead time status$/i), expected: pick(/^Expected Delivery$/i),
-        required: pick(/^Date Req\. on site$/i), componentStatus: pick(/^Status$/i), values };
+      const { parts, values } = await kit.componentInfo(material);
+      const [weeks = '', confirmation = ''] = parts[4] || [];
+      const [next = ''] = parts[6] || [];
+      const [roj = '', rojCheck = ''] = parts[7] || [];
+      return { weeks: (weeks.match(/\d+/) || [''])[0], status: confirmation, expected: (next.match(/\d{2}\/\d{2}\/\d{4}/) || [''])[0],
+        required: roj, rojCheck, componentStatus: (parts[3] || [''])[0], values };
     },
-    // Component row › "Lead Time": enter the weeks, tick the confirmation, Submit (PL-REG-CMP-06 pattern).
+    // Component "⋯" › "Lead time": enter the weeks, tick the confirmation, Submit (PL-REG-CMP-06 pattern).
     async confirmLeadTime(material, weeks) {
-      await k.componentRow(material).getByRole('button', { name: 'Lead Time' }).click();
+      await k.componentAction(material, 'Lead time');
       const m = k.dialog('Update Lead Time', 'Submit');
       await m.getByRole('spinbutton').fill(String(weeks));
       await m.getByRole('checkbox').check();
       await m.getByRole('button', { name: 'Submit', exact: true }).click();
       await expect.poll(async () => (await kit.leadTime(material)).status, { timeout: 20000, message: 'Lead time status "Confirmed"' }).toBe('Confirmed');
     },
-    // Component view summary (label → value): Required QTY, QTY Received, Remaining QTY To Be Delivered, Value Delivered …
+    // Component view summary: "<n> <UoM> required", the bar "Received in good order g, Damaged d, On a load l, Planned
+    // deliveries p, Not planned yet r" and "Value delivered" / "Remaining value". Returned under the former labels.
     async componentSummary() {
-      const out = {};
-      for (const label of ['Required QTY', 'QTY Received', 'QTY Rejected', 'Remaining QTY To Be Delivered', 'Value Delivered', 'Remaining Value To Be Delivered']) {
-        const value = page.getByText(label, { exact: true }).filter({ visible: true }).first().locator('xpath=following-sibling::*[1]');
-        out[label] = clean(await value.innerText({ timeout: 5000 }).catch(() => ''));
-      }
-      return out;
+      const bar = (await page.getByRole('img', { name: /^Received in good order/ }).filter({ visible: true }).last().getAttribute('aria-label').catch(() => '')) || '';
+      const num = label => Number((bar.match(new RegExp(`${label} (\\d+(?:\\.\\d+)?)`)) || [])[1] || NaN);
+      const text = clean(await page.getByText(/ required ·/).filter({ visible: true }).last().locator('xpath=ancestor::div[1]').innerText().catch(() => ''));
+      const summary = clean(await page.getByText('Value delivered').filter({ visible: true }).last().locator('xpath=..').innerText().catch(() => ''));
+      const money = label => (summary.match(new RegExp(`${label}\\s*([^\\d\\s]*\\s?[\\d.,]+)`, 'i')) || [])[1] || '';
+      const received = num('Received in good order');
+      const remaining = num('Planned deliveries') + num('Not planned yet') + num('On a load');
+      return { 'Required QTY': (text.match(/^([\d.,]+ \S+) required/) || [])[1] || '', 'QTY Received': String(received), 'QTY Rejected': String(num('Damaged')),
+        'Remaining QTY To Be Delivered': String(remaining), 'Value Delivered': money('Value delivered'), 'Remaining Value To Be Delivered': money('Remaining value'), bar };
     },
-    // Deliveries waiting for the checklist: one visible "Pre Shipping Info" icon each (rows are nested, so rows count twice).
-    visibleDeliveries() {
-      return page.locator('img[title="Pre Shipping Info"]').filter({ visible: true });
-    },
-    deliveryRow() {
-      return page.getByRole('row').filter({ has: page.locator('img[title="Pre Shipping Info"], img[title="Approved"], img[title="Approve Pre-Shipping Checklist"], img[title="Generate GRN"], img[alt="Edit"]') }).last();
-    },
+    visibleDeliveries() { return k.deliveryRows(); },
+    deliveryRow() { return k.deliveryRows().last(); },
+    // Actions offered on the delivery: the items of its "Delivery actions" menu (e.g. "Pre-shipping info",
+    // "Approve pre-shipping checklist", "Pre-shipping checklist (approved)", "Generate GRN").
     async deliveryIcons() {
-      return kit.deliveryRow().locator('img[title], img[alt]').evaluateAll(els => [...new Set(els.map(e => e.getAttribute('title') || e.getAttribute('alt')).filter(Boolean))]);
+      await expect(kit.deliveryRow(), 'Delivery listed on the component').toBeVisible({ timeout: 15000 });
+      return k.deliveryMenu(kit.deliveryRow());
     },
     async logDelivery({ material, qty, date, tag }) {
-      await k.keepSite(); await page.getByRole('button', { name: '+ Log Delivery' }).last().click();
-      const d = k.dialog('Add Delivery', 'Add');
-      await k.day(d.getByRole('textbox').first(), date);
-      await d.getByRole('button', { name: /^(All Locations|Choose Location)$/ }).click();
-      const location = listbox().getByRole('option').filter({ hasNotText: /^(All Locations|Choose Location)$/ }).first();
-      const locationName = clean(await location.innerText());
-      await location.click();
-      await d.getByRole('button', { name: 'Choose Item Name' }).click();
-      await listbox().getByRole('option', { name: material, exact: true }).first().click();
-      await d.getByRole('spinbutton').first().fill(String(qty));
-      await d.getByRole('button', { name: 'Add', exact: true }).click();
-      await expect(page.getByRole('heading', { name: 'Add Delivery', exact: true })).toBeHidden({ timeout: 20000 });
-      await settle(1500);
-      await expect(kit.deliveryRow().locator('img[title="Pre Shipping Info"]'), `Delivery ${tag} awaits the pre-shipping checklist`).toBeVisible({ timeout: 15000 });
-      return { location: locationName };
+      await k.keepSite();
+      const { location } = await k.addDelivery({ material, qty, date });
+      expect(await kit.deliveryIcons(), `Delivery ${tag} awaits the pre-shipping checklist`).toContain('Pre-shipping info');
+      return { location };
     },
-    // Supplier: every question YES with a comment, supplier note, Confirm Checklist (PL-R16, BUGS-155).
     async fillChecklist(tag) {
-      const icon = kit.deliveryRow().locator('img[title="Pre Shipping Info"]');
-      await expect(icon, '"Pre Shipping Info" offered on the delivery').toBeVisible({ timeout: 15000 });
-      await icon.click();
-      const c = k.dialog('Add Pre-Shipping Details', 'Confirm Checklist');
-      await c.getByRole('button', { name: 'Y/N', exact: true }).first().waitFor({ timeout: 20000 });
-      const inputs = c.locator('input:visible:not([type="checkbox"]):not([type="radio"]):not([type="hidden"])');
-      const count = await inputs.count();
-      for (let i = 0; i < count; i++) await inputs.nth(i).fill(`${tag} answer ${i + 1}`);
-      const yn = page.getByRole('button', { name: 'Y/N', exact: true });
-      let answered = 0;
-      for (; (await yn.count()) > 0 && answered < 60; answered++) { await yn.first().click(); await page.getByRole('option', { name: 'YES', exact: true }).click(); }
-      await c.locator('textarea:visible').first().fill(`${tag} supplier note`);
-      await c.getByRole('button', { name: 'Confirm Checklist', exact: true }).click();
-      await toast('Shipping Details updated successfully!');
-      return { comments: count, answered };
+      expect(await kit.deliveryIcons(), '"Pre-shipping info" offered on the delivery').toContain('Pre-shipping info');
+      return k.preShipping(kit.deliveryRow(), tag);
     },
     async approveChecklist(tag) {
-      const icon = kit.deliveryRow().locator('img[title="Approve Pre-Shipping Checklist"]');
-      await expect(icon, '"Approve Pre-Shipping Checklist" offered on the delivery').toBeVisible({ timeout: 15000 });
-      await icon.click();
-      const a = k.dialog('Approve Pre-Shipping Checklist', 'Approve');
-      await a.locator('textarea').last().fill(`${tag} approved by subcontractor`);
-      await a.getByRole('button', { name: 'Approve', exact: true }).click();
-      await toast('Checklist Generated Successfully!');
+      expect(await kit.deliveryIcons(), '"Approve pre-shipping checklist" offered on the delivery').toContain('Approve pre-shipping checklist');
+      await k.approveChecklist(kit.deliveryRow(), `${tag} approved by subcontractor`);
     },
+    // "Receive" › "Edit Delivery" › Actual Date Of Delivery, "Update": the delivery moves to "Received" (RCV-…).
     async setActualDate(date) {
-      await kit.deliveryRow().locator('img[alt="Edit"]').last().click();
-      const e = k.dialog('Edit Delivery', 'Update');
-      await k.day(e.getByRole('textbox').nth(1), date);
-      await e.getByRole('button', { name: 'Update', exact: true }).click();
-      await expect(page.getByRole('heading', { name: 'Edit Delivery' })).toBeHidden({ timeout: 15000 });
-      await settle(1500);
+      const { receipt } = await k.receive(kit.deliveryRow(), date);
+      return { receipt };
     },
-    async shippingInfo(tag) {
-      await kit.deliveryRow().locator('img[title="Update Shipping Info"]').click();
-      const sh = k.dialog('Add Shipping Info', 'Add');
-      await k.pick('Choose Shipping Mode', 'Other', sh);
-      await sh.getByRole('textbox').nth(0).fill(`${tag}-SHIP`);
-      await sh.getByRole('textbox').nth(1).fill('Origin');
-      await sh.locator('textarea').fill(tag);
-      await sh.getByRole('button', { name: 'Add', exact: true }).click();
-      await toast('Shipping Details updated successfully!');
-    },
-    async deliveryConditions({ good, damage }) {
-      await kit.deliveryRow().locator('img[title="Update Delivery Condition"]').click();
-      const dc = k.dialog('Add Delivery Conditions', 'Add');
-      await dc.getByRole('spinbutton').nth(0).fill(String(good));
-      await dc.getByRole('spinbutton').nth(1).fill(String(damage));
-      const shortage = Number(await dc.getByRole('spinbutton').nth(2).inputValue());
-      await dc.getByRole('button', { name: 'Add', exact: true }).click();
-      await toast('Delivery Conditions updated successfully!');
-      return { shortage };
-    },
-    // Generate GRN (POST /api/shipping_details/generate_grn_pdf/ answers JSON, 201). The PDF itself is stored with the
-    // booking's files; it is read back with downloadGrn. Never throws after the click succeeded (a retry would create a
+    shippingInfo(tag) { return k.shippingInfo(kit.deliveryRow(), tag); },
+    deliveryConditions({ good, damage }) { return k.deliveryConditions(kit.deliveryRow(), { good, damage }); },
+    // Generate GRN (POST /api/shipping_details/generate_grn_pdf/ answers JSON, 201). The PDF is listed in the submittal's
+    // "Files" section; it is read back with downloadGrn. Never throws after the click succeeded (a retry would create a
     // second GRN); the spec requests a GRN at most once per booking.
     async generateGrn(tag) {
+      const receipt = ((await kit.deliveryRow().innerText()).match(/RCV-\d+/) || [])[0] || null;
       const response = page.waitForResponse(r => /generate_grn_pdf/i.test(r.url()), { timeout: 45000 }).catch(() => null);
-      await kit.deliveryRow().locator('img[title="Generate GRN"]').click();
+      await k.deliveryAction(kit.deliveryRow(), 'Generate GRN');
       await toast('GRN Generated Successfully!', 30000);
       await settle(1500);
       const res = await response;
       const note = res ? `generate_grn_pdf HTTP ${res.status()}` : 'no generate_grn_pdf response seen';
       let grn = { file: null, text: '', receipt: null };
-      try { grn = await kit.downloadGrn(tag); } catch (e) { return { ...grn, note: `${note}; download failed: ${e.message.split('\n')[0]}` }; }
+      try { grn = await kit.downloadGrn(tag, receipt); } catch (e) { return { ...grn, note: `${note}; download failed: ${e.message.split('\n')[0]}` }; }
       return { ...grn, note };
     },
-    // Booking › "files" › GRN_<delivery>.pdf card › ⋮ (img alt "Menu") › "Download" (download_schedule_file): saves the PDF
-    // in the run folder and returns its text (pypdf) and Receipt No. Read-only.
-    async downloadGrn(tag) {
-      await kit.deliveryRow().locator('img[title="files"], img[alt="files"]').first().click();
-      const name = page.getByText(/^GRN_.*\.pdf$/).filter({ visible: true }).first();
-      await expect(name, 'GRN file listed with the booking').toBeVisible({ timeout: 20000 });
-      const card = name.locator('xpath=ancestor::div[contains(@class,"border")][1]');
-      await card.locator('img[alt="Menu"]').first().click();
+    // Submittal page › "Files" › the GRN_<delivery>.pdf entry linked to the receipt › "Download": saves the PDF in the run
+    // folder and returns its text (pypdf) and Receipt No. Read-only.
+    async downloadGrn(tag, receipt = null) {
+      if (!receipt && /[?&]schedule=/.test(page.url())) receipt = ((await kit.deliveryRow().innerText().catch(() => '')).match(/RCV-\d+/) || [])[0] || null;
+      await k.backToSubmittal();
+      const refresh = page.getByRole('button', { name: 'Refresh', exact: true }).last();
+      let index = -1;
+      for (let i = 0; i < 4 && index < 0; i++) {
+        if (i) { await refresh.click().catch(() => null); await settle(2000); }
+        // Each file entry is the largest ancestor of its "Download" button that holds no other "Download" button.
+        index = await page.getByRole('button', { name: 'Download', exact: true }).evaluateAll((buttons, rc) => buttons.findIndex(b => {
+          let n = b;
+          while (n.parentElement && n.parentElement.querySelectorAll('button').length && [...n.parentElement.querySelectorAll('button')].filter(x => x.textContent.trim() === 'Download').length === 1) n = n.parentElement;
+          const t = n.innerText || '';
+          return /GRN_[^\s]*\.pdf/.test(t) && (!rc || t.includes(rc));
+        }), receipt);
+      }
+      if (index < 0) throw new Error(`GRN file${receipt ? ` for ${receipt}` : ''} not listed in the submittal's Files`);
       const download = page.waitForEvent('download', { timeout: 30000 });
-      await page.getByText('Download', { exact: true }).filter({ visible: true }).first().click();
+      await page.getByRole('button', { name: 'Download', exact: true }).nth(index).click();
       const d = await download;
       const file = path.join(outDir, 'grn', `${tag}-${d.suggestedFilename()}`);
       fs.mkdirSync(path.dirname(file), { recursive: true });
       await d.saveAs(file);
-      await page.keyboard.press('Escape').catch(() => null);
-      await page.getByText('Details', { exact: true }).last().click().catch(() => null);
       let text = '';
       try { text = execFileSync(process.env.SCP_PYTHON || 'python', [path.join(__dirname, 'e2e-pdf-text.py'), file], { encoding: 'utf8', windowsHide: true }); } catch (e) { text = ''; }
       const lines = text.split(/\r?\n/).map(clean).filter(Boolean);

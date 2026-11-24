@@ -58,8 +58,10 @@ test('Configuration Options – live effects', async ({ page, browserName }) => 
       await fresh(); await k.search(d.number); await k.openSubmittal(d.description);
       return d;
     };
-    const icon = name => page.locator(`img[title="${name}"], img[alt="${name}"]`).filter({ visible: true });
-    const reopen = async url => { await page.goto(url, { waitUntil: 'domcontentloaded' }); await page.getByRole('button', { name: '+ Log Delivery' }).last().waitFor({ timeout: 30000 }); await k.settle(2500); };
+    // Redesigned component view (staging release of 23 Nov 2026 evening): the delivery's former action icons are items
+    // of its "Delivery actions" (⋯) menu; the run delivery is the only delivery of its component.
+    const offered = async name => (await k.deliveryRows().count()) ? (await k.deliveryMenu(k.deliveryRows().last())).includes(name) : false;
+    const reopen = async url => { await page.goto(url, { waitUntil: 'domcontentloaded' }); await k.logDeliveryButton().waitFor({ timeout: 30000 }); await k.settle(2500); };
 
     const login = await run.scenario({ ...meta('CFL-SETUP', 'Sign in; record the Configuration Options toggles', 'Setup'), always: true }, async s => {
       await k.signIn(s, config);
@@ -75,11 +77,11 @@ test('Configuration Options – live effects', async ({ page, browserName }) => 
     try {
       // ================= CFG-09 =================
       await run.scenario(meta('PM-REG-CFG-09', 'Pre-Shipping off removes the delivery checklist; on brings it back (same delivery)'), async s => {
-        await s.step(`Run submittal ${RUN}-SUB-P (${MATERIAL}): component, "+ Log Delivery" QTY 1 → the delivery offers "Pre Shipping Info"`, async () => {
+        await s.step(`Run submittal ${RUN}-SUB-P (${MATERIAL}): component, "⋯" › "Open component" › "Log delivery" QTY 1 → "Delivery actions" offers "Pre-shipping info"`, async () => {
           const d = await newSubmittal('P');
           await k.addComponent({ rojDate: plusDays(45), qty: 2 });
-          await k.componentRow().getByRole('cell', { name: MATERIAL }).click();
-          await k.keepSite(); await page.getByRole('button', { name: '+ Log Delivery' }).last().click();
+          await k.keepSite(); await k.openComponent(MATERIAL);
+          await k.logDeliveryButton().click();
           const dl = k.dialog('Add Delivery', 'Add');
           await k.day(dl.getByRole('textbox').first(), today);
           await dl.getByRole('button', { name: /^(All Locations|Choose Location)$/ }).click(); await listbox().getByRole('option').filter({ hasNotText: /^(All Locations|Choose Location)$/ }).first().click();
@@ -87,43 +89,43 @@ test('Configuration Options – live effects', async ({ page, browserName }) => 
           await dl.getByRole('spinbutton').first().fill('1');
           await dl.getByRole('button', { name: 'Add', exact: true }).click();
           await expect(page.getByRole('heading', { name: 'Add Delivery', exact: true })).toBeHidden({ timeout: 20000 });
-          await expect(icon('Pre Shipping Info').last()).toBeVisible({ timeout: 15000 });
+          await expect.poll(() => offered('Pre-shipping info'), { timeout: 15000 }).toBe(true);
           state.preUrl = page.url(); state.preSub = d.number;
         }, { critical: true });
-        await s.step('Configuration Options: "Pre-Shipping Checklist" Off, Save → reopen the same delivery → "Pre Shipping Info" no longer offered', async () => {
+        await s.step('Configuration Options: "Pre-Shipping Checklist" Off, Save → reopen the same delivery → "Pre-shipping info" no longer offered', async () => {
           await setToggle('Pre-Shipping Checklist', false);
           await reopen(state.preUrl);
-          const count = await icon('Pre Shipping Info').count();
-          s.observe(`"Pre Shipping Info" icons with Pre-Shipping Off: ${count}`);
-          expect(count, 'checklist not available while Pre-Shipping is Off').toBe(0);
+          const items = await k.deliveryMenu(k.deliveryRows().last());
+          s.observe(`"Delivery actions" with Pre-Shipping Off: ${items.join(', ')}`);
+          expect(items, 'checklist not available while Pre-Shipping is Off').not.toContain('Pre-shipping info');
         });
-        await s.step('"Pre-Shipping Checklist" On again, Save → reopen the same delivery → "Pre Shipping Info" offered again', async () => {
+        await s.step('"Pre-Shipping Checklist" On again, Save → reopen the same delivery → "Pre-shipping info" offered again', async () => {
           await setToggle('Pre-Shipping Checklist', true);
           await reopen(state.preUrl);
-          await expect(icon('Pre Shipping Info').last(), 'checklist available again').toBeVisible({ timeout: 15000 });
+          await expect.poll(() => offered('Pre-shipping info'), { timeout: 15000, message: 'checklist available again' }).toBe(true);
         });
       });
 
       // ================= CFG-10 =================
       await run.scenario(meta('PM-REG-CFG-10', 'GRN off removes "Generate GRN"; on brings it back (same delivery)'), async s => {
-        await s.step(`Run submittal ${RUN}-SUB-G (${MATERIAL}): component with PO, delivery QTY 2 → checklist, approve, actual date, shipping, conditions → stopped at the GRN step ("Generate GRN" offered)`, async () => {
+        await s.step(`Run submittal ${RUN}-SUB-G (${MATERIAL}): component with PO, delivery QTY 2 → checklist, approve, "Receive" with actual date, shipping, conditions → stopped at the GRN step ("Delivery actions" offers "Generate GRN")`, async () => {
           await newSubmittal('G');
           await k.addComponent({ rojDate: plusDays(45), qty: 2, po: `${RUN}-PO-G`, poDate: poToday() });
           await k.deliverToGrn({ qty: 2, tag: RUN, stopBeforeGrn: true });
-          await expect(icon('Generate GRN').last()).toBeVisible({ timeout: 15000 });
+          await expect.poll(() => offered('Generate GRN'), { timeout: 15000 }).toBe(true);
           state.grnUrl = page.url();
         }, { critical: true });
         await s.step('Configuration Options: "GRN" Off, Save → reopen the same delivery → "Generate GRN" no longer offered', async () => {
           await setToggle('GRN', false);
           await reopen(state.grnUrl);
-          const count = await icon('Generate GRN').count();
-          s.observe(`"Generate GRN" icons with GRN Off: ${count}`);
-          expect(count, 'GRN not available while GRN is Off').toBe(0);
+          const items = await k.deliveryMenu(k.deliveryRows().last());
+          s.observe(`"Delivery actions" with GRN Off: ${items.join(', ')}`);
+          expect(items, 'GRN not available while GRN is Off').not.toContain('Generate GRN');
         });
         await s.step('"GRN" On again, Save → reopen the same delivery → "Generate GRN" offered again', async () => {
           await setToggle('GRN', true);
           await reopen(state.grnUrl);
-          await expect(icon('Generate GRN').last(), 'GRN available again').toBeVisible({ timeout: 15000 });
+          await expect.poll(() => offered('Generate GRN'), { timeout: 15000, message: 'GRN available again' }).toBe(true);
         });
       });
     } finally {

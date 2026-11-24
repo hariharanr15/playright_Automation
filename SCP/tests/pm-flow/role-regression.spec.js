@@ -10,6 +10,7 @@
 // Skipped with the reason.
 const { test, expect } = require('@playwright/test');
 const { runPmSuite } = require('./support/pm-flow');
+const { prepareContext } = require('./support/app-shell');
 const { plKit } = require('./support/pl-flow');
 const { LoginPage } = require('../../pages/login.page');
 const { PlatformChooserPage } = require('../../pages/platform-chooser.page');
@@ -49,7 +50,7 @@ test('Role-based access – regression (read-only)', async ({ page, browserName 
     // ---------------- Voyage Control Admin › Roles (read-only) ----------------
     const admSettle = async (ms = 2500) => { await state.adm.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => null); await state.adm.waitForTimeout(ms); };
     const openPortal = async () => {
-      const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+      const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } }).then(prepareContext);
       const p = await ctx.newPage();
       await p.goto(config.loginUrl, { waitUntil: 'domcontentloaded' });
       await new LoginPage(p).login(config.username, config.password);
@@ -80,7 +81,7 @@ test('Role-based access – regression (read-only)', async ({ page, browserName 
 
     // ---------------- SCP as an account ----------------
     const signInAs = async acct => {
-      const ctx = await browser.newContext({ baseURL: config.baseUrl, viewport: { width: 1440, height: 900 } });
+      const ctx = await browser.newContext({ baseURL: config.baseUrl, viewport: { width: 1440, height: 900 } }).then(prepareContext);
       const p = await ctx.newPage();
       await p.goto(config.loginUrl, { waitUntil: 'domcontentloaded' });
       await new LoginPage(p).login(acct.email, acct.password);

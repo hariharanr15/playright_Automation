@@ -58,7 +58,8 @@ for (let i = 0; i < lines.length; i++) {
     const header = cells(rows[0]);
     const data = rows.slice(/^\s*\|[\s:|-]+\|\s*$/.test(rows[1] || '') ? 2 : 1).map(cells);
     const headerHtml = header.every(cell => !cell) ? '' : `<thead><tr>${header.map(cell => `<th>${inline(cell)}</th>`).join('')}</tr></thead>`;
-    body.push(`<table>${headerHtml}<tbody>${data.map(row => `<tr>${row.map(cell => `<td>${inline(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table>`);
+    const register = header.length === 8 && /^No$/.test(header[0]);
+    body.push(`<table${register ? ' class="register"' : ''}>${register ? '<colgroup>' + '<col>'.repeat(8) + '</colgroup>' : ''}${headerHtml}<tbody>${data.map(row => `<tr>${row.map(cell => `<td>${inline(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table>`);
     continue;
   }
   if (/^\d+\.\s/.test(line)) {
@@ -87,7 +88,7 @@ for (let i = 0; i < lines.length; i++) {
 flush();
 if (sectionOpen) body.push('</section>');
 
-const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escape(footerTitle)}</title><style>
+const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escape(footerTitle)}</title><style>
   body { font-family: "Segoe UI", Arial, sans-serif; font-size: 9.5pt; color: #1d2430; line-height: 1.4; }
   h1 { font-size: 17pt; color: #0f5e4f; border-bottom: 2px solid #0f5e4f; padding-bottom: 4px; margin: 0 0 8px; }
   h2 { font-size: 13pt; color: #0f5e4f; margin: 18px 0 6px; page-break-after: avoid; border-bottom: 1px solid #c9dcd6; padding-bottom: 2px; }
@@ -95,6 +96,11 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escape(f
   section.case { page-break-inside: avoid; }
   table { border-collapse: collapse; width: 100%; margin: 4px 0 8px; font-size: 8.5pt; }
   th, td { border: 1px solid #cfd6dd; padding: 3px 5px; text-align: left; vertical-align: top; }
+  td { overflow-wrap: break-word; }
+  ${landscape ? '' : `table { font-size: 7.5pt; } th, td { padding: 2px 3px; } tr { page-break-inside: avoid; } td:first-child { white-space: normal; }
+  table.register { table-layout: fixed; } table.register td { word-break: normal; overflow-wrap: break-word; hyphens: auto; }
+  table.register col:nth-child(1) { width: 4%; } table.register col:nth-child(2) { width: 10%; } table.register col:nth-child(3) { width: 9%; } table.register col:nth-child(4) { width: 14%; }
+  table.register col:nth-child(5) { width: 21%; } table.register col:nth-child(6) { width: 13%; } table.register col:nth-child(7) { width: 17%; } table.register col:nth-child(8) { width: 12%; }`}
   th { background: #f1f4f7; }
   td:first-child { white-space: nowrap; }
   ol { margin: 4px 0 8px 18px; padding: 0; } ol li { margin-bottom: 4px; }

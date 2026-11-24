@@ -5,6 +5,7 @@
 const path = require('path');
 const { test, expect } = require('@playwright/test');
 const { runPmSuite } = require('./support/pm-flow');
+const { prepareContext, SHELL_VIEWPORT } = require('./support/app-shell');
 const { pmUi } = require('./support/pm-ui');
 const { OVERLAY } = require('./support/pm-navigator');
 const { plKit, MATERIAL, SUPPLIER } = require('./support/pl-flow');
@@ -124,8 +125,8 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
       }
       await s.step('Log a delivery on D (no PO)', async () => {
         await fresh(); await k.search(subs.D.number); await k.openSubmittal(subs.D.description);
-        await k.componentRow().getByRole('cell', { name: MATERIAL }).click();
-        await k.keepSite(); await page.getByRole('button', { name: '+ Log Delivery' }).last().click();
+        await k.keepSite(); await k.openComponent(MATERIAL);
+        await k.logDeliveryButton().click();
         const dl = k.dialog('Add Delivery', 'Add');
         await k.day(dl.getByRole('textbox').first(), day(0));
         await dl.getByRole('button', { name: /^(All Locations|Choose Location)$/ }).click();
@@ -314,9 +315,9 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
       });
     });
     await sc517('T517-13', 'Bulk Edit: one batch confirmation', 'Bulk Edit', async s => {
-      await s.step(`Open B › component row › "Lead Time": 2, tick confirm, "Submit" → B's component lead time 2 weeks, Confirmed (so T517-15 can see the flag restored)`, async () => {
+      await s.step(`Open B › component row "⋯" › "Lead time": 2, tick confirm, "Submit" → B's component lead time 2 weeks, Confirmed (so T517-15 can see the flag restored)`, async () => {
         await fresh(); await k.search(subs.B.number); await k.openSubmittal(subs.B.description);
-        await k.componentRow().getByRole('button', { name: 'Lead Time' }).click();
+        await k.componentAction(MATERIAL, 'Lead time');
         const m = k.dialog('Update Lead Time', 'Submit');
         await m.getByRole('spinbutton').fill('2'); await m.getByRole('checkbox').check();
         await m.getByRole('button', { name: 'Submit', exact: true }).click();
@@ -700,7 +701,7 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
     const supAcct = config.accounts.supplier || {};
     if (!supAcct.username) run.skip(meta('T508-18', M508, 'Non-Project-Admin has no upload', 'Negative'), 'SCP_SUPPLIER_USERNAME / PASSWORD not set');
     else await run.scenario(meta('T508-18', M508, 'Non-Project-Admin has no upload', 'Negative'), async s => {
-      const ctx = await page.context().browser().newContext({ viewport: null, baseURL: config.baseUrl });
+      const ctx = await page.context().browser().newContext({ viewport: SHELL_VIEWPORT, baseURL: config.baseUrl }).then(prepareContext);
       const sp = await ctx.newPage();
       try {
         await s.step('Supplier window: sign in with the Supplier account → SCP opens (directly or via the platform chooser) on /management-dashboard', async () => {
@@ -1009,9 +1010,13 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
     const SAME_ORG_SUPPLIER = process.env.SCP_TKT155_SAME_ORG_SUPPLIER || ''; // supplier in the subcontractor account's organisation
     const sub155 = { F: { supplier: SUPPLIER }, G: { supplier: SAME_ORG_SUPPLIER || SUPPLIER } };
     for (const key of Object.keys(sub155)) Object.assign(sub155[key], { spec: `${RUN}-SPEC-${key}`, description: `${RUN} checklist ${key}`, number: `${RUN}-SUB-${key}`, scheduleId: num(key.charCodeAt(0) - 64) });
-    const dIcon = (p, name) => p.locator(`img[title="${name}"], img[alt="${name}"]`).filter({ visible: true }).last();
+    // Redesigned component view (staging release of 23 Nov 2026 evening): the delivery's former action icons are items of
+    // its "Delivery actions" (⋯) menu; each run delivery is the only delivery of its component.
+    const dRow = p => plKit(p).deliveryRows().last();
+    const dOffers = async (p, item) => (await plKit(p).deliveryRows().count()) ? (await plKit(p).deliveryMenu(dRow(p))).includes(item) : false;
+    const dAct = (p, item) => plKit(p).deliveryAction(dRow(p), item);
     const fillChecklist = async (p, kit, tag) => {
-      await dIcon(p, 'Pre Shipping Info').click();
+      await dAct(p, 'Pre-shipping info');
       const c = kit.dialog('Add Pre-Shipping Details', 'Confirm Checklist');
       await c.getByRole('button', { name: 'Y/N', exact: true }).first().waitFor({ timeout: 20000 });
       const inputs = c.locator('input:visible:not([type="checkbox"]):not([type="radio"]):not([type="hidden"])');
@@ -1029,8 +1034,8 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
           await fresh(); await k.addSubmittal({ ...d, materials: [MATERIAL] }); await k.toast('Submittal added successfully');
           await fresh(); await k.search(d.number); await k.openSubmittal(d.description);
           await k.addComponent({ rojDate: day(45), qty: 2 });
-          await k.componentRow().getByRole('cell', { name: MATERIAL }).click();
-          await k.keepSite(); await page.getByRole('button', { name: '+ Log Delivery' }).last().click();
+          await k.keepSite(); await k.openComponent(MATERIAL);
+          await k.logDeliveryButton().click();
           const dl = k.dialog('Add Delivery', 'Add');
           await k.day(dl.getByRole('textbox').first(), day(0));
           await dl.getByRole('button', { name: /^(All Locations|Choose Location)$/ }).click(); await listbox().getByRole('option').filter({ hasNotText: /^(All Locations|Choose Location)$/ }).first().click();
@@ -1038,7 +1043,7 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
           await dl.getByRole('spinbutton').first().fill('1');
           await dl.getByRole('button', { name: 'Add', exact: true }).click();
           await expect(page.getByRole('heading', { name: 'Add Delivery', exact: true })).toBeHidden({ timeout: 20000 });
-          await expect(dIcon(page, 'Pre Shipping Info')).toBeVisible({ timeout: 15000 });
+          await expect.poll(() => dOffers(page, 'Pre-shipping info'), { timeout: 15000 }).toBe(true);
           d.url = page.url();
         }, { critical: true });
       }
@@ -1051,7 +1056,7 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
       : !acct.username
         ? run.skip(meta('T155-SIGNIN', M155, 'Subcontractor sign-in', 'Setup'), 'SCP_SUBCONTRACTOR_USERNAME / PASSWORD not set')
         : await run.scenario(meta('T155-SIGNIN', M155, 'Subcontractor sign-in', 'Setup'), async s => {
-          subCtx = await page.context().browser().newContext({ viewport: null, baseURL: config.baseUrl });
+          subCtx = await page.context().browser().newContext({ viewport: SHELL_VIEWPORT, baseURL: config.baseUrl }).then(prepareContext);
           subPage = await subCtx.newPage();
           // 13 Nov 2026: the subcontractor account has one platform, so Sign in goes straight to SCP (no chooser with the
           // email heading, which the shared admin sign-in expects). The window is also brought to the front: behind the
@@ -1088,7 +1093,7 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
       // opened and checked but NOT confirmed, so the delivery stays available for later runs.
       const REF155 = { number: process.env.SCP_TKT155_FILL_SUBMITTAL || 'E2E2611111127-SUB', material: process.env.SCP_TKT155_FILL_MATERIAL || 'Smoke Mat 2611111127' };
       await sc155('T155-01', 'Subcontractor can fill the pre-shipping checklist', 'Positive', async s => {
-        await s.step(`Subcontractor: Procurement Log › search ${REF155.number} › open it › component ${REF155.material} → the delivery offers "Pre Shipping Info"`, async () => {
+        await s.step(`Subcontractor: Procurement Log › search ${REF155.number} › open it › component ${REF155.material} "⋯" › "Open component" → "Delivery actions" offers "Pre-shipping info"`, async () => {
           const sk = plKit(subPage);
           await sk.menu('Procurement Log').catch(() => subPage.goto('/procurement-log', { waitUntil: 'domcontentloaded' }));
           await sk.search(REF155.number);
@@ -1097,13 +1102,13 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
           // The first cell is the row checkbox: open the submittal through its "Spec Description" cell.
           const headers = (await sk.main.getByRole('columnheader').allInnerTexts()).map(t => t.trim());
           await sk.openSubmittal((await row.getByRole('cell').nth(headers.indexOf('Spec Description')).innerText()).trim());
-          await subPage.getByRole('row').filter({ has: subPage.getByRole('checkbox', { name: 'Select this component' }) }).filter({ hasText: REF155.material }).first().getByRole('cell', { name: REF155.material }).click();
-          await subPage.getByRole('button', { name: '+ Log Delivery' }).last().waitFor({ timeout: 30000 }); await sk.settle(2000);
-          await expect(dIcon(subPage, 'Pre Shipping Info'), '"Pre Shipping Info" offered to the subcontractor').toBeVisible({ timeout: 15000 });
+          await sk.componentsLoaded();
+          await sk.openComponent(REF155.material); await sk.settle(2000);
+          await expect.poll(() => dOffers(subPage, 'Pre-shipping info'), { timeout: 15000, message: '"Pre-shipping info" offered to the subcontractor' }).toBe(true);
         }, { critical: true });
-        await s.step('Click "Pre Shipping Info" → the checklist opens with its questions and an enabled "Confirm Checklist"; close it WITHOUT confirming', async () => {
+        await s.step('"Delivery actions" › "Pre-shipping info" → the checklist opens with its questions and an enabled "Confirm Checklist"; close it WITHOUT confirming', async () => {
           const sk = plKit(subPage);
-          await dIcon(subPage, 'Pre Shipping Info').click();
+          await dAct(subPage, 'Pre-shipping info');
           const c = sk.dialog('Add Pre-Shipping Details', 'Confirm Checklist');
           await c.getByRole('button', { name: 'Y/N', exact: true }).first().waitFor({ timeout: 20000 });
           const questions = await c.getByRole('button', { name: 'Y/N', exact: true }).count();
@@ -1113,9 +1118,9 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
           await sk.closeDialog('Add Pre-Shipping Details').catch(() => subPage.keyboard.press('Escape'));
           expect(enabled, 'Confirm Checklist usable by the subcontractor').toBe(true);
         });
-        await s.step(`For the record: delivery on this run's submittal ${sub155.G.number} (supplier ${sub155.G.supplier}) → whether "Pre Shipping Info" is offered too`, async () => {
+        await s.step(`For the record: delivery on this run's submittal ${sub155.G.number} (supplier ${sub155.G.supplier}) → whether "Pre-shipping info" is offered too`, async () => {
           await subOpen(sub155.G);
-          s.observe(`"Pre Shipping Info" ${await dIcon(subPage, 'Pre Shipping Info').isVisible().catch(() => false) ? 'offered' : 'not offered'} on ${sub155.G.number}`);
+          s.observe(`"Pre-shipping info" ${await dOffers(subPage, 'Pre-shipping info').catch(() => false) ? 'offered' : 'not offered'} on ${sub155.G.number}`);
         });
       });
       await sc155('T155-02', 'Subcontractor can approve a checklist the supplier filled', 'Positive', async s => {
@@ -1123,10 +1128,10 @@ test('Ticket regression – BUGS-517, 543, 508, 507, 548, 155', async ({ page })
           await page.goto(sub155.F.url, { waitUntil: 'domcontentloaded' }); await k.settle(2000);
           await fillChecklist(page, k, RUN);
         }, { critical: true });
-        await s.step('Subcontractor: "Approve Pre-Shipping Checklist" → Approve → "Checklist Generated Successfully!"', async () => {
+        await s.step('Subcontractor: "Delivery actions" › "Approve pre-shipping checklist" → Approve → "Checklist Generated Successfully!"', async () => {
           await subOpen(sub155.F);
           const sk = plKit(subPage);
-          await dIcon(subPage, 'Approve Pre-Shipping Checklist').click();
+          await dAct(subPage, 'Approve pre-shipping checklist');
           const a = sk.dialog('Approve Pre-Shipping Checklist', 'Approve');
           await a.locator('textarea').last().fill(`${RUN} approved by subcontractor`);
           await a.getByRole('button', { name: 'Approve', exact: true }).click();

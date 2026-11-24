@@ -15,6 +15,14 @@ const read = f => JSON.parse(fs.readFileSync(path.join(folder, f), 'utf8'));
 const defects = read('DEFECT_CASES.json').filter(c => c.status === 'Known Defect');
 const skipped = read('SKIPPED_CASES.json');
 const passed = fs.existsSync(path.join(folder, 'PASSED_CASES.json')) ? read('PASSED_CASES.json') : [];
+// Plain-language wording for business readers (23 Nov 2026): config/scp-plain-language.json (cases) and
+// config/scp-plain-defects.json (defects). A case without an entry keeps the wording generated from the run.
+const loadJson = f => { const file = path.join(__dirname, '..', 'config', f); return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : {}; };
+const PLAIN = loadJson('scp-plain-language.json');
+const PLAIN_DEFECTS = loadJson('scp-plain-defects.json');
+const numbered = list => list.map((t, n) => `${n + 1}. ${cell(t)}`).join(BR) || '–';
+const plainDesc = (c, fallback) => { const P = PLAIN[c.id]; return P ? `**${cell(c.id)}**${BR}**${cell(P.title)}**${BR}${cell(P.description)}` : `**${cell(c.id)}**${BR}${fallback}`; };
+const GLOSSARY = ['**Words used in this register:** PO = purchase order · GRN = goods received note (confirms the delivered quantity) · FDI = first delivery inspection (quality check of the first delivery of a material) · UoM = unit of measure · Required on site (ROS) = date the material is needed on site · Submittal = a procurement package of materials for one supplier · Component = one material line of a submittal · Venue / site = the location selected in the page header · Run / test record = data created by the automation for this run (names start with a run tag). Defect IDs SCP-DEF-xxx refer to the defect register; "pending team confirmation" means the expected behaviour still has to be confirmed by the team.', ''];
 
 // ---------- helpers ----------
 const BR = ' ¶ '; // line break inside a table cell (md-to-pdf.js turns it into <br>)
@@ -31,7 +39,7 @@ const plainError = e => {
   const rec = (text.match(/Received(?: value| array| string)?:\s*(.+?)(?= Call log|$)/) || [])[1];
   const parts = [];
   if (first && !/^expect\(|^locator\./.test(first)) parts.push(first.replace(/[.:]$/, '') + '.');
-  if (exp && rec) parts.push(`Expected ${exp.slice(0, 160)}, but the application showed ${rec.slice(0, 200)}.`);
+  if (exp && rec && !/^\//.test(exp.trim())) parts.push(`Expected ${exp.slice(0, 160)}, but the application showed ${rec.slice(0, 200)}.`);
   return parts.join(' ') || text.slice(0, 300);
 };
 const order = (a, b) => moduleOf(a).localeCompare(moduleOf(b)) || subOf(a).localeCompare(subOf(b)) || a.id.localeCompare(b.id, 'en', { numeric: true });
@@ -44,8 +52,11 @@ const kdRows = defects.sort(order).map((c, i) => {
   const entry = KNOWN_DEFECTS.find(d => d.id === ids[0]) || {};
   const stepText = steps.map((s, n) => `${n + 1}. ${cell(split(s.name)[0])}`).join(BR) || cell(c.coveredBy ? `Checked by ${c.coveredBy}` : '–');
   const expected = cell(split(bad.name || '')[1]) || cell(entry.title) || '–';
-  const actual = [bad.observed ? cell(bad.observed).slice(0, 400) : '', plainError(bad.error)].filter(Boolean).join(BR) || cell(String(entry.summary || '').replace(/^PENDING TEAM CONFIRMATION\.\s*/, '').slice(0, 400));
+  const actual = [bad.observed ? cell(bad.observed).slice(0, 400) : '', cell(plainError(bad.error))].filter(Boolean).join(BR) || cell(String(entry.summary || '').replace(/^PENDING TEAM CONFIRMATION\.\s*/, '').slice(0, 400));
   const status = `**Known Defect** ${BR}${ids.join(', ')}${BR}${entry.confirmation === 'pending' ? 'Pending team confirmation' : 'Registered defect'}${entry.title ? `${BR}_${cell(entry.title)}_` : ''}`;
+  const P = PLAIN[c.id]; const PD = PLAIN_DEFECTS[ids[0]];
+  const status2 = `**Known Defect**${BR}${ids.join(', ')}${BR}${entry.confirmation === 'pending' ? 'Pending team confirmation' : 'Registered defect'}${PD ? `${BR}_${cell(PD.title)}_` : entry.title ? `${BR}_${cell(entry.title)}_` : ''}`;
+  if (P) return `| ${i + 1} | ${cell(moduleOf(c))} | ${cell(subOf(c))} | ${plainDesc(c)} | ${numbered(P.steps)} | ${numbered(P.expected)} | ${cell(P.actual)} | ${status2} |`;
   return `| ${i + 1} | ${cell(moduleOf(c))} | ${cell(subOf(c))} | **${cell(c.id)}**${BR}${description(c.title)} | ${stepText} | ${expected} | ${actual} | ${status} |`;
 });
 
@@ -65,6 +76,7 @@ for (const file of docs) {
   }
 }
 const pick = (def, re) => { if (!def) return ''; const i = def.header.findIndex(h => re.test(h)); return i >= 0 ? def.row[i] || '' : ''; };
+const numbered2 = list => list.map((t, n) => `${n + 1}. ${cell(t)}`).join(BR) || '–';
 const SHORT = { A: 'Automation work pending', B: 'Waiting for a decision / approval', C: 'Needs an account or test data', D: 'Needs a requirement', E: 'Manual check only', X: 'Deferred (out of scope for now)' };
 const skRows = skipped.sort(order).map((c, i) => {
   const def = rows.get(c.id); const p = plan[c.id] || {};
@@ -73,6 +85,8 @@ const skRows = skipped.sort(order).map((c, i) => {
   if (!expected && steps.includes('→')) { [steps, expected] = split(steps); }
   const numbered = cell(steps).split(/\s*(?:;|→ then| then )\s*/).filter(Boolean).map((s, n) => `${n + 1}. ${s}`).join(BR) || '–';
   const docTitle = pick(def, /^Title$/i);
+  const P = PLAIN[c.id];
+  if (P) return `| ${i + 1} | ${cell(moduleOf(c))} | ${cell(subOf(c))} | ${plainDesc(c)} | ${numbered2(P.steps)} | ${numbered2(P.expected)} | ${cell(P.actual)} | **Skipped**${BR}${SHORT[p.group] || 'Not classified'}${P.needed ? `${BR}_Needed: ${cell(P.needed)}_` : p.need ? `${BR}_Needed: ${cell(p.need)}_` : ''} |`;
   return `| ${i + 1} | ${cell(moduleOf(c))} | ${cell(subOf(c))} | **${cell(c.id)}**${BR}${cell(docTitle || description(c.title))} | ${numbered} | ${cell(expected) || '–'} | Not executed.${BR}${cell(c.reason)} | **Skipped**${BR}${SHORT[p.group] || 'Not classified'}${p.need ? `${BR}_Needed: ${cell(p.need)}_` : ''} |`;
 });
 
@@ -84,6 +98,8 @@ const psRows = passed.sort(order).map((c, i) => {
   const notes = steps.map((s, n) => s.observed ? `${n + 1}. ${cell(s.observed).slice(0, 220)}` : '').filter(Boolean).join(BR);
   const retried = steps.some(s => s.retried);
   const actual = `As expected.${notes ? `${BR}${notes}` : ''}${c.coveredBy ? `${BR}Covered by: ${cell(c.coveredBy)}` : ''}`;
+  const P = PLAIN[c.id];
+  if (P) return `| ${i + 1} | ${cell(moduleOf(c))} | ${cell(subOf(c))} | ${plainDesc(c)} | ${numbered(P.steps)} | ${numbered(P.expected)} | ${cell(P.actual)} | **Passed**${retried ? `${BR}_passed on retry_` : ''} |`;
   return `| ${i + 1} | ${cell(moduleOf(c))} | ${cell(subOf(c))} | **${cell(c.id)}**${BR}${description(c.title)} | ${stepText} | ${expected} | ${actual} | **Passed**${retried ? `${BR}_passed on retry_` : ''} |`;
 });
 
@@ -91,7 +107,7 @@ const psRows = passed.sort(order).map((c, i) => {
 const head = (title, intro, count) => [
   `# ${title}`, '',
   `_Generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC from the consolidated results in \`${path.basename(folder)}\` plus re-runs._`, '',
-  intro, '', `**${count} test case(s).**`, '',
+  intro, '', ...GLOSSARY, `**${count} test case(s).**`, '',
   '| No | Module | Sub-module | Description | Steps | Expected result | Actual result | Status |',
   '|---|---|---|---|---|---|---|---|'
 ];
@@ -110,3 +126,23 @@ if (passed.length) fs.writeFileSync(path.join(folder, 'TEST_CASES_PASSED.md'), [
   ...psRows, ''].join('\n'));
 console.log(`Passed register: ${passed.length} case(s)`);
 console.log(`Known Defect register: ${defects.length} case(s); Skipped register: ${skipped.length} case(s) -> ${path.relative(process.cwd(), folder)}`);
+
+// ---------- All test cases in one register (user request, 23 Nov 2026), ordered by module and sub-module ----------
+if (passed.length) {
+  const tagged = [[psRows, 0], [kdRows, 1], [skRows, 2]].flatMap(([list, st]) => list.map(row => ({ st, c: row.trim().replace(/^\||\|$/g, '').split('|').map(x => x.trim()) })));
+  tagged.sort((a, b) => a.c[1].localeCompare(b.c[1]) || a.c[2].localeCompare(b.c[2]) || a.st - b.st || a.c[3].localeCompare(b.c[3], 'en', { numeric: true }));
+  const mods = {};
+  for (const { st, c } of tagged) (mods[c[1]] = mods[c[1]] || [0, 0, 0])[st]++;
+  const T = [0, 1, 2].map(k => Object.values(mods).reduce((n, v) => n + v[k], 0));
+  fs.writeFileSync(path.join(folder, 'TEST_CASES_ALL.md'), [
+    '# SCP – All test cases', '',
+    `_Generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC from the consolidated results in \`${path.basename(folder)}\` plus re-runs._`, '',
+    'Every test case of the regression in one register, ordered by module and sub-module. Status: **Passed** = ran and behaved as expected; **Known Defect** = ran and the application did not behave as expected (defect ID given); **Skipped** = not run (reason given).', '', ...GLOSSARY,
+    `**${tagged.length} test cases:** ${T[0]} Passed · ${T[1]} Known Defect · ${T[2]} Skipped.`, '',
+    '| Module | Passed | Known Defect | Skipped | Total |', '|---|---|---|---|---|',
+    ...Object.keys(mods).sort().map(m => `| ${m} | ${mods[m][0]} | ${mods[m][1]} | ${mods[m][2]} | ${mods[m][0] + mods[m][1] + mods[m][2]} |`),
+    `| **Total** | **${T[0]}** | **${T[1]}** | **${T[2]}** | **${tagged.length}** |`, '',
+    '| No | Module | Sub-module | Description | Steps | Expected result | Actual result | Status |', '|---|---|---|---|---|---|---|---|',
+    ...tagged.map(({ c }, i) => `| ${[i + 1, ...c.slice(1)].join(' | ')} |`), ''].join('\n'));
+  console.log(`All test cases register: ${tagged.length} case(s)`);
+}

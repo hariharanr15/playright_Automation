@@ -21,7 +21,6 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
 const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // Run submittals created by the Procurement regression (latest first in the option lists).
 const RUN_SUBMITTAL = /PL[TRS]\d{10}-SUB-P|PL[TRS]\d{10}-SUB/;
-const ENT_SKIP = 'Skipped on user triage 13 Nov 2026: Enterprise requirement not clear yet';
 
 test.describe.configure({ mode: 'serial' });
 test.setTimeout(120 * 60 * 1000); // International Shipments alone needs ~3.5 min per page load (23 Nov 2026)
@@ -31,7 +30,7 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
     // 13 Nov 2026 user triage of the full regression: these cases are recorded as Skipped with the reason, not executed.
     const TRIAGE_SKIP = {
       // SHP-REG-03/06/08/09 run again from 23 Nov 2026 (user: International Shipments back in scope); failures are pending-confirmation defects.
-      'ENT-REG-02': ENT_SKIP, 'ENT-REG-03': ENT_SKIP
+      // ENT-REG-02/03 run again from 23 Nov 2026 (user: run the pending Enterprise cases).
     };
     const runScenario = run.scenario.bind(run);
     run.scenario = async (m, body) => (TRIAGE_SKIP[m.id] ? run.skip(m, TRIAGE_SKIP[m.id]) : runScenario(m, body));
@@ -859,29 +858,61 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
     // ======================= Enterprise =======================
     const ENT = 'Enterprise';
     run.skip(meta('ENT-REG-01', ENT, 'Enterprise counts match Procurement', 'Integration'), 'Covered by the existing Enterprise suite (BUGS-325 oracle)');
+    // 23 Nov 2026 (user: run the pending Enterprise cases): ENT-REG-02 uses a run submittal whose lead time is not confirmed
+    // (the Configuration Options seed: ordered with a PO, lead time not confirmed); ENT-REG-03 compares the CSV
+    // (long format "Metric,Key,Value") with the on-screen Supplier table.
     await run.scenario(meta('ENT-REG-02', ENT, 'Supplier Inbox lists run items', 'Integration', { navPath: [ENT, 'Supplier Inbox'] }), async s => {
-      await s.step(`Enterprise › Supplier Inbox: read the page → at least one run material (Auto Fdi… / Pld…) appears under a section`, async () => {
-        await open('/supplier-inbox', 'Supplier Inbox', ENT); await k.settle(2000);
-        const txt = await main.innerText();
-        // Items are listed by material; the material filter lists every name once, so a run material in a section appears twice.
-        const names = [...new Set(txt.match(/Auto Fdi \d{10}|Pld1102[^\n]*/g) || [])];
-        const hits = names.filter(n => txt.split(n).length - 1 > 1);
-        s.observe(`${names.length} run materials known, ${hits.length} listed in a section: ${hits.slice(0, 4).join(', ')}`);
-        expect(hits.length, 'No run material under any Supplier Inbox section').toBeGreaterThan(0);
+      const seedFile = path.join(__dirname, '..', '..', 'reports', 'cfg-alert-seed.json');
+      const seed = fs.existsSync(seedFile) ? JSON.parse(fs.readFileSync(seedFile, 'utf8')).notConfirmed : null;
+      const heads = async () => (await main.locator('h1,h2,h3,h4,h5,[role=tab]').allInnerTexts()).map(t => t.replace(/\s+/g, ' ').trim()).filter(Boolean);
+      await s.step('Enterprise › Supplier Inbox: open the page → the inbox sections are shown', async () => {
+        await open('/supplier-inbox', 'Supplier Inbox', ENT); await k.settle(3000);
+        const h = await heads();
+        s.observe(`sections: ${h.join(' | ').slice(0, 300)}`);
+        expect(h.some(t => /unconfirmed/i.test(t)), 'No "Unconfirmed lead times" section').toBe(true);
+      });
+      await s.step(`Submittal filter: type the run submittal ${seed ? seed.number : '(seed missing)'} (ordered with a PO, lead time not confirmed) → it is listed under the Unconfirmed lead times section`, async () => {
+        expect(seed, 'Seed submittal file reports/cfg-alert-seed.json is missing').toBeTruthy();
+        const box = main.getByPlaceholder(/SUB-/i).first();
+        await box.fill(seed.number); await box.press('Enter').catch(() => {}); await k.settle(3500);
+        // Sections are collapsed (▼) and show counts: read the Unconfirmed Lead Times count, then expand it.
+        const flat = async () => (await main.innerText()).replace(/\s+/g, ' ');
+        const txt = await flat();
+        const count = Number((txt.match(/Unconfirmed Lead Times .*?(\d+) SUBMITTALS/i) || [])[1] || 0);
+        const head = main.getByText(/^Unconfirmed Lead Times$/i).first();
+        await head.click().catch(() => {}); await k.settle(2000);
+        let open1 = await flat();
+        if (!open1.includes(seed.number)) { await main.getByText('▼').first().click().catch(() => {}); await k.settle(2000); open1 = await flat(); }
+        const sec = open1.indexOf('Unconfirmed Lead Times'); const next = open1.indexOf('Overdue Items', sec);
+        const part = open1.slice(sec, next > sec ? next : sec + 1500);
+        s.observe(`Unconfirmed Lead Times after the filter: ${count} submittal(s); expanded: ${part.slice(0, 500)}`);
+        expect(count, 'Unconfirmed Lead Times lists no submittal for the run submittal').toBeGreaterThan(0);
+        expect(part.includes(seed.number), `Run submittal ${seed.number} is not inside the Unconfirmed Lead Times section`).toBe(true);
       });
     });
-    await run.scenario(meta('ENT-REG-03', ENT, 'Download CSV rows = table rows', 'Positive', { navPath: [ENT, 'Enterprise View'] }), async s => {
-      await s.step(`Enterprise › Enterprise View: click "Download CSV" → CSV data rows equal the Supplier table rows (table with "% of total")`, async () => {
-        await open('/enterprise-view', 'Enterprise View', ENT); await k.settle(2000);
-        const supTable = main.locator('table').filter({ has: page.getByRole('columnheader', { name: '% of total' }) }).first();
-        const rows = await supTable.locator('tbody tr').count();
+    await run.scenario(meta('ENT-REG-03', ENT, 'Download CSV matches the table', 'Positive', { navPath: [ENT, 'Enterprise View'] }), async s => {
+      let csv = [];
+      const supTable = () => main.locator('table').filter({ has: page.getByRole('columnheader', { name: '% of total' }) }).first();
+      await s.step('Enterprise › Enterprise View: click "Download CSV" → a CSV file with the columns Metric, Key, Value is downloaded', async () => {
+        await open('/enterprise-view', 'Enterprise View', ENT); await k.settle(3000);
         const file = await download(() => main.getByRole('button', { name: 'Download CSV' }).click());
-        const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/).filter(l => l.trim());
-        s.observe(`CSV ${lines.length - 1} rows (${lines[0].slice(0, 120)}), Supplier table ${rows}`);
-        expect(lines.length - 1, 'CSV rows differ from the Supplier table rows').toBe(rows);
+        const keep = path.join(__dirname, '..', '..', 'reports', 'reruns-2026-11-23', `enterprise-view-${RUN}.csv`);
+        fs.copyFileSync(file, keep);
+        csv = fs.readFileSync(file, 'utf8').split(/\r?\n/).filter(l => l.trim()).map(l => (l.match(/("([^"]|"")*"|[^,]*)(,|$)/g) || []).map(c => c.replace(/,$/, '').replace(/^"|"$/g, '').replace(/""/g, '"').trim())).map(r => (r.length > 3 && r[r.length - 1] === '' ? r.slice(0, -1) : r));
+        const metrics = [...new Set(csv.slice(1).map(r => r[0]))];
+        s.observe(`${csv.length - 1} rows; header "${csv[0].join(',')}"; metrics (${metrics.length}): ${metrics.join(' | ').slice(0, 300)}`);
+        expect(csv[0].map(c => c.toLowerCase())).toEqual(['metric', 'key', 'value']);
       });
-      await s.step(`Enterprise View Supplier table: add up the "% of total" values → sum is about 100 (within 1.5)`, async () => {
-        const pcts = (await main.locator('table').filter({ has: page.getByRole('columnheader', { name: '% of total' }) }).first().locator('tbody tr').allInnerTexts()).map(t => Number((t.match(/([\d.]+)\s*%/) || [])[1])).filter(n => !Number.isNaN(n));
+      await s.step('Compare with the Supplier table (with "% of total") → every supplier in the table is in the CSV', async () => {
+        const names = (await supTable().locator('tbody tr').evaluateAll(rows => rows.map(r => (r.querySelector('td') || {}).innerText || ''))).map(t => t.replace(/\s+/g, ' ').trim()).filter(Boolean);
+        const keys = new Set(csv.slice(1).map(r => r[1].replace(/\s+/g, ' ').trim().toLowerCase()));
+        const missing = names.filter(n => !keys.has(n.toLowerCase()));
+        s.observe(`Supplier table ${names.length} row(s); missing from the CSV: ${missing.length}${missing.length ? ` (${missing.slice(0, 6).join(', ')})` : ''}`);
+        expect(missing, 'Suppliers shown in the table but missing from the CSV').toEqual([]);
+      });
+      await s.step('Enterprise View Supplier table: add up the "% of total" values → sum is about 100 (within 1.5)', async () => {
+        const pcts = (await supTable().locator('tbody tr').allInnerTexts()).map(t => Number((t.match(/([\d.]+)\s*%/) || [])[1])).filter(n => !Number.isNaN(n));
+        s.observe(`${pcts.length} values, sum ${pcts.reduce((a, b) => a + b, 0).toFixed(2)}`);
         if (pcts.length) expect(Math.abs(pcts.reduce((a, b) => a + b, 0) - 100)).toBeLessThan(1.5);
       });
     });

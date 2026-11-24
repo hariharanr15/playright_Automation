@@ -83,6 +83,8 @@ const S = {
   assign: meta('TC-12', 'Procurement Log', 'Assign Responsible user', ['Procurement Log']),
   bulk: meta('TC-13', 'Procurement Log', 'Bulk Edit Spec Description: Confirm, then Roll Back validation', ['Procurement Log']),
   alert: meta('TC-14', 'Procurement Log', 'Create Procurement alert', ['Procurement Log']),
+  entInbox: meta('TC-14B', 'Enterprise', 'Supplier Inbox lists the run delivery under Pending Pre-Shipping Checklists', ['Enterprise', 'Supplier Inbox']),
+  shipment: meta('TC-14C', 'International Shipments', 'Log an international shipment for the run submittal', ['Enterprise', 'Enterprise Shipments']),
   supplierApproval: meta('TC-15', 'Supplier', 'Logout Project Admin, login Supplier, Supplier approval', ['Procurement Log']),
   subconApproval: meta('TC-16', 'Subcontractor', 'Logout Supplier, login Subcontractor, Subcontractor approval', ['Procurement Log']),
   delivery: meta('TC-17', 'Procurement Log', 'Logout Subcontractor, login Project Admin, complete deliveries', ['Procurement Log']),
@@ -93,6 +95,7 @@ const S = {
   fdiView: meta('TC-22', 'First Delivery Inspections', 'Filter and view the submitted inspection', ['First Delivery Inspections']),
   dashboard: meta('TC-23', 'Management Dashboard', 'Previous vs current KPI values', ['Management Dashboard']),
   inbox: meta('TC-23B', 'Alerts / Notifications / Tasks', 'Alerts, Notifications and Tasks of the run', ['Management Dashboard']),
+  entAfter: meta('TC-24B', 'Enterprise', 'Enterprise after the flow: checklist no longer pending, run supplier in Enterprise View', ['Enterprise', 'Enterprise View']),
   analytics: meta('TC-24', 'Analytics', 'Analytics after the flow (every page, compared with TC-02B) and reference data / configuration', ['Analytics']),
   report: meta('TC-25', 'Reporting', 'Detailed execution report generated', ['Management Dashboard']),
   logout: meta('TC-26', 'Authentication', 'Logout the active account', ['Management Dashboard'])
@@ -221,7 +224,7 @@ test('SCP – End-to-end smoke', async ({ page }) => {
         expect(listed, `${sub.number} listed (${count})`).toBe(true);
         await k.openSubmittal(sub.description);
       }
-      await page.getByRole('button', { name: 'Add Component', exact: true }).last().waitFor({ timeout: 30000 });
+      await k.addComponentButton().waitFor({ timeout: 30000 });
       await k.settle(1500);
     };
     // TC-25: project + location are selected once per login and kept in the run context (v2.siteContext); before a
@@ -238,19 +241,18 @@ test('SCP – End-to-end smoke', async ({ page }) => {
       const { listed, count } = await kit.findSubmittal(sub.number);
       expect(listed, `${sub.number} listed (${count})`).toBe(true);
       await k.openSubmittal(sub.description);
-      await page.getByRole('button', { name: 'Add Component', exact: true }).last().waitFor({ timeout: 30000 });
+      await k.addComponentButton().waitFor({ timeout: 30000 });
       await k.settle(1500);
     };
     const reopenComponent = async m => {
       await reopenDrawer();
-      await k.componentRow(m.name).getByRole('cell', { name: m.name }).click();
-      await page.getByRole('button', { name: '+ Log Delivery' }).last().waitFor({ timeout: 30000 });
-      await k.settle(1500);
+      await k.openComponent(m.name);
+      await k.settle(500);
     };
     const atComponent = async m => {
       await keepSite(`Component ${m.name}`);
       await drawer();
-      const cell = () => k.componentRow(m.name).getByRole('cell', { name: m.name });
+      const cell = () => k.componentRow(m.name);
       // The submittal drawer sometimes opens with an empty components table ("No data found", 20 Nov 2026 TC-16):
       // reopen it once through the Procurement Log menu and search (no page reload: that resets the header site).
       if (!(await cell().isVisible({ timeout: 15000 }).catch(() => false))) {
@@ -259,9 +261,8 @@ test('SCP – End-to-end smoke', async ({ page }) => {
         await keepSite(`Component ${m.name} (drawer reopened)`);
         await reopenDrawer();
       }
-      await cell().click();
-      await page.getByRole('button', { name: '+ Log Delivery' }).last().waitFor({ timeout: 30000 });
-      await k.settle(1500);
+      await k.openComponent(m.name);
+      await k.settle(500);
     };
 
     const PA = { email: config.username, password: config.password, role: 'Project Admin' };
@@ -630,7 +631,7 @@ test('SCP – End-to-end smoke', async ({ page }) => {
       // ================= TC-10 Components and lead time =================
       await scenario('components', ['secondMaterial'], async s => {
         for (const m of M) {
-          await s.step(`Drawer › "Add Component": material ${m.name}, Date Req. on Site ${ddmmyyyy(m.roj)}, QTY ${m.qty}, Value ${m.value}, PO ${m.po}, PO Date ${ddmmyyyy(PO_DAY)} → toast "Schedule added successfully!", status "Ordered"`, async () => {
+          await s.step(`Submittal › "Add component": material ${m.name}, Date Req. on Site ${ddmmyyyy(m.roj)}, QTY ${m.qty}, Value ${m.value}, PO ${m.po}, PO Date ${ddmmyyyy(PO_DAY)} → toast "Schedule added successfully!", status "Ordered"`, async () => {
             await drawer();
             if (await k.componentRow(m.name).count()) s.observe('Component already created by the first attempt – not created again');
             else await k.addComponent({ material: m.name, rojDate: m.roj, qty: m.qty, value: m.value, po: m.po, poDate: PO_DAY });
@@ -639,7 +640,7 @@ test('SCP – End-to-end smoke', async ({ page }) => {
         }
         await s.step(`Submittal → exactly ${M.length} components, one per material`, async () => {
           await drawer();
-          const rows = page.getByRole('row').filter({ has: page.getByRole('checkbox', { name: 'Select this component' }) });
+          const rows = k.componentRows();
           expect(await rows.count(), 'Components on the submittal').toBe(M.length);
           for (const m of M) {
             expect(await k.componentRow(m.name).count(), `${m.name} component`).toBe(1);
@@ -647,20 +648,21 @@ test('SCP – End-to-end smoke', async ({ page }) => {
           }
         }, { critical: true });
         for (const m of M) {
-          await s.step(`${m.name}: lead time shown by the application → ${m.weeks} week(s) (supplier mapping); Expected Delivery = PO Date + ${m.weeks} week(s) = ${ddmmyyyy(m.expected)}`, async () => {
+          // Since the staging release of 23 Nov 2026 the component row shows no "Expected Delivery" date; the expected
+          // date (PO Date + lead time) is used as the booking date in TC-10B and checked there as "Next delivery".
+          await s.step(`${m.name}: lead time shown by the application → ${m.weeks} week(s) (supplier mapping); expected delivery = PO Date + ${m.weeks} week(s) = ${ddmmyyyy(m.expected)} (booked in TC-10B)`, async () => {
             await drawer();
             const lt = await kit.leadTime(m.name);
-            s.observe(`Lead time ${lt.weeks}, status ${lt.status}, expected ${lt.expected}, required ${lt.required}`);
+            s.observe(`Lead time ${lt.weeks} week(s), "${lt.status}", next delivery "${lt.expected || '—'}", ROJ ${lt.required}`);
             expect(lt.weeks).toBe(String(m.weeks));
-            expect(lt.expected).toBe(ddmmyyyy(m.expected));
           }, { critical: true });
-          await s.step(`${m.name}: "Lead Time" › ${m.weeks} week(s), tick confirm, "Submit" → "Lead time status" exactly "Confirmed"; Expected Delivery (delivery schedule) still ${ddmmyyyy(m.expected)}`, async () => {
+          await s.step(`${m.name}: component "⋯" › "Lead time" › ${m.weeks} week(s), tick confirm, "Submit" → lead time shows exactly "Confirmed" and still ${m.weeks} week(s)`, async () => {
             await drawer();
             if ((await kit.leadTime(m.name)).status !== 'Confirmed') await kit.confirmLeadTime(m.name, m.weeks);
             const lt = await kit.leadTime(m.name);
-            s.observe(`Lead time status "${lt.status}", expected ${lt.expected}`);
+            s.observe(`Lead time ${lt.weeks} week(s), "${lt.status}"`);
             expect(lt.status).toBe('Confirmed');
-            expect(lt.expected).toBe(ddmmyyyy(m.expected));
+            expect(lt.weeks).toBe(String(m.weeks));
           }, { critical: true, evidence: true });
           await s.step(`${m.name}: business rule → Expected Delivery ${ddmmyyyy(m.expected)} on or before Date Required on Site ${ddmmyyyy(m.roj)}; not "At Risk"`, async () => {
             const lt = await kit.leadTime(m.name);
@@ -674,12 +676,14 @@ test('SCP – End-to-end smoke', async ({ page }) => {
       // ================= TC-10B Delivery bookings =================
       await scenario('booking', ['components'], async s => {
         for (const m of M) {
-          await s.step(`${m.name} › "+ Log Delivery": delivery date ${ddmmyyyy(m.expected)} (confirmed expected date), first location of ${SITE}, item ${m.name}, QTY ${m.qty}, "Add" → booking awaits "Pre Shipping Info"`, async () => {
+          await s.step(`${m.name} › "⋯" › "Open component" › "Log delivery": delivery date ${ddmmyyyy(m.expected)} (confirmed expected date), first location of ${SITE}, item ${m.name}, QTY ${m.qty}, "Add" → the delivery offers "Pre-shipping info"`, async () => {
             await atComponent(m);
             if (await kit.visibleDeliveries().count() || await kit.deliveryRow().count()) { s.observe('Delivery already logged by the first attempt – not logged again'); return; }
             m.delivery = await kit.logDelivery({ material: m.name, qty: m.qty, date: m.expected, tag: `${RUN}-${m.key}` });
           }, { critical: true, evidence: true });
-          await s.step(`${m.name}: reopen the component → exactly one booking, dated ${ddmmyyyy(m.expected)}, on the run submittal`, async () => {
+          await s.step(`${m.name}: reopen the component → exactly one booking, dated ${ddmmyyyy(m.expected)}, on the run submittal; the submittal shows it as "Next delivery"`, async () => {
+            await reopenDrawer();
+            expect((await kit.leadTime(m.name)).expected, 'Next delivery on the component row').toBe(ddmmyyyy(m.expected));
             await reopenComponent(m);
             expect(await kit.visibleDeliveries().count(), 'One booking').toBe(1);
             expect(await kit.deliveryRow().innerText()).toContain(ddmmyyyy(m.expected));
@@ -729,12 +733,13 @@ test('SCP – End-to-end smoke', async ({ page }) => {
 
       // ================= TC-12 Assign Responsible =================
       await scenario('assign', ['submittal'], async s => {
-        await s.step(`Run submittal › row "⋮" › "Assign Responsible" › "Choose user": ${maskEmail(RESPONSIBLE)}, "Assign" once → toast "Responsible user assigned."`, async () => {
+        await s.step(`Run submittal › row "⋮" › "Assign Responsible" → "Responsible — <submittal>" › "Add a Responsible person": ${maskEmail(RESPONSIBLE)}, "Add" once → listed as Responsible; "Done"`, async () => {
           R.responsible = await v2.assignResponsible(sub.number, RESPONSIBLE);
           s.observe(`Chosen "${R.responsible.label.replace(/[\w.+-]+@[\w.-]+/, x => maskEmail(x))}"`);
         }, { critical: true, evidence: true });
         await s.step(`Procurement Log: the run submittal → "Responsible" shows the assigned user`, async () => {
-          const value = await v2.rowValue(sub.number, 'Responsible');
+          // Since the 23 Nov 2026 (evening) release the cell also holds an "Edit" (or "Assign") button.
+          const value = String(await v2.rowValue(sub.number, 'Responsible')).replace(/\s+(Edit|Assign)\s*$/, '');
           s.observe(`Responsible "${value}"`);
           expect(norm(value)).toBe(norm(R.responsible.name));
           record('Procurement Log', 'Responsible user', sub.number, R.responsible.name, 'Project Admin', maskEmail(RESPONSIBLE));
@@ -886,14 +891,84 @@ test('SCP – End-to-end smoke', async ({ page }) => {
         });
       });
 
+      // ================= TC-14B / TC-14C Enterprise and International Shipments (added 23 Nov 2026) =================
+      // Supplier Inbox: a section is collapsed (▼) and shows counts; filter by the run submittal, expand, read the rows.
+      const entMain = page.getByRole('main');
+      const flatText = async () => (await entMain.innerText()).replace(/\s+/g, ' ');
+      const inboxFor = async (number, section) => {
+        await k.menu('Supplier Inbox', 'Enterprise').catch(() => null);
+        if (!/\/supplier-inbox/.test(page.url())) await page.goto('/supplier-inbox', { waitUntil: 'domcontentloaded' });
+        await k.settle(2500);
+        await expect.poll(async () => /\d+ SUBMITTALS/i.test(await flatText()), { timeout: 30000 }).toBe(true);
+        const box = entMain.getByPlaceholder(/SUB-/i).first();
+        await box.fill(number); await box.press('Enter').catch(() => {}); await k.settle(3500);
+        const txt = await flatText();
+        const count = Number((txt.match(new RegExp(`${section} .*?(\\d+) SUBMITTALS`, 'i')) || [])[1] || 0);
+        const head = entMain.getByText(new RegExp(`^${section}$`, 'i')).first();
+        let open = txt;
+        for (let i = 0; i < 2 && count && !open.slice(open.indexOf(section), open.indexOf(section) + 1500).includes(number); i++) { await head.click().catch(() => {}); await k.settle(2000); open = await flatText(); }
+        const at = open.indexOf(section); const part = open.slice(at, at + 1500);
+        return { count, listed: part.includes(number), part: part.slice(0, 400) };
+      };
+      await scenario('entInbox', ['booking'], async s => {
+        await s.step(`Enterprise › Supplier Inbox: Submittal filter "${sub.number}" → the run delivery (booked, checklist not yet filled) is listed under "Pending Pre-Shipping Checklists"`, async () => {
+          const r = await inboxFor(sub.number, 'Pending Pre-Shipping Checklists');
+          s.observe(`Pending Pre-Shipping Checklists: ${r.count} submittal(s); listed: ${r.listed} · ${r.part.slice(0, 300)}`);
+          expect(r.count, 'Pending Pre-Shipping Checklists has no submittal for the run').toBeGreaterThan(0);
+          expect(r.listed, `Run submittal ${sub.number} not inside Pending Pre-Shipping Checklists`).toBe(true);
+          R.inboxPending = r.count;
+        }, { evidence: true });
+      });
+      // Enterprise Shipments › "+ Log Shipment" for the run submittal; the International Shipments list can need ~200 s to load.
+      const fieldAfter = async (scope, label, value) => {
+        const el = scope.getByText(new RegExp(`^${esc(label)}\\s*\\*?$`)).first().locator('xpath=following::*[self::input or self::textarea][1]');
+        await el.fill(String(value));
+      };
+      await scenario('shipment', ['submittal'], async s => {
+        await s.step(`Enterprise › Enterprise Shipments › "+ Log Shipment": Project ${config.projectName}, Submittal ${sub.number}, Manufacturer "Mfr ${RUN}", country "South Korea", Container # "C${RUN}", ports Busan → Chennai, "Log shipment" → toast "Shipment logged."`, async () => {
+          await k.menu('Enterprise Shipments', 'Enterprise').catch(() => null);
+          if (!/\/enterprise-shipments/.test(page.url())) await page.goto('/enterprise-shipments', { waitUntil: 'domcontentloaded' });
+          await k.settle(2500);
+          await entMain.getByRole('button', { name: /Log Shipment/i }).first().click(); await k.settle(800);
+          const dlg = page.locator('div.shadow-xl').filter({ has: page.getByRole('button', { name: 'Log shipment', exact: true }) }).last();
+          const sels = dlg.locator('select');
+          await sels.nth(0).selectOption({ label: (await sels.nth(0).locator('option').allInnerTexts()).find(t => t.includes(config.projectName)) });
+          await expect.poll(async () => sels.nth(1).locator('option').count(), { timeout: 60000 }).toBeGreaterThan(1);
+          const opt = (await sels.nth(1).locator('option').allInnerTexts()).find(t => t.startsWith(sub.number));
+          expect(opt, `Run submittal ${sub.number} not offered in Log Shipment`).toBeTruthy();
+          await sels.nth(1).selectOption({ label: opt });
+          await fieldAfter(dlg, 'Manufacturer name', `Mfr ${RUN}`);
+          await fieldAfter(dlg, 'Manufacturer country', 'South Korea');
+          await fieldAfter(dlg, 'Container #', `C${RUN}`);
+          await fieldAfter(dlg, 'Port of origin', 'Busan'); await fieldAfter(dlg, 'Port of destination', 'Chennai');
+          await page.getByRole('button', { name: 'Log shipment', exact: true }).click();
+          await expect(page.getByRole('status').filter({ hasText: 'Shipment logged.' }).first()).toBeVisible({ timeout: 15000 });
+          record('International Shipments', 'Shipment', sub.number, `Container C${RUN}`, 'Project Admin', 'Busan to Chennai');
+        }, { critical: true, evidence: true });
+        await s.step(`Enterprise Shipments: search "${sub.number}" → a row for the run submittal is listed`, async () => {
+          await page.goto('/enterprise-shipments', { waitUntil: 'domcontentloaded' }); await k.settle(2500);
+          await entMain.getByPlaceholder(/^Search submittal/).fill(sub.number); await k.settle(2000);
+          const row = entMain.locator('tbody tr').filter({ hasText: sub.number }).first();
+          await expect(row).toBeVisible({ timeout: 30000 });
+          s.observe((await row.innerText()).replace(/\s+/g, ' ').slice(0, 200));
+        });
+        await s.step(`International Shipments (the list can need ~200 s): the run submittal ${sub.number} is listed`, async () => {
+          const started = Date.now();
+          await page.goto('/international-shipments', { waitUntil: 'domcontentloaded' });
+          await expect(page.getByText('Total International').first()).toBeVisible({ timeout: 360000 });
+          await expect.poll(async () => (await flatText()).includes(sub.number), { timeout: 60000 }).toBe(true);
+          s.observe(`Listed after ${Math.round((Date.now() - started) / 1000)} s`);
+        });
+      });
+
       // ================= TC-15 Supplier approval =================
       await scenario('supplierApproval', ['booking'], async s => {
         await logoutAs(s, PA);
         await loginAs(s, SUP, 'Supplier');
         for (const m of M) {
           await s.step(`Supplier: Procurement Log › ${sub.number} › ${m.name} → its booking is listed`, () => atComponent(m), { critical: true });
-          await s.step(`Supplier: ${m.name} booking › "Pre Shipping Info": comment and YES for every question, supplier note, "Confirm Checklist" → toast "Shipping Details updated successfully!"`, async () => {
-            if ((await kit.deliveryIcons()).includes('Approve Pre-Shipping Checklist')) { s.observe('Checklist already confirmed by the first attempt'); return; }
+          await s.step(`Supplier: ${m.name} booking › "Delivery actions" › "Pre-shipping info": comment and YES for every question, supplier note, "Confirm Checklist" → toast "Shipping Details updated successfully!"`, async () => {
+            if ((await kit.deliveryIcons()).includes('Approve pre-shipping checklist')) { s.observe('Checklist already confirmed by the first attempt'); return; }
             const r = await kit.fillChecklist(`${RUN}-${m.key}`);
             s.observe(`${r.answered} questions answered, ${r.comments} comments`);
           }, { critical: true, evidence: true });
@@ -901,7 +976,7 @@ test('SCP – End-to-end smoke', async ({ page }) => {
             await reopenComponent(m);
             m.iconsAfterSupplier = await kit.deliveryIcons();
             s.observe(`Actions: ${m.iconsAfterSupplier.join(', ')}`);
-            expect(m.iconsAfterSupplier).toContain('Approve Pre-Shipping Checklist');
+            expect(m.iconsAfterSupplier).toContain('Approve pre-shipping checklist');
           }, { critical: true });
         }
       });
@@ -937,15 +1012,15 @@ test('SCP – End-to-end smoke', async ({ page }) => {
         for (const m of M) {
           await s.step(`Subcontractor: Procurement Log › ${sub.number} › ${m.name} → its booking awaits approval`, async () => {
             await atComponent(m);
-            expect(await kit.deliveryIcons()).toEqual(expect.arrayContaining(['Approve Pre-Shipping Checklist']));
+            expect(await kit.deliveryIcons()).toEqual(expect.arrayContaining(['Approve pre-shipping checklist']));
           }, { critical: true });
-          await s.step(`Subcontractor: ${m.name} booking › "Approve Pre-Shipping Checklist": comment, "Approve" → toast "Checklist Generated Successfully!"`, () => kit.approveChecklist(`${RUN}-${m.key}`), { critical: true, evidence: true });
-          await s.step(`Subcontractor: ${m.name} booking status (component reopened) → "Approved"`, async () => {
+          await s.step(`Subcontractor: ${m.name} booking › "Delivery actions" › "Approve pre-shipping checklist": comment, "Approve" → toast "Checklist Generated Successfully!"`, () => kit.approveChecklist(`${RUN}-${m.key}`), { critical: true, evidence: true });
+          await s.step(`Subcontractor: ${m.name} booking status (component reopened) → "Pre-shipping checklist (approved)"`, async () => {
             await reopenComponent(m);
             m.iconsAfterSubcontractor = await kit.deliveryIcons();
             s.observe(`Actions: ${m.iconsAfterSubcontractor.join(', ')}`);
-            expect(m.iconsAfterSubcontractor).toContain('Approved');
-            expect(m.iconsAfterSubcontractor).not.toContain('Approve Pre-Shipping Checklist');
+            expect(m.iconsAfterSubcontractor).toContain('Pre-shipping checklist (approved)');
+            expect(m.iconsAfterSubcontractor).not.toContain('Approve pre-shipping checklist');
           }, { critical: true });
         }
       });
@@ -955,28 +1030,27 @@ test('SCP – End-to-end smoke', async ({ page }) => {
         await logoutAs(s, SUBCON);
         await loginAs(s, PA, 'Admin');
         for (const m of M) {
-          await s.step(`${m.name}: lead time reconfirmed → status "Confirmed", Expected Delivery ${ddmmyyyy(m.expected)}`, async () => {
+          await s.step(`${m.name}: lead time reconfirmed → "Confirmed"; next delivery ${ddmmyyyy(m.expected)}`, async () => {
             await drawer();
             const lt = await kit.leadTime(m.name);
             expect(lt.status).toBe('Confirmed');
             expect(lt.expected).toBe(ddmmyyyy(m.expected));
           }, { critical: true });
-          await s.step(`${m.name}: booking › supplier and subcontractor approvals done ("Approved", no pending checklist action); component not "Delivered" before its Actual Delivery Date is entered`, async () => {
+          await s.step(`${m.name}: booking › supplier and subcontractor approvals done ("Pre-shipping checklist (approved)", no pending checklist action); component not "Received" before its Actual Delivery Date is entered`, async () => {
             await drawer();
             m.statusBeforeActual = await k.componentStatus(m.name);
             s.observe(`Component status before the Actual Delivery Date: "${m.statusBeforeActual}"`);
-            expect(m.statusBeforeActual, 'Not Delivered while the Actual Delivery Date is empty').not.toBe('Delivered');
+            expect(m.statusBeforeActual, 'Not Received while the Actual Delivery Date is empty').not.toBe('Received');
             await atComponent(m);
             const icons = await kit.deliveryIcons();
             s.observe(`Actions: ${icons.join(', ')}`);
-            expect(icons).toContain('Approved');
-            expect(icons).not.toContain('Pre Shipping Info');
-            expect(icons).not.toContain('Approve Pre-Shipping Checklist');
+            expect(icons).toContain('Pre-shipping checklist (approved)');
+            expect(icons).not.toContain('Approve pre-shipping checklist');
           }, { critical: true });
-          await s.step(`${m.name}: booking › "Edit" › Actual Delivery Date ${TODAY}, "Update" → form closes`, () => kit.setActualDate(today), { critical: true });
-          await s.step(`${m.name}: booking › "Update Shipping Info": mode "Other", reference, origin, note → toast "Shipping Details updated successfully!"`, () => kit.shippingInfo(`${RUN}-${m.key}`), { critical: true, evidence: true });
+          await s.step(`${m.name}: booking › "Receive" › Actual Date Of Delivery ${TODAY}, "Update" → the delivery moves to "Received" with a receipt number`, async () => { m.receipt = (await kit.setActualDate(today)).receipt; s.observe(`Receipt ${m.receipt}`); }, { critical: true });
+          await s.step(`${m.name}: received delivery › "Delivery actions" › "Update shipping info": mode "Other", reference, origin, note → toast "Shipping Details updated successfully!"`, () => kit.shippingInfo(`${RUN}-${m.key}`), { critical: true, evidence: true });
           let shortage;
-          await s.step(`${m.name}: booking › "Update Delivery Condition": Goods ${m.qty}, Damage 0 → toast "Delivery Conditions updated successfully!"`, async () => {
+          await s.step(`${m.name}: received delivery › "Delivery actions" › "Update delivery condition": Goods ${m.qty}, Damage 0 → toast "Delivery Conditions updated successfully!"`, async () => {
             await atComponent(m);
             ({ shortage } = await kit.deliveryConditions({ good: m.qty, damage: 0 }));
             m.shortage = shortage;
@@ -991,7 +1065,7 @@ test('SCP – End-to-end smoke', async ({ page }) => {
       // ================= TC-17B GRN =================
       await scenario('grn', ['delivery'], async s => {
         for (const m of M) {
-          await s.step(`${m.name}: booking › "Generate GRN" → toast "GRN Generated Successfully!"; GRN PDF captured`, async () => {
+          await s.step(`${m.name}: received delivery › "Delivery actions" › "Generate GRN" → toast "GRN Generated Successfully!"; GRN PDF captured`, async () => {
             await atComponent(m);
             if (!(await kit.deliveryIcons()).includes('Generate GRN')) throw new Error('"Generate GRN" is not offered on the booking');
             if (m.grnRequested) { s.observe('GRN already requested by the first attempt – not generated again'); return; }
@@ -999,7 +1073,7 @@ test('SCP – End-to-end smoke', async ({ page }) => {
             m.grn = await kit.generateGrn(`${RUN}-${m.key}`);
             s.observe(`${m.grn.note}${m.grn.name ? ` · ${m.grn.name}` : ''}`);
           }, { critical: true, evidence: true });
-          await s.step(`${m.name}: GRN PDF (booking › files › ⋮ › Download) → "GOODS RECEIVED NOTE" with a Receipt No., PO ${m.po}, shipping ${RUN}-${m.key}-SHIP, supplier ID, received ${TODAY}, item ${m.name} × ${m.qty}`, async () => {
+          await s.step(`${m.name}: GRN PDF (submittal › Files › GRN entry of the receipt › Download) → "GOODS RECEIVED NOTE" with a Receipt No., PO ${m.po}, shipping ${RUN}-${m.key}-SHIP, supplier ID, received ${TODAY}, item ${m.name} × ${m.qty}`, async () => {
             if (!m.grn?.file) { await atComponent(m); m.grn = { ...(m.grn || {}), ...(await kit.downloadGrn(`${RUN}-${m.key}`)) }; }
             const g = m.grn;
             s.observe(`${g.name}: Receipt ${g.receipt} · PO ${g.po} · shipping ${g.shipping} · supplier ${g.supplier} · received ${g.received}`);
@@ -1014,14 +1088,15 @@ test('SCP – End-to-end smoke', async ({ page }) => {
             expect(g.lines.slice(item, item + 3).join(' '), 'GRN item quantity').toMatch(new RegExp(`(^|\\s)${m.qty}(\\.0+)?\\s`));
             record('Procurement Log', 'GRN', g.receipt, `${g.name} · ${m.name} × ${m.qty}`, 'Project Admin', `${sub.number} · booking ${m.schedule} · ${path.relative(outDir, g.file)}`);
           }, { evidence: true });
-          await s.step(`${m.name}: component view → QTY Received ${m.qty}, Remaining QTY 0, Value Delivered recorded; status "Delivered"`, async () => {
+          await s.step(`${m.name}: component view → received in good order ${m.qty}, nothing remaining, Value delivered recorded; component status "Received"`, async () => {
+            await atComponent(m); // the GRN download ends on the submittal page (Files section)
             const c = await kit.componentSummary();
             s.observe(JSON.stringify(c));
             expect(c['QTY Received']).toMatch(new RegExp(`^${m.qty}\\b`));
             expect(c['Remaining QTY To Be Delivered']).toMatch(/^0\b/);
             m.valueDelivered = { text: c['Value Delivered'], amount: Number((c['Value Delivered'] || '').replace(/[^\d.]/g, '')), currency: (c['Value Delivered'] || '').replace(/[\d.,\s]/g, '') };
             await drawer();
-            await expect.poll(() => k.componentStatus(m.name), { timeout: 30000 }).toBe('Delivered');
+            await expect.poll(() => k.componentStatus(m.name), { timeout: 30000 }).toBe('Received');
           }, { evidence: true });
         }
         // Business rule (confirmed 12 Nov 2026): "Delivered" only once the required actual date is entered on the booking.
@@ -1030,7 +1105,7 @@ test('SCP – End-to-end smoke', async ({ page }) => {
           const v = await kit.submittalRowValues(sub.number, sub.description);
           R.submittal.finalStatus = v.Status; R.submittal.actualDeliveryDate = v['Actual Delivery Date'];
           s.observe(`Before the actual date: ${M.map(m => `${m.name} "${m.statusBeforeActual}"`).join(', ')} · after: submittal "${v.Status}" · grid column Actual Delivery Date "${v['Actual Delivery Date']}" (information only)`);
-          for (const m of M) expect(m.statusBeforeActual, `${m.name} not Delivered before its actual date`).not.toBe('Delivered');
+          for (const m of M) expect(m.statusBeforeActual, `${m.name} not Received before its actual date`).not.toBe('Received');
           expect(v.Status).toBe('Delivered');
         });
         await s.step(`User Management: ${maskEmail(R.newUser.email)} → ${subconLogin === 'invite' ? '"Active"' : 'listed (invite not accepted: existing Subcontractor account used)'}, role Subcontractor, organisation ${R.newUser.organization}`, async () => {
@@ -1081,7 +1156,7 @@ test('SCP – End-to-end smoke', async ({ page }) => {
         }, { critical: true, evidence: true });
         await s.step(`FDI record → material, supplier, submittal and delivery date ${TODAY} match the run; status "Auditor Not Yet Assigned" (or already assigned/completed by the first attempt)`, async () => {
           const r = R.fdi.record;
-          expect(norm(r.material)).toBe(norm(M[0].name)); expect(norm(r.supplier)).toBe(norm(R.supplier.name)); expect(norm(r.submittal)).toBe(norm(sub.number));
+          expect(norm(r.material).startsWith(norm(M[0].name)), `material cell "${r.material}" starts with ${M[0].name} (since 24 Nov the cell also shows the FDI question set)`).toBe(true); expect(norm(r.supplier)).toBe(norm(R.supplier.name)); expect(norm(r.submittal)).toBe(norm(sub.number));
           expect(r.deliveryDate).toBe(TODAY);
           expect(r.status).toMatch(/Auditor Not Yet Assigned|Awaiting Inspection Completion|Inspection Completed/i);
         }, { critical: true });
@@ -1120,10 +1195,11 @@ test('SCP – End-to-end smoke', async ({ page }) => {
           const values = await (await v2.fdi.reportQuestions()).evaluateAll(els => els.map(e => e.value));
           expect(values).toEqual(F.answers);
         }, { critical: true });
-        await s.step('"Submit Inspection" (once) → status "inspection completed"', async () => {
+        await s.step('"Inspection outcome": product matches "Yes", quantity damaged 0, a completed status; "Submit Inspection" (once) → status "inspection completed"', async () => {
           if (F.done) return;
           F.done = true;
           await v2.fdi.submit();
+          if (v2.fdi.lastOutcome) s.observe(`Inspection outcome: match "${v2.fdi.lastOutcome.match?.value}" (options ${(v2.fdi.lastOutcome.match?.options || []).join(' / ')}), status "${v2.fdi.lastOutcome.status?.value}" (options ${(v2.fdi.lastOutcome.status?.options || []).join(' / ')})`);
         }, { critical: true, evidence: true });
         await s.step(`FDI list → the run record shows "Inspection Completed", inspector ${maskEmail(PA.email)}`, async () => {
           const data = await v2.fdi.rowData(await fdiRow());
@@ -1358,6 +1434,25 @@ test('SCP – End-to-end smoke', async ({ page }) => {
           const cur = (R.after?.categories?.[R.category.name] || {}).currency;
           s.observe(`Dashboard spend "${R.after?.categories?.[R.category.name]?.cells?.[7] || ''}" (currency ${cur || '?'}); configured ${C.currency}`);
           if (cur !== C.symbol) throw new Error(`Dashboard spend differs from the Procurement Log Value Delivered: currency "${cur}" instead of the configured ${C.currency} (${C.symbol})`);
+        });
+      });
+
+      // ================= TC-24B Enterprise after the flow (added 23 Nov 2026) =================
+      await scenario('entAfter', ['grn'], async s => {
+        await s.step(`Enterprise › Supplier Inbox: Submittal filter "${sub.number}" → no longer under "Pending Pre-Shipping Checklists" (the checklist was confirmed and approved in TC-15/16)`, async () => {
+          const r = await inboxFor(sub.number, 'Pending Pre-Shipping Checklists');
+          s.observe(`before the approvals: ${R.inboxPending ?? '?'} submittal(s); now: ${r.count}`);
+          expect(r.count, 'Run submittal still listed under Pending Pre-Shipping Checklists after the approvals').toBe(0);
+        });
+        await s.step(`Enterprise › Enterprise View: Supplier table (with "% of total") → the run supplier "${R.supplier.name || '(not created)'}" is listed with a spend value`, async () => {
+          await k.menu('Enterprise View', 'Enterprise').catch(() => null);
+          if (!/\/enterprise-view/.test(page.url())) await page.goto('/enterprise-view', { waitUntil: 'domcontentloaded' });
+          await k.settle(3000);
+          const table = entMain.locator('table').filter({ has: page.getByRole('columnheader', { name: '% of total' }) }).first();
+          const rows = await table.locator('tbody tr').evaluateAll(trs => trs.map(tr => [...tr.querySelectorAll('td')].map(td => td.innerText.replace(/\s+/g, ' ').trim())));
+          const mine = rows.find(r => norm(r[0] || '') === norm(R.supplier.name || ''));
+          s.observe(mine ? `Run supplier row: ${mine.join(' · ')}` : `Run supplier not among ${rows.length} rows`);
+          expect(mine, `Run supplier ${R.supplier.name} not in the Enterprise View supplier table`).toBeTruthy();
         });
       });
 
