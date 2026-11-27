@@ -1,6 +1,6 @@
 # SCP – consolidated issues, bugs, blockers and skipped cases (27 Nov 2026)
 
-_Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 · latest result of every case from the 26 Nov full regression, its re-runs and the new-module suites (Loads, NCRs, My Work, TOV, EPD, Excel Import, Inventory Rebuild, Messages) up to 27 Nov 03:00 IST · 879 cases, 709 passed._
+_Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 · latest result of every case from the 26 Nov full regression, its re-runs and the new-module suites (Loads, NCRs, My Work, TOV, EPD, Excel Import, Inventory Rebuild, Messages) up to 27 Nov 03:00 IST · 879 cases, 710 passed._
 
 ## 1. Summary
 
@@ -11,7 +11,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 | Blocker / question | 8 | Test cannot complete until the environment changes or the dev team answers | Dev / platform team |
 | Withdrawn after feedback | 1 | Not an issue per the 27 Nov issue justification; the test will be updated | QA |
 | Answered – test update | 0 | The dev review answers the question; the test will follow the described flow | QA |
-| Automation re-check | 1 | Test-side issue, already fixed; re-verified in the next run | QA |
+| Automation re-check | 0 | Test-side issue, already fixed; re-verified in the next run | QA |
 | Skipped | 96 | Not run, with the reason and what is needed (section 4) | See owner |
 
 **Module-wise**
@@ -228,7 +228,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 #### N-08 · NPE-GAP-02 – Gap 2: "Reject and return" leaves the goods in Received and adds a replacement on top of Required
 
-**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T10-29-13-400Z
+**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T13-19-07-057Z
 
 **Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header. A received load of PLT2611130841-SUB-P with a "Received after ROJ" discrepancy of 2 pieces.
 
@@ -244,7 +244,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 #### N-11 · NPE-GAP-03 – Gap 3: correcting a received load delivery does not update the load or its discrepancies
 
-**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T11-07-30-378Z
+**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T13-19-07-057Z
 
 **Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header. A received load (LD-0017, receipt RCV-000322: Received 2, Damaged 1 of 3) with its discrepancies (Short delivery, Damaged, Over delivery, Received after ROJ).
 
@@ -263,7 +263,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 #### N-07 · NPE-GAP-04 – Gap 4: "Log delivery" accepts a delivery for a component that is on an open load, without a warning
 
-**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T10-29-13-400Z
+**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T13-19-07-057Z
 
 **Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header. A load in "Expected" with 3 pieces of PLT2611130841-SUB-P (component 43 Inches, 20,000 pieces).
 
@@ -279,7 +279,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 #### N-10 · NPE-GAP-08 – Gap 8: a Subcontractor can raise an NCR on the discrepancies of a load
 
-**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T10-29-13-400Z
+**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T13-19-07-057Z
 
 **Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header. A received load with open "Short delivery" and "Damaged" discrepancies (LD-0017). The Subcontractor test account (SCP_SUBCONTRACTOR_*).
 
@@ -295,7 +295,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 #### N-09 · NPE-GAP-13 – Gap 13: the component page shows a load receipt of 2 as received 3
 
-**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T10-29-13-400Z
+**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T13-19-07-057Z
 
 **Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header. A load of 3 pieces of PLT2611130841-SUB-P, received with Received 2 and Damaged 1 (RCV-N).
 
@@ -311,7 +311,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 #### N-02 · NPE-REG-05 – Build load accepts a quantity above what is left on the line
 
-**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T10-29-13-400Z
+**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T13-19-07-057Z
 
 **Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header. An open product line, e.g. PLT2611130841-SUB-P (20,000 pieces).
 
@@ -330,7 +330,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 #### N-12 · NPE-REG-12 – "Received after ROJ" discrepancy shows the UTC date, not the project date (IST)
 
-**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T10-29-13-400Z
+**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T13-19-07-057Z
 
 **Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header. A load in "Expected" whose line has a ROJ date before today.
 
@@ -347,7 +347,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 #### N-05 · NPE-REG-19 – A deleted load number is given to the next load
 
-**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T10-29-13-400Z
+**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T13-19-07-057Z
 
 **Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header.
 
@@ -363,7 +363,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 #### N-06 · NPE-REG-21 – Adding a damage photo makes the receipt form view-only
 
-**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T10-29-13-400Z
+**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T13-19-07-057Z
 
 **Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header. A load in "Expected".
 
@@ -379,7 +379,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 #### N-03 · NPE-REG-08 – Re-inspection completed but the Rework NCR stays "Awaiting re-inspection"
 
-**Type:** Question · **Evidence:** np-e2e-2026-11-27T10-29-13-400Z
+**Type:** Question · **Evidence:** np-e2e-2026-11-27T13-19-07-057Z
 
 **Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header. A received load with a "Damaged" discrepancy.
 
@@ -401,7 +401,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 #### N-04 · NPE-REG-09 – Unallocated Deliveries: no way to create or record an unplanned arrival
 
-**Type:** Blocker · **Evidence:** np-e2e-2026-11-27T10-29-13-400Z
+**Type:** Blocker · **Evidence:** np-e2e-2026-11-27T13-19-07-057Z
 
 **Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header.
 
@@ -1589,12 +1589,6 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 | DOC-REG-16 | Scan Procore for EPDs | Procore link (external system); not executed | Access to the external system (Procore / TheLink). | None |
 | DOC-REG-11 | PO validation with a valid PO | Needs a sample PO with line items (Q-DOC-3, Q-PL-13) | A sample PO with line items and a sample BOM (Q-DOC-3). | Dev team / Client |
 | DOC-REG-12 | BOM validation | Needs a sample BOM (Q-DOC-3) | A sample PO with line items and a sample BOM (Q-DOC-3). | Dev team / Client |
-
-## 5. Automation re-checks (not application issues)
-
-| Test case | Module | Note |
-|---|---|---|
-| NPE-REG-04 | Loads, Discrepancies & NCRs | On 27 Nov "To load" fell by 2 instead of 1 because the NPE-GAP-04 test delivery ("today · 1 · Not on a load") could not be deleted by the test (the component page was stacked twice). Both leftovers were deleted by hand and the clean-up is fixed; re-verified in the next chain run. |
 
 ## 6. Gaps from the dev review and how the tests cover them
 

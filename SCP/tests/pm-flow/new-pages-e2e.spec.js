@@ -399,14 +399,20 @@ test('New pages – E2E chain', async ({ page, browserName }) => {
         const after = await expectedCount();
         s.observe(`dialog ${stillOpen ? 'stayed open' : 'closed'}; message "${msg || '(none)'}"; expected deliveries ${before} → ${after}`);
         if (stillOpen) await k.closeDialog('Add Delivery').catch(() => page.keyboard.press('Escape'));
+        // Re-read after a reload: right after "Add" the stacked page showed the one new delivery twice (27 Nov 18:1x).
+        if (after > before) { await page.reload(); await k.settle(5000); }
         const looseAfter = after > before ? await looseIdx() : [];
         s.observe(`loose 1-piece rows before ${looseBefore}, after ${looseAfter.length}`);
-        if (after > before && looseAfter.length === looseBefore + 1) {
-          await rowAction(looseAfter[looseAfter.length - 1], 'Delete delivery'); await k.settle(1000);
+        // Deleted only when it is certainly the run's own delivery: the total rose by exactly 1 and there was no loose
+        // 1-piece delivery before.
+        if (after === before + 1 && looseBefore === 0 && looseAfter.length >= 1) {
+          await rowAction(looseAfter[0], 'Delete delivery'); await k.settle(1000);
           const ok = page.getByRole('button', { name: /^(Delete|Yes|Confirm)/ }).last();
           if (await ok.isVisible().catch(() => false)) await ok.click();
-          await k.settle(2500);
-          s.observe(`accepted delivery deleted again; expected deliveries now ${await expectedCount()}`);
+          await k.settle(2500); await page.reload(); await k.settle(5000);
+          const back = await expectedCount();
+          s.observe(`accepted delivery deleted again; expected deliveries now ${back}`);
+          if (back !== before) s.observe(`WARNING: expected deliveries ${back}, not back to ${before} – check the component by hand`);
         } else if (after > before) s.observe('accepted delivery NOT deleted: it could not be told apart from the load delivery – delete it by hand');
         expect(after === before || warned, `"Log delivery" accepted 1 piece on the component while ${R.load} is open, without a warning (gap 4)`).toBe(true);
       }, { attempts: 1 }); // a write: never repeated
