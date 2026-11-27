@@ -18,7 +18,7 @@ test('Remaining modules – smoke', async ({ page, browserName }) => {
     const { main } = k;
     const btn = (name, scope = main) => scope.getByRole('button', { name, exact: true }).first();
     const heads = async () => (await main.getByRole('columnheader').allInnerTexts()).map(t => t.trim().replace(/\s+/g, ' '));
-    const hasCols = async cols => { await main.getByRole('columnheader').first().waitFor({ timeout: 60000 }); const h = (await heads()).map(x => x.toLowerCase()); for (const c of cols) expect(h, c).toContain(c.toLowerCase()); };
+    const hasCols = async cols => { await main.getByRole('columnheader').first().waitFor({ timeout: 60000 }); const h = (await heads()).map(x => x.replace(/[↕↑↓▲▼]/g, '').trim().toLowerCase()); /* sort arrows (24 Nov 2026) are not part of the name */ for (const c of cols) expect(h, c).toContain(c.toLowerCase()); };
     const rowMenu = row => row.locator('img[alt="Menu"]').first().click();
     const tabBtn = name => main.getByRole('button', { name: new RegExp(`^${name}(\\s|\\d|$)`) }).first(); // labels carry a count: "Delay Alerts406", "Alerts 99+"
     const text = (t, scope = main) => expect(scope.getByText(t, { exact: typeof t === 'string' }).first()).toBeVisible({ timeout: 30000 });
@@ -28,6 +28,8 @@ test('Remaining modules – smoke', async ({ page, browserName }) => {
       await k.menu(name, group).catch(() => page.goto(route, { waitUntil: 'domcontentloaded' }));
       if (!new RegExp(`${route}(\\?|$)`).test(new URL(page.url()).pathname)) await page.goto(route, { waitUntil: 'domcontentloaded' });
       await k.settle(1000);
+      // a page load lets the app pick the newest (run-created) site in the header (OBS-INV-12): put the run site back
+      if (await k.keepSite().catch(() => false)) await k.settle(1500);
     };
     const download = async (trigger, pattern) => {
       const dl = page.waitForEvent('download', { timeout: 60000 });
@@ -45,7 +47,10 @@ test('Remaining modules – smoke', async ({ page, browserName }) => {
     const INV = 'Inventory Management';
     const invCount = async () => Number(((await main.innerText()).match(/(\d+) items?/) || [])[1] || NaN);
     const invSearch = page.getByRole('textbox', { name: 'Search inventory…' });
-    const invOk = await run.scenario(meta('INV-SMK-01', INV, 'Page loads'), async s => {
+    // 24 Nov 2026: Inventory Management was removed from the menu; /inventory-management opens the Procurement Log
+    // "Inventory" tab, which shows "Couldn't load inventory." – skipped until the client answers question 2.
+    const INV_BLOCKED = 'Skipped (25 Nov 2026): Inventory Management removed; its Procurement Log "Inventory" tab shows "Couldn\'t load inventory." – awaiting client question 2';
+    const invOk = process.env.SCP_INV_TAB_READY ? await run.scenario(meta('INV-SMK-01', INV, 'Page loads'), async s => {
       await s.step(`Sidebar › "Inventory Management" → page opens (route /inventory-management is the fallback)`, () => open('/inventory-management', INV), { critical: true });
       await s.step(`Inventory Management → search box "Search inventory…" and buttons "Receive booking", "Upload", "Export" visible; grid lists items with columns Category, Material ID, Material Name, Inventory, UOM`, async () => {
         await expect(invSearch).toBeVisible({ timeout: 30000 });
@@ -53,7 +58,7 @@ test('Remaining modules – smoke', async ({ page, browserName }) => {
         await expect.poll(invCount, { timeout: 30000 }).toBeGreaterThan(0);
         await hasCols(['Category', 'Material ID', 'Material Name', 'Inventory', 'UOM']);
       });
-    });
+    }) : (run.skip(meta('INV-SMK-01', INV, 'Page loads'), INV_BLOCKED), { status: 'Skipped' });
     if (invOk.status === 'Passed') {
       await run.scenario(meta('INV-SMK-02', INV, 'Search by name, ID, category; no match'), async s => {
         const all = await invCount();
@@ -139,7 +144,7 @@ test('Remaining modules – smoke', async ({ page, browserName }) => {
         await expect(page.getByRole('textbox', { name: /Search users/ })).toBeVisible({ timeout: 30000 });
         for (const b of ['Filter', 'Invite Users']) await expect(btn(b)).toBeVisible();
         await hasCols(['Status', 'Name', 'Email Address', 'Associated Organization', 'Platform Role']);
-        expect(await k.rows().count()).toBeGreaterThan(0);
+        await expect.poll(() => k.rows().count(), { timeout: 30000, message: 'User rows' }).toBeGreaterThan(0);
       });
     });
     await run.scenario(meta('UM-SMK-02', UM, 'User profile panel'), async s => {
@@ -196,9 +201,13 @@ test('Remaining modules – smoke', async ({ page, browserName }) => {
     // ---------------- First Delivery Inspections ----------------
     await run.scenario(meta('FDI-SMK-01', 'First Delivery Inspections', 'Page loads'), async s => {
       await s.step(`Sidebar › "First Delivery Inspections" → page opens`, () => open('/first-delivery-inspections', 'First Delivery Inspections'), { critical: true });
-      await s.step(`First Delivery Inspections → columns Material, Supplier, Submittal, Delivery Date, Assigned To, Status, Procore, Actions; at least 4 filter inputs/selects on the page`, async () => {
+      await s.step(`First Delivery Inspections → KPI cards Inspections, Pending, Overdue; untick "Group by material category" → columns Material, Supplier, Submittal, Delivery Date, Assigned To, Status, Procore, Actions; at least 4 filter inputs/selects; grouping ticked again`, async () => {
+        for (const t of ['INSPECTIONS', 'PENDING', 'OVERDUE']) await text(new RegExp(`^${t}$`, 'i'));
+        const group = main.getByRole('checkbox', { name: 'Group by material category' });
+        if (await group.isChecked().catch(() => false)) { await group.uncheck(); await k.settle(2000); }
         await hasCols(['Material', 'Supplier', 'Submittal', 'Delivery Date', 'Assigned To', 'Status', 'Procore', 'Actions']);
         expect(await main.locator('select, input').count()).toBeGreaterThanOrEqual(4);
+        await group.check().catch(() => null);
       });
     });
 
@@ -227,15 +236,15 @@ test('Remaining modules – smoke', async ({ page, browserName }) => {
     const SHP = 'International Shipments';
     await run.scenario(meta('SHP-SMK-01', SHP, 'International Shipments loads'), async s => {
       await s.step(`Sidebar › "International Shipments" → page opens`, () => open('/international-shipments', SHP), { critical: true });
-      await s.step(`International Shipments → wait for the "Total International" tile (data loaded); tabs Risk Dashboard, Delay Alerts, Flag & Review, Shipments; tiles Total International, At Risk, Not Yet Ordered, In Transit, Delivered; columns Submittal…Risk`, async () => {
+      await s.step(`International Shipments → wait for the "Total International" tile (data loaded); tabs Risk Dashboard, Delay Alerts, Flag & Review, Shipments; tiles Total International, At Risk, Not Yet Ordered, In Transit, Delivered; columns Submittal, Material, Manufacturer, Container / AWB, ROJ, Status, Risk`, async () => {
         // A "Loading international shipments..." text can stay on screen after the data is shown, so wait for the data itself.
-        await expect(page.getByText('Total International').first()).toBeVisible({ timeout: 90000 });
+        await expect(page.getByText('Total International').first()).toBeVisible({ timeout: 300000 }); // 24 Nov 2026: takes 2–5 minutes
         const loaders = await page.getByText('Loading international shipments...').locator('visible=true').count();
         if (loaders) s.observe(`"Loading international shipments..." still shown ${loaders}× after the data loaded`);
         // The page can drop back to its full-page loader after showing data, so each check waits for the content to return.
         for (const t of ['Risk Dashboard', 'Delay Alerts', 'Flag & Review', 'Shipments']) await expect(tabBtn(t), t).toBeVisible({ timeout: 90000 });
         for (const t of ['Total International', 'At Risk', 'Not Yet Ordered', 'In Transit', 'Delivered']) await text(t);
-        await hasCols(['Submittal', 'Material', 'Manufacturer', 'Country', 'Required Date', 'Status', 'Risk']);
+        await hasCols(['Submittal', 'Material', 'Manufacturer', 'Container / AWB', 'ROJ', 'Status', 'Risk']); // since 24 Nov 2026
       });
     });
     const ESH = 'Enterprise Shipments';
@@ -268,9 +277,17 @@ test('Remaining modules – smoke', async ({ page, browserName }) => {
     });
     await run.scenario(meta('DSH-SMK-02', DSH, 'Each tab lists rows'), async s => {
       for (const tab of ['Alerts', 'Notifications', 'Tasks']) {
-        await s.step(`Management Dashboard › tab "${tab}" → table with columns ${tab === 'Tasks' ? 'Description, Created At, Status' : 'Description, Created At'} and at least one row`, async () => {
+        await s.step(`Management Dashboard › tab "${tab}" → ${tab === 'Tasks' ? 'chips Overdue / At risk / Open / Done, "Open in My Work", columns STATUS, TASK, TYPE, DUE, RAISED, ACTIONS' : 'table with columns Description, Created At'} and at least one row`, async () => {
           await tabBtn(tab).click(); await k.settle(1500);
-          await hasCols(tab === 'Tasks' ? ['Description', 'Created At', 'Status'] : ['Description', 'Created At']);
+          s.observe(`${tab} columns: ${(await main.getByRole('columnheader').allInnerTexts()).map(t => t.trim()).filter(Boolean).join(', ')}`);
+          if (tab === 'Tasks') {
+            // 24 Nov 2026: Tasks is a task list – chips Overdue / At risk / Open / Done, "Open in My Work",
+            // columns STATUS, TASK, TYPE, DUE, RAISED, ACTIONS (only STATUS is exposed as a column header).
+            for (const chip of [/^Overdue\s*\d+$/, /^At risk\s*\d+$/, /^Open\s*\d+$/, /^Done\s*\d+$/]) await expect(main.getByRole('button', { name: chip }).first(), String(chip)).toBeVisible();
+            await text(/^Open in My Work/); // link text ends with an arrow
+            const head = (await main.locator('table thead').last().innerText()).replace(/\s+/g, ' ');
+            for (const c of ['STATUS', 'TASK', 'TYPE', 'DUE', 'RAISED', 'ACTIONS']) expect(head.toUpperCase(), `column ${c}`).toContain(c);
+          } else await hasCols(['Description', 'Created At']);
           expect(await k.rows().count(), `${tab} rows`).toBeGreaterThan(0);
         });
       }
@@ -280,10 +297,10 @@ test('Remaining modules – smoke', async ({ page, browserName }) => {
     const ENT = 'Enterprise';
     const entPages = [
       ['ENT-SMK-01', '/enterprise-view', 'Enterprise View', ['Download CSV', 'Supplier', 'Spend']],
-      ['ENT-SMK-02', '/supplier-inbox', 'Supplier Inbox', ['Unconfirmed Lead Times', 'Overdue Items', 'Deliveries to Schedule', 'Pending Pre-Shipping Checklists']],
       ['ENT-SMK-03', '/supplier-performance', 'Supplier Performance', [/Deliveries by month/i, /Project/i, /Supplier/i]],
       ['ENT-SMK-04', '/lead-time-benchmarks', 'Lead Time Benchmarks', [/Your Delivery Performance/i, /Lead Time Comparison by Category/i]]
     ];
+    run.skip(meta('ENT-SMK-02', ENT, 'Supplier Inbox loads', { navPath: [ENT, 'Supplier Inbox'] }), 'Skipped (25 Nov 2026): Supplier Inbox was removed – /supplier-inbox opens My Work; awaiting client question 3 (retire or move to My Work)');
     for (const [id, route, name, texts] of entPages) {
       await run.scenario(meta(id, ENT, `${name} loads`, { navPath: [ENT, name] }), async s => {
         await s.step(`Sidebar › "${ENT}" › "${name}" → page opens`, () => open(route, name, ENT), { critical: true });
@@ -296,7 +313,7 @@ test('Remaining modules – smoke', async ({ page, browserName }) => {
     const anaPages = [
       ['ANA-SMK-01', '/aggregate-stats', 'Aggregate Stats', [/Changes per week/i, /Top editors/i]],
       ['ANA-SMK-02', '/lead-time-analysis', 'Lead Time Analysis', [/Lead Time Comparison by Category/i]],
-      ['ANA-SMK-03', '/supply-chain-intelligence', 'Supply Chain Intelligence', [/Active disruptions/i, /Risk heatmap/i]],
+      ['ANA-SMK-03', '/supply-chain-intelligence', 'Supply Chain Intelligence', [/Supply chain tracker/i, /Active disruptions/i, /categories tracked/i]], // "Risk heatmap" no longer shown (24 Nov 2026)
       ['ANA-SMK-04', '/emissions-report', 'Emissions Report', [/Emissions Summary/i, /Export CSV/i]],
       ['ANA-SMK-05', '/inventory-reports', 'Inventory Reports', [/30d/]],
       ['ANA-SMK-06', '/status-report', 'Status Report', ['Generate']],

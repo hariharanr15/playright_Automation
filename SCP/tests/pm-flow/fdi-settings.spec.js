@@ -41,6 +41,9 @@ test('FDI settings – effect on the inspection form', async ({ page, browserNam
       for (const l of [UPLOADS, NOTES, MANDATORY, SPEC]) if (l in wanted && (await box(l).isChecked()) !== wanted[l]) await box(l).click();
       await main.getByRole('button', { name: 'Save', exact: true }).first().click(); await k.settle(2000);
       await openConfig();
+      // The saved values load after the page: poll so an unticked default is not read too early.
+      const same = o => Object.keys(wanted).every(l => o[l] === wanted[l]);
+      await expect.poll(async () => same(await readSettings()), { timeout: 15000 }).toBe(true).catch(() => null);
       const now = await readSettings();
       for (const l of Object.keys(wanted)) expect(now[l], `${l} saved`).toBe(wanted[l]);
       return now;
@@ -48,25 +51,65 @@ test('FDI settings – effect on the inspection form', async ({ page, browserNam
     const describe = w => Object.entries(w).map(([l, v]) => `"${l}" ${v ? 'Yes' : 'No'}`).join(', ');
 
     // ---------------- Inspection forms ----------------
-    const fdiRows = () => main.locator('tbody tr');
-    const openList = async () => { await page.goto('/first-delivery-inspections', { waitUntil: 'domcontentloaded' }); await k.settle(2500); await fdiRows().first().waitFor({ timeout: 30000 }); };
+    // 25 Nov 2026: with the grouping unticked the page shows two tables – the category summary first, then the
+    // inspections (the one with the "Outcome" column). Only the inspection rows are used.
+    const fdiRows = () => main.locator('table').filter({ has: page.getByRole('columnheader', { name: 'Outcome' }) }).first().locator('tbody tr').filter({ has: page.locator('td') });
+    // Since 24 Nov 2026 the page opens grouped by material category; the inspection rows show only with the grouping unticked.
+    const openList = async () => {
+      await page.goto('/first-delivery-inspections', { waitUntil: 'domcontentloaded' }); await k.settle(2500);
+      // a page load lets the app pick the newest (run-created) site in the header (OBS-INV-12): put the run site back
+      if (await k.keepSite().catch(() => false)) await k.settle(1500);
+      const group = k.main.getByRole('checkbox', { name: 'Group by material category' });
+      if (await group.isChecked().catch(() => false)) { await group.uncheck(); await k.settle(2000); }
+      await fdiRows().first().waitFor({ timeout: 30000 });
+    };
     const freeRow = () => fdiRows().filter({ hasText: /Auditor Not Yet Assigned/i }).filter({ hasText: /Auto Fdi|Pld|Pl[tr]/i }).first();
     // Self-assigns the next free run inspection and opens its form; returns the material name.
+    // Since 24 Nov 2026 unassigned rows show no "Self Assign" button for this account; run inspections already assigned
+    // to it and still "Awaiting Inspection Completion" offer "Fill Inspection Report" – one of those is used instead.
+    const mineRow = () => fdiRows().filter({ hasText: /Awaiting Inspection/i }).filter({ hasText: /Auto Fdi|Pld|Pl[tr]/i })
+      .filter({ has: page.getByRole('button', { name: 'Fill Inspection Report' }) });
+    // 26 Nov 2026 (user decision): a full run submits more inspections than it creates (one per run, pl-regression-3).
+    // When no run inspection is left, Self Assign one of the older unassigned inspections of the project instead.
+    const olderFreeRow = () => fdiRows().filter({ hasText: /Auditor Not Yet Assigned/i }).filter({ has: page.getByRole('button', { name: 'Self Assign' }) });
+    const selfAssign = async pick => {
+      await pick.row.getByRole('button', { name: 'Self Assign' }).click();
+      await k.toast('You have been assigned as the auditor for this inspection');
+    };
     const newForm = async () => {
       await openList();
-      await expect(freeRow(), 'a free run inspection ("Auditor Not Yet Assigned")').toBeVisible({ timeout: 30000 });
-      const cells = await freeRow().getByRole('cell').allInnerTexts();
-      const material = cells.find(c => /Auto Fdi|Pld|Pl[tr]/i.test(c)).trim();
-      await freeRow().getByRole('button', { name: 'Self Assign' }).click();
-      await k.toast('You have been assigned as the auditor for this inspection');
-      state.used.push(material);
-      await openForm(material);
-      return material;
+      await fdiRows().first().waitFor({ timeout: 30000 }).catch(() => null);
+      const pickFrom = async (rows, runOnly = true) => {
+        for (let i = 0, n = await rows.count(); i < n; i++) {
+          // the Material cell (2nd column) shows the material and, on a second line, its question set (since 24 Nov): keep line 1 only
+          const cells = await rows.nth(i).getByRole('cell').allInnerTexts();
+          const material = ((runOnly ? cells.find(c => /Auto Fdi|Pld|Pl[tr]/i.test(c)) : cells[1]) || '').split(/\n/)[0].trim();
+          if (material && !state.used.includes(material)) return { row: rows.nth(i), material };
+        }
+        return null;
+      };
+      let pick = await pickFrom(freeRow());
+      if (pick && await pick.row.getByRole('button', { name: 'Self Assign' }).isVisible().catch(() => false)) await selfAssign(pick);
+      else if ((pick = await pickFrom(mineRow()))) { /* run inspection already assigned to this account */ }
+      else {
+        pick = await pickFrom(olderFreeRow(), false);
+        expect(pick, 'a run inspection, or an older unassigned inspection that offers Self Assign').toBeTruthy();
+        s_log(`no run inspection left – older inspection ${pick.material} self-assigned`);
+        await selfAssign(pick);
+      }
+      state.used.push(pick.material);
+      await openForm(pick.material);
+      return pick.material;
     };
+    const s_log = text => console.log(`      note: ${text}`);
     const openForm = async material => {
       await openList();
-      const row = fdiRows().filter({ hasText: material }).first();
-      await row.getByRole('button', { name: 'Fill Inspection Report' }).click();
+      // After "Save Progress" the row action can read differently from "Fill Inspection Report" – accept any form-opening action.
+      const action = page.getByRole('button', { name: /Fill Inspection Report|Continue|Resume|Edit (Inspection|Report)/i });
+      const row = fdiRows().filter({ hasText: material }).filter({ has: action }).first();
+      await expect(row, `inspection row for ${material} with a form action`).toBeVisible({ timeout: 30000 });
+      s_log(`Row actions for ${material}: ${(await row.getByRole('button').allInnerTexts()).join(' / ')}`);
+      await row.getByRole('button', { name: /Fill Inspection Report|Continue|Resume|Edit (Inspection|Report)/i }).first().click();
       await expect(page).toHaveURL(/\/form/, { timeout: 30000 });
       await page.getByRole('button', { name: 'Submit Inspection' }).waitFor({ timeout: 30000 }); await k.settle(1500);
     };
@@ -76,6 +119,19 @@ test('FDI settings – effect on the inspection form', async ({ page, browserNam
       for (let i = 0, n = await pass.count(); i < n; i++) await pass.nth(i).click();
       const texts = page.locator('main textarea:visible, main input[type="text"]:visible');
       for (let i = 0, n = await texts.count(); i < n; i++) if (!(await texts.nth(i).inputValue())) await texts.nth(i).fill(`${RUN} answer`);
+      // Since 24 Nov 2026 the form ends with a required "Inspection outcome": "Does the product match the approved
+      // submittal? *" and "Inspection status *" (Accepted / Rejected / Pending Review) – without them Submit is refused.
+      const outcome = page.locator('main').getByText('Inspection outcome', { exact: true }).locator('xpath=..');
+      const pickIn = async (label, wanted) => {
+        const sel = outcome.locator('select').filter({ has: page.locator('option', { hasText: wanted }) }).first();
+        if (!(await sel.count())) return;
+        const opt = (await sel.locator('option').allInnerTexts()).find(o => wanted.test(o.trim()));
+        if (opt) await sel.selectOption({ label: opt.trim() });
+      };
+      if (await outcome.isVisible().catch(() => false)) {
+        await pickIn('match', /^Yes\b/i);
+        await pickIn('status', /^Accepted$/i);
+      }
     };
     const addPhoto = async files => {
       const ch = page.waitForEvent('filechooser', { timeout: 15000 });
@@ -84,7 +140,18 @@ test('FDI settings – effect on the inspection form', async ({ page, browserNam
     };
     const photoSection = () => page.getByRole('button', { name: /Add photo/i }).first().isVisible().catch(() => false);
     const notesField = () => page.getByText(/Overall Notes|Observation\s*\/\s*Notes/i).first().isVisible().catch(() => false);
-    const submit = async () => { await page.getByRole('button', { name: 'Submit Inspection' }).click(); await k.settle(2500); };
+    // The outcome can be empty again after "Save Progress", a photo upload or a reopen: fill it right before every submit.
+    const fillOutcome = async () => {
+      const outcome = page.locator('main').getByText('Inspection outcome', { exact: true }).locator('xpath=..');
+      if (!(await outcome.isVisible().catch(() => false))) return;
+      for (const wanted of [/^Yes\b/i, /^Accepted$/i]) {
+        const sel = outcome.locator('select').filter({ has: page.locator('option', { hasText: wanted }) }).first();
+        if (!(await sel.count())) continue;
+        const opt = (await sel.locator('option').allInnerTexts()).find(o => wanted.test(o.trim()));
+        if (opt) await sel.selectOption({ label: opt.trim() });
+      }
+    };
+    const submit = async () => { await fillOutcome(); await page.getByRole('button', { name: 'Submit Inspection' }).click(); await k.settle(2500); };
     const submitted = () => page.getByText('Inspection Detail').first().isVisible({ timeout: 30000 }).catch(() => false);
 
     const login = await run.scenario({ ...meta('FDS-SETUP', 'Sign in and record the FDI Settings', 'Setup'), always: true }, async s => {
@@ -164,6 +231,14 @@ test('FDI settings – effect on the inspection form', async ({ page, browserNam
         await s.step(`${UPLOADS} Yes, ${MANDATORY} Yes → new form, answer every question without a photo → "Save Progress" succeeds; "Submit Inspection" → photo message, not submitted`, async () => {
           await applySettings({ [UPLOADS]: true, [MANDATORY]: true });
           state.photoForm = await newForm();
+          // Assigned run inspections are reused across runs: one can already hold photos from an earlier "Save Progress",
+          // which makes the mandatory-photo check meaningless (26 Nov: Auto Fdi 2611221134 had 4). Take a form without photos.
+          const photos = () => page.locator('main img').filter({ hasNot: page.locator('[alt*="logo" i]') }).count();
+          for (let i = 0; i < 4 && await photos() > 0; i++) {
+            s.observe(`${state.photoForm} already holds ${await photos()} saved photo(s) – next run inspection`);
+            state.photoForm = await newForm();
+          }
+          expect(await photos(), 'a form without saved photos').toBe(0);
           await answerAllPass();
           await page.getByRole('button', { name: 'Save Progress' }).click(); await k.settle(2000);
           s.observe(`after Save Progress: ${(await page.getByRole('status').allInnerTexts()).join(' | ') || '(no message)'}`);

@@ -31,7 +31,10 @@ test('Fresh project checks', async ({ page, browserName }) => {
       await page.goto('/management-dashboard', { waitUntil: 'domcontentloaded' }); await k.settle(3000);
       const nav = page.locator('nav');
       const pm = nav.getByRole('button', { name: 'Project Management', exact: true }).first();
-      if (!(await nav.getByRole('button', { name: 'Configuration Options', exact: true }).first().isVisible().catch(() => false))) await pm.click().catch(() => null);
+      // Menu of 24 Nov 2026: Project Management › Project Settings › PreShipping Checklist.
+      const btn = name => nav.getByRole('button', { name, exact: true }).first();
+      if (!(await btn('Project Settings').isVisible().catch(() => false))) { await pm.click().catch(() => null); await k.settle(600); }
+      if (!(await btn('Configuration Options').isVisible().catch(() => false))) await btn('Project Settings').click().catch(() => null);
       await k.settle(800);
       return nav.getByRole('button', { name: 'PreShipping Checklist', exact: true }).first().isVisible().catch(() => false);
     };

@@ -31,7 +31,7 @@ test('Project Management – Regression (part 1: read-only and form-only)', asyn
   const result = await runPmSuite({ page, suite: 'Regression', scenarios: async ({ run, navigator, config, outDir }) => {
     const ui = pmUi(page, navigator, outDir);
     const { main, modal, visible, headers, rowTexts, countText, button, click, openForm, inModal, dropdownOptions, selectOptions, download, clean, pickDate } = ui;
-    const EMPTY = /No data (found|available)/;
+    const EMPTY = /No data (found|available)|No results for/; // Material Category since 24 Nov 2026: 'No results for "<text>"'
     const data = run.data;
     const sc = (id, submodule, title, body) => run.scenario(meta(id, submodule, title), body);
     const skip = (id, submodule, title, reason) => run.skip(meta(id, submodule, title), reason);
@@ -42,7 +42,7 @@ test('Project Management – Regression (part 1: read-only and form-only)', asyn
     // ================= Navigation =================
     await sc('PM-REG-NAV-02', 'Navigation', 'Group buttons expand without navigating', async s => {
       const start = page.url();
-      for (const [group, child] of [[PM, 'Configuration Options'], ['Integrations', 'XER Import'], ['Reference Data', 'Common UoM']]) {
+      for (const [group, child] of [[PM, 'Project Settings'], ['Integrations', 'XER Import'], ['Materials', 'Common UoM']] /* menu of 24 Nov 2026: Reference Data removed, PM opens into groups */) {
         await s.step(`Left menu: click "${group}" → group expands showing "${child}" and the page URL does not change`, async () => {
           const control = navigator.menuItem(group);
           await visible(control, group);
@@ -336,11 +336,11 @@ test('Project Management – Regression (part 1: read-only and form-only)', asyn
       await s.step(`Configuration Options: read the three week fields and the Archive, Currency and Integration dropdown values → weeks are not negative and at least three dropdown values shown`, async () => {
         data.weeks = [];
         for (let i = 0; i < 3; i += 1) data.weeks.push(await weekInputs().nth(i).inputValue());
-        for (const value of data.weeks) expect(Number(value), 'Week values are not negative (R69)').toBeGreaterThanOrEqual(0);
-        // The dropdowns are div[role=button]: read them by role.
+        // The dropdowns are div[role=button]: read them by role (before the week check, so CFG-02 can still use them).
         const values = (await main.getByRole('button').allInnerTexts()).map(t => t.trim()).filter(t => /days$|Rupee|dollar|Pound|^None$|^Procore$|^Autodesk ACC$|Sri|^Choose$/.test(t));
-        expect(values.length, 'Archive, Currency and Integration values shown').toBeGreaterThanOrEqual(3);
         data.configValues = values;
+        expect(values.length, 'Archive, Currency and Integration values shown').toBeGreaterThanOrEqual(3);
+        for (const value of data.weeks) expect(Number(value), 'Week values are not negative (R69)').toBeGreaterThanOrEqual(0);
       });
     });
     await sc('PM-REG-CFG-02', 'Configuration Options', 'Dropdown option sets', async s => {
@@ -627,9 +627,19 @@ test('Project Management – Regression (part 1: read-only and form-only)', asyn
     // ================= Inventory Control =================
     await sc('PM-REG-INV-01', 'Inventory Control', 'Empty state', async s => {
       await s.step(`Project Management › "Inventory Control": open the page → page opens`, () => navigator.open('Inventory Control'), { critical: true });
-      await s.step(`Inventory Control: check the empty state → "No rules configured" and "Add a rule to set inventory thresholds" shown`, async () => {
-        await visible(main.getByText('No rules configured'), 'No rules configured');
-        await visible(main.getByText('Add a rule to set inventory thresholds'), 'Empty-state hint');
+      // NRVC_Hall has rules since 23 Nov 2026 (Inventory set-up): the empty state is checked only when no rule exists,
+      // otherwise the rules list must show its heading and at least one rule.
+      await s.step(`Inventory Control: no rule → "No rules configured" and "Add a rule to set inventory thresholds"; with rules → "Inventory control rules" and the rule rows`, async () => {
+        await visible(main.getByText(/No rules configured|Inventory control rules/).first(), 'Rules list or empty state');
+        if (await main.getByText('No rules configured').isVisible().catch(() => false)) {
+          await visible(main.getByText('Add a rule to set inventory thresholds'), 'Empty-state hint');
+          s.observe('no rules: empty state shown');
+        } else {
+          const text = await main.innerText();
+          const rules = (text.match(/Min Balance/g) || []).length || await main.locator('tbody tr').count();
+          s.observe(`${rules} rule(s) listed`);
+          expect(rules, 'At least one rule listed').toBeGreaterThan(0);
+        }
       });
     });
 
@@ -885,30 +895,40 @@ test('Project Management – Regression (part 1: read-only and form-only)', asyn
     // ================= Site Details =================
     await sc('PM-REG-SITE-01', 'Site Details', 'Dropdown options', async s => {
       await s.step(`Project Management › "Site Details": open the page → page opens`, () => navigator.open('Site Details'), { critical: true });
-      await s.step(`Site Details: click "Add Site", open the "Choose Site" dropdown → Warehouse, Site_type3, Site; close the form`, async () => {
-        await openForm('Add Site', 'Add Site');
+      await s.step(`Sites & Storage: click "Add site", open the "Choose Site" dropdown → Warehouse, Site_type3, Site; close the form`, async () => {
+        await openForm('Add site', 'Add Site');
         data.siteTypes = await dropdownOptions(modal().getByRole('button', { name: 'Choose Site' }));
         expect(data.siteTypes).toEqual(['Warehouse', 'Site_type3', 'Site']);
         await navigator.closeOverlay();
       });
-      await s.step(`Site Details: click "ADD" on the first site row, open the "Choose Location" dropdown → Construction Area, Substore; close the form`, async () => {
-        await click(main.locator('tbody tr').first().getByRole('button', { name: 'ADD', exact: true }), 'ADD location');
-        await expect(modal()).toBeVisible();
-        data.locationTypes = await dropdownOptions(modal().getByRole('button', { name: 'Choose Location' }));
-        expect(data.locationTypes).toEqual(['Construction Area', 'Substore']);
-        await navigator.closeOverlay();
+      // Since 24 Nov 2026 a site is a card; opening it shows the inline "ADD LOCATION" row (Location type, Location name,
+      // Parent location, Add) – location types Building / Area / Laydown / Bay replace Construction Area / Substore.
+      await s.step(`Sites & Storage: open the first site card → "ADD LOCATION" row: Location type options Building, Area, Laydown, Bay; Parent location starts with "Top level"; "Add" disabled while the name is empty`, async () => {
+        const card = main.getByRole('button', { name: /^Actions for site / }).first().locator('xpath=preceding-sibling::button[1]');
+        if ((await card.getAttribute('aria-expanded')) !== 'true') await click(card, 'Site card');
+        const type = main.getByRole('combobox', { name: 'Location type' }).first();
+        await visible(type, 'Location type');
+        data.locationTypes = await type.locator('option').allInnerTexts();
+        expect(data.locationTypes).toEqual(['Building', 'Area', 'Laydown', 'Bay']);
+        expect((await main.getByRole('combobox', { name: 'Parent location' }).first().locator('option').allInnerTexts())[0]).toBe('Top level');
+        await expect(main.getByRole('button', { name: 'Add', exact: true }).first()).toBeDisabled();
       });
     });
     await sc('PM-REG-SITE-02', 'Site Details', 'Row menu', async s => {
-      await s.step(`Site Details: click the row menu icon of the first site → menu shows Edit and Delete (then closed)`, async () => {
-        await click(main.locator('tbody tr').first().locator('img[alt="Menu"]'), 'Row menu');
-        for (const item of ['Edit', 'Delete']) await visible(page.getByText(item, { exact: true }).last(), item);
+      await s.step(`Sites & Storage: click "⋯" on the first site card → menu shows "Edit site" and "Delete site" (then closed)`, async () => {
+        await click(main.getByRole('button', { name: /^Actions for site / }).first(), 'Site menu');
+        for (const item of ['Edit site', 'Delete site']) await visible(page.getByRole('menuitem', { name: item, exact: true }), item);
+        await page.keyboard.press('Escape'); await page.mouse.click(5, 300);
+      });
+      await s.step(`Sites & Storage: click "⋯" on a storage location of the open card → menu shows "Raise NCR…", "Rename", "Move", "Archive", "Remove" (then closed)`, async () => {
+        await click(main.getByRole('button', { name: /^Actions for (?!site )/ }).first(), 'Location menu');
+        for (const item of ['Raise NCR…', 'Rename', 'Move', 'Archive', 'Remove']) await visible(page.getByRole('menuitem', { name: item, exact: true }), item);
         await page.keyboard.press('Escape'); await page.mouse.click(5, 300);
       });
     });
     await sc('PM-REG-SITE-06', 'Site Details', 'Address entry on Add Site', async s => {
-      await s.step(`Site Details: click "Add Site", type "Anna Salai Chennai" in "Start typing an address…" → no suggestion list appears and the typed text stays`, async () => {
-        await openForm('Add Site', 'Add Site');
+      await s.step(`Sites & Storage: click "Add site", type "Anna Salai Chennai" in "Start typing an address…" → no suggestion list appears and the typed text stays`, async () => {
+        await openForm('Add site', 'Add Site');
         const address = modal().getByPlaceholder('Start typing an address…');
         await focus(address); await address.pressSequentially('Anna Salai Chennai', { delay: 40 });
         await page.waitForTimeout(1500);
@@ -918,10 +938,11 @@ test('Project Management – Regression (part 1: read-only and form-only)', asyn
       await s.step(`Add Site form: close it (Cancel/X) → form closes, nothing added`, () => navigator.closeOverlay());
     });
     await sc('PM-REG-SITE-11', 'Site Details', 'Export sites', async s => {
-      await s.step(`Site Details: click "Export" → .xlsx downloaded listing as many distinct site names as the page shows`, async () => {
-        if (!(await button('Export').isVisible().catch(() => false))) await navigator.open('Site Details'); // run alone in re-runs
+      // "Export" is "Sites report" since 24 Nov 2026 (same workbook, sheet Site_Location_Data).
+      await s.step(`Sites & Storage: click "Sites report" → .xlsx downloaded listing as many distinct site names as the page shows`, async () => {
+        if (!(await button('Sites report').isVisible().catch(() => false))) await navigator.open('Site Details'); // run alone in re-runs
         const total = Number(((await countText()).match(/\d+/) || [])[0]);
-        const file = await download(button('Export'), 'Export');
+        const file = await download(button('Sites report'), 'Sites report');
         expect(file.name).toMatch(/\.xlsx$/i);
         // One row per location (Site Name, Site Type, Location Name, Location Type, Client ID, Project ID, Created At).
         // 19 Nov 2026: the old message listed every site name and was cut off; it now states each cause in short.
@@ -941,9 +962,9 @@ test('Project Management – Regression (part 1: read-only and form-only)', asyn
       });
     });
     await sc('UPL-SITE-01', 'Site Details › Upload', 'Template download and layout', async s => {
-      await s.step(`Site Details: click "Upload" › "Download Template" → file site_bulk_upload_template.xlsx, sheet "Sheet1" headers site_name, site_type, location_name, location_type`, async () => {
-        await click(button('Upload'), 'Upload');
-        const file = await download(page.getByText('Download Template', { exact: true }).first(), 'Download Template');
+      await s.step(`Sites & Storage: click "Bulk upload" › "Download template" → file site_bulk_upload_template.xlsx, sheet "Sheet1" headers site_name, site_type, location_name, location_type`, async () => {
+        await click(main.getByRole('button', { name: /^Bulk upload/ }), 'Bulk upload');
+        const file = await download(page.getByRole('menuitem', { name: 'Download template' }), 'Download template');
         expect(file.name).toBe('site_bulk_upload_template.xlsx');
         const book = readWorkbook(file.path);
         expect(Object.values(book.Sheet1[0]).filter(Boolean)).toEqual(['site_name', 'site_type', 'location_name', 'location_type']);

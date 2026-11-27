@@ -861,8 +861,17 @@ test('SCP – End-to-end smoke', async ({ page }) => {
       // ================= TC-14 Procurement alert =================
       await scenario('alert', ['submittal'], async s => {
         const A = R.alert = R.alert || { message: `Alert for ${sub.number}: total count at or above ${ALERT_VALUE}` };
-        await s.step(`Run submittal › row "⋮" › "Alert" › "Add Alert": field (first "Total Count" field), condition "${ALERT_CONDITION}", value ${ALERT_VALUE}, message, recipient ${R.responsible?.name || '(none chosen)'}, "Submit" once → toast "Alert created successfully!"`, async () => {
-          const r = await v2.createAlert({ number: sub.number, field: process.env.SCP_E2E_ALERT_FIELD, condition: ALERT_CONDITION, value: ALERT_VALUE, message: A.message, user: R.responsible?.name });
+        // 27 Nov 2026 (issue justification): the alert field is a numeric custom field created in Procurement Log
+        // Configuration › "+ Add Log Fields"; one "Alert Count <run>" field is created once and reused by later runs.
+        await s.step('Project Management › Procurement Log Configuration › "+ Add Log Fields": an "Alert Count" custom field of a numeric type exists (created now when missing) → listed as "(Custom)"', async () => {
+          if (A.field) return;
+          const f = await v2.ensureAlertField(D);
+          A.field = f.name;
+          s.observe(f.created ? `Created "${f.name}" (type ${f.type}; types offered: ${f.types.join(', ')})` : `Reused existing custom field "${f.name}"`);
+          record('Procurement Log', 'Custom field (alert)', f.name, f.created ? f.type : 'reused', 'Project Admin', f.created ? 'Created for the alert' : 'Existing field reused');
+        }, { critical: true, evidence: true });
+        await s.step(`Run submittal › row "⋮" › "Alert" › "Add Alert": field (the "Alert Count" custom field), condition "${ALERT_CONDITION}", value ${ALERT_VALUE}, message, recipient ${R.responsible?.name || '(none chosen)'}, "Submit" once → toast "Alert created successfully!"`, async () => {
+          const r = await v2.createAlert({ number: sub.number, field: process.env.SCP_E2E_ALERT_FIELD || A.field, condition: ALERT_CONDITION, value: ALERT_VALUE, message: A.message, user: R.responsible?.name });
           if (!r.created) { s.observe('Alert already created by the first attempt'); return; }
           Object.assign(A, r);
           s.observe(`Field "${r.field}" (offered: ${r.fields.join(', ')}); recipient ${r.user || 'none'}`);
@@ -910,6 +919,8 @@ test('SCP – End-to-end smoke', async ({ page }) => {
         const at = open.indexOf(section); const part = open.slice(at, at + 1500);
         return { count, listed: part.includes(number), part: part.slice(0, 400) };
       };
+      // 24 Nov 2026: Supplier Inbox was removed (/supplier-inbox opens My Work) – skipped until client question 3 is answered.
+      if (!process.env.SCP_SUPPLIER_INBOX) { records.entInbox = { ...S.entInbox, status: 'Skipped', reason: 'Skipped (25 Nov 2026): Supplier Inbox removed – /supplier-inbox opens My Work; awaiting client question 3', steps: [], startedAt: new Date().toISOString(), durationMs: 0 }; run.result.scenarios.push(records.entInbox); flush(); } else
       await scenario('entInbox', ['booking'], async s => {
         await s.step(`Enterprise › Supplier Inbox: Submittal filter "${sub.number}" → the run delivery (booked, checklist not yet filled) is listed under "Pending Pre-Shipping Checklists"`, async () => {
           const r = await inboxFor(sub.number, 'Pending Pre-Shipping Checklists');
@@ -1439,7 +1450,9 @@ test('SCP – End-to-end smoke', async ({ page }) => {
 
       // ================= TC-24B Enterprise after the flow (added 23 Nov 2026) =================
       await scenario('entAfter', ['grn'], async s => {
-        await s.step(`Enterprise › Supplier Inbox: Submittal filter "${sub.number}" → no longer under "Pending Pre-Shipping Checklists" (the checklist was confirmed and approved in TC-15/16)`, async () => {
+        // Supplier Inbox removed on 24 Nov 2026 (client question 3): its check runs only when SCP_SUPPLIER_INBOX is set.
+        if (!process.env.SCP_SUPPLIER_INBOX) s.observe('Supplier Inbox check not run: page removed (/supplier-inbox opens My Work) – awaiting client question 3');
+        else await s.step(`Enterprise › Supplier Inbox: Submittal filter "${sub.number}" → no longer under "Pending Pre-Shipping Checklists" (the checklist was confirmed and approved in TC-15/16)`, async () => {
           const r = await inboxFor(sub.number, 'Pending Pre-Shipping Checklists');
           s.observe(`before the approvals: ${R.inboxPending ?? '?'} submittal(s); now: ${r.count}`);
           expect(r.count, 'Run submittal still listed under Pending Pre-Shipping Checklists after the approvals').toBe(0);

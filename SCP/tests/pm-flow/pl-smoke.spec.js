@@ -16,6 +16,8 @@ test('Procurement Log – smoke', async ({ page, browserName }) => {
     const k = plKit(page);
     const { main } = k;
     const btn = name => main.getByRole('button', { name, exact: true }).first();
+    // 25 Nov 2026: the toolbar button "Assign Responsible" is now "Bulk assign Responsible".
+    const assignBtn = () => main.getByRole('button', { name: /^(Bulk assign|Assign) Responsible$/i }).first();
 
     const login = await run.scenario(meta('PL-SMK-001', `Open Procurement Log on ${config.projectName}`, { always: true }), async s => {
       await k.signIn(s, config);
@@ -25,7 +27,8 @@ test('Procurement Log – smoke', async ({ page, browserName }) => {
 
     await run.scenario(meta('PL-SMK-002', 'Toolbar controls render'), async s => {
       await s.step(`Procurement Log toolbar → buttons "Add Submittal", "Filters", "Status", "Assign Responsible", "Bulk Delete", "Import", "Export", "Columns", date boxes "Start date"/"End date" (dd/mm/yyyy) and checkbox "Only my watched" are visible`, async () => {
-        for (const name of ['Add Submittal', 'Filters', 'Status', 'Assign Responsible', 'Bulk Delete', 'Import', 'Export', 'Columns']) await expect(btn(name), name).toBeVisible();
+        for (const name of ['Add Submittal', 'Filters', 'Status', 'Bulk Delete', 'Import', 'Export', 'Columns']) await expect(btn(name), name).toBeVisible();
+        await expect(assignBtn(), 'Bulk assign Responsible').toBeVisible();
         await expect(page.getByRole('textbox', { name: 'Start date' })).toHaveValue(/^\d{2}\/\d{2}\/\d{4}$/);
         await expect(page.getByRole('textbox', { name: 'End date' })).toHaveValue(/^\d{2}\/\d{2}\/\d{4}$/);
         await expect(page.getByRole('checkbox', { name: 'Only my watched' })).toBeVisible();
@@ -86,8 +89,17 @@ test('Procurement Log – smoke', async ({ page, browserName }) => {
       await s.step(`Close the "Add Submittal" dialog → item count is unchanged (nothing created)`, async () => { await k.closeDialog('Add Submittal'); await expect.poll(k.count).toBe(before); });
     });
 
-    await run.scenario(meta('PL-SMK-008', 'Bulk actions need a selection'), async s => {
-      await s.step(`Click "Assign Responsible" with no row selected → toast "Select one or more rows before assigning a Responsible user."`, async () => { await btn('Assign Responsible').click(); await k.toast('Select one or more rows before assigning a Responsible user.'); });
+    await run.scenario(meta('PL-SMK-008', 'Bulk assign Responsible page; Bulk Delete needs a selection'), async s => {
+      // 25 Nov 2026: "Bulk assign Responsible" opens its own page instead of asking for a row selection first.
+      await s.step(`Click "Bulk assign Responsible" → page /procurement-log/bulk-responsible with lists "Submittals" and "People", "Add to existing Responsible" / "Remove from selected submittals" and "Build list to review"; click "← Procurement Log" (nothing saved)`, async () => {
+        await assignBtn().click();
+        await expect(page).toHaveURL(/\/procurement-log\/bulk-responsible/);
+        for (const t of ['Submittals', 'People', 'Add to existing Responsible', 'Remove from selected submittals']) await expect(main.getByText(t, { exact: true }).first(), t).toBeVisible({ timeout: 20000 });
+        await expect(btn('Build list to review')).toBeVisible();
+        await btn('← Procurement Log').click();
+        await expect(page).toHaveURL(/\/procurement-log\/?(\?|$)/);
+        await k.openLog();
+      });
       await s.step(`Click "Bulk Delete" with no row selected → toast "Select one or more rows before deleting."`, async () => { await btn('Bulk Delete').click(); await k.toast('Select one or more rows before deleting.'); });
     });
 
@@ -102,10 +114,18 @@ test('Procurement Log – smoke', async ({ page, browserName }) => {
 
     let description = '';
     await run.scenario(meta('PL-SMK-010', 'Submittal detail drawer'), async s => {
-      await s.step(`Click the Spec Description cell of the first row → URL contains ?submittal= (drawer opens)`, async () => {
-        description = (await k.rows().first().getByRole('cell').nth(1).innerText()).trim();
-        await k.rows().first().getByRole('cell').nth(1).click();
-        await expect(page).toHaveURL(/[?&]submittal=/);
+      // The newest submittals may have no components yet: open the first of the top rows whose page lists components.
+      await s.step(`Click the Spec Description cell of the first row that has components (up to 10 rows tried) → URL contains ?submittal= (drawer opens)`, async () => {
+        for (let i = 0; i < 10; i++) {
+          if (i) await k.openLog();
+          const cell = k.rows().nth(i).getByRole('cell').nth(1);
+          description = (await cell.innerText()).trim();
+          await cell.click();
+          await expect(page).toHaveURL(/[?&]submittal=/);
+          await k.componentsLoaded();
+          if (await page.getByRole('button', { name: /^More actions for / }).first().isVisible().catch(() => false)) { s.observe(`Row ${i + 1} has components`); return; }
+        }
+        throw new Error('None of the first 10 submittals has components');
       }, { critical: true });
       // Redesigned submittal page (staging release of 23 Nov 2026 evening).
       await s.step(`Submittal page → heading with the submittal, buttons "Import components", "Add component", "Add shipment", "Select not-confirmed", section "International shipping" and the component list ("Select all components") are shown`, async () => {

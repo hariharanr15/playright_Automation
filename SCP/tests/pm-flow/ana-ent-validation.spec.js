@@ -40,7 +40,9 @@ test('Analytics and Enterprise – validation', async ({ page, browserName }) =>
       return { file, name: d.suggestedFilename() };
     };
     const tableRows = async table => table.locator('tbody tr').evaluateAll(rows => rows.map(r => [...r.querySelectorAll('td')].map(td => td.innerText.replace(/\s+/g, ' ').trim())));
-    const rowsOf = async table => { for (let i = 0; i < 10; i++) { const r = await tableRows(table); if (r.length) return r; await page.waitForTimeout(2000); } return []; };
+    // 24 Nov 2026: some Analytics grids render the header and the body as two tables – the rows are then read from the
+    // table that follows the header table.
+    const rowsOf = async table => { for (let i = 0; i < 10; i++) { const r = await tableRows(table); if (r.length) return r; const next = await tableRows(table.locator('xpath=following::table[1]')).catch(() => []); if (next.length) return next; await page.waitForTimeout(2000); } return []; };
     const headers = async table => (await table.locator('th').allInnerTexts()).map(t => t.replace(/\s+/g, ' ').trim());
 
     const login = await run.scenario(meta('ANV-SETUP', 'Setup', `Sign in on ${config.projectName}`, 'Setup', { always: true }), async s => { await k.signIn(s, config); });
@@ -77,6 +79,19 @@ test('Analytics and Enterprise – validation', async ({ page, browserName }) =>
     await run.scenario(meta('ENT-REG-05', ENT, 'Project filter limits every section to the project', 'Positive', { navPath: [ENT, 'Supplier Inbox'] }), async s => {
       await s.step(`Supplier Inbox › Project filter: choose "${config.projectName}" → every row of the expanded sections belongs to ${config.projectName}`, async () => {
         await open('/supplier-inbox', 'Supplier Inbox', ENT);
+        // Since 23 Nov 2026 Supplier Inbox is part of My Work (/supplier-inbox redirects there). My Work has no Project
+        // dropdown: its "Projects at a glance" list is narrowed with "Search projects…" – that filter is checked instead.
+        if (/\/my-work/.test(page.url()) || !(await main.locator('select').first().isVisible().catch(() => false))) {
+          const search = main.getByPlaceholder(/Search projects/i).first();
+          await expect(search, 'My Work › Search projects').toBeVisible({ timeout: 30000 });
+          await search.fill(config.projectName); await k.settle(2500);
+          const names = (await main.locator('table').first().locator('tbody tr').evaluateAll(rows => rows.map(r => (r.cells[0]?.innerText || '').split('\n')[0].trim()))).filter(Boolean);
+          s.observe(`Supplier Inbox opens My Work (${page.url().replace(/^https?:\/\/[^/]+/, '')}); Search projects "${config.projectName}" → ${names.length} row(s): ${names.slice(0, 5).join(', ')}`);
+          expect(names.length, 'Rows after the project search').toBeGreaterThan(0);
+          expect(names.filter(n => !n.toLowerCase().includes(config.projectName.toLowerCase())), 'Projects that do not match the search').toEqual([]);
+          await search.fill('');
+          return;
+        }
         await main.locator('select').first().selectOption({ label: config.projectName }); await k.settle(3000);
         const other = []; let total = 0;
         for (const name of ['Unconfirmed Lead Times', 'Overdue Items', 'Deliveries to Schedule']) {

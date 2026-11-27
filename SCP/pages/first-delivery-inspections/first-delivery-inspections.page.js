@@ -119,7 +119,12 @@ class FirstDeliveryInspectionsPage extends BasePage {
   }
 
   rows() {
-    return this.page.locator('main table tbody tr').filter({ has: this.page.locator('td:nth-child(9)') });
+    // Since 24 Nov 2026 the page also shows a 9-column "Question sets & results by material category" summary table; the
+    // inspection rows are the table whose header has "Outcome" (older builds: any 9+ column table).
+    const tables = this.page.locator('main table');
+    const inspections = tables.filter({ has: this.page.getByRole('columnheader', { name: /^Outcome/i }) });
+    const old = tables.filter({ hasNot: this.page.getByRole('columnheader', { name: /^Question set/i }) });
+    return inspections.or(old).locator('tbody tr').filter({ has: this.page.locator('td:nth-child(9)') });
   }
 
   async hasRecords() {
@@ -175,14 +180,23 @@ class FirstDeliveryInspectionsPage extends BasePage {
   }
 
   async rowData(row) {
-    const cells = await row.getByRole('cell').allTextContents();
+    const cells = (await row.getByRole('cell').allTextContents()).map(c => c.trim());
+    // Since the 24 Nov 2026 build the table can carry extra columns (e.g. "Material category"), so cells are mapped by
+    // the header names of the row's own table; the old fixed positions remain the fallback.
+    const heads = await row.evaluate(tr => [...(tr.closest('table')?.querySelectorAll('thead th') || [])].map(th => th.innerText.replace(/\s+/g, ' ').trim()))
+      .catch(() => []);
+    const offset = Math.max(0, heads.length - cells.length);
+    const col = (re, fallback) => {
+      const i = heads.findIndex(h => re.test(h));
+      return i >= 0 ? cells[i - offset] : cells[fallback];
+    };
     return {
-      material: cells[1]?.trim(),
-      supplier: cells[2]?.trim(),
-      submittal: cells[3]?.trim(),
-      deliveryDate: cells[4]?.trim(),
-      assignedTo: cells[5]?.trim(),
-      status: cells[6]?.trim()
+      material: col(/^material(?!\s*categ)/i, 1),
+      supplier: col(/^supplier/i, 2),
+      submittal: col(/^submittal/i, 3),
+      deliveryDate: col(/deliver/i, 4),
+      assignedTo: col(/assign|inspector/i, 5),
+      status: col(/^status/i, 6)
     };
   }
 

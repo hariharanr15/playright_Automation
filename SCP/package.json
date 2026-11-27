@@ -78,7 +78,16 @@
     "defects:report": "node scripts/known-defects-report.js",
     "e2e:smoke": "node scripts/run-pm-flow.js e2e-smoke",
     "full:regression": "node scripts/run-full-regression.js",
-    "ana-ent": "node scripts/run-pm-flow.js ana-ent"
+    "ana-ent": "node scripts/run-pm-flow.js ana-ent",
+    "new-pages": "node scripts/run-pm-flow.js new-pages",
+    "inv-tab": "node scripts/run-pm-flow.js inv-tab",
+    "p2": "node scripts/run-pm-flow.js p2",
+    "p1": "node scripts/run-pm-flow.js p1",
+    "loads": "node scripts/run-pm-flow.js loads",
+    "np-e2e": "node scripts/run-pm-flow.js np-e2e",
+    "my-work": "node scripts/run-pm-flow.js my-work",
+    "tov-epd": "node scripts/run-pm-flow.js tov-epd",
+    "import-rebuild": "node scripts/run-pm-flow.js import-rebuild"
   },
   "keywords": [
     "playwright",

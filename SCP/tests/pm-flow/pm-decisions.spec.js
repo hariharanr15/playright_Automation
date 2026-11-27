@@ -133,34 +133,32 @@ test('Project Management – decision cases', async ({ page, browserName }) => {
     });
 
     // ================= SITE-07 =================
-    await run.scenario(meta('PM-REG-SITE-07', 'Site Details', 'Delete a site that has deliveries is blocked or warned'), async s => {
+    // 25 Nov 2026 (user): skipped until a site with run deliveries is chosen – the earlier one (Site T2 Pmr2-2611220013) is gone.
+    if (!process.env.SCP_SITE07_SITE) run.skip(meta('PM-REG-SITE-07', 'Site Details', 'Delete a site that has deliveries is blocked or warned'), 'Skipped (user, 25 Nov 2026): no run site with deliveries is listed any more; set SCP_SITE07_SITE to a site with deliveries that may be deleted if the app wrongly allows it');
+    else await run.scenario(meta('PM-REG-SITE-07', 'Site Details', 'Delete a site that has deliveries is blocked or warned'), async s => {
       let site;
       await s.step('Site Details: a run site "Site T2 Pmr2-…" (received run deliveries) is listed', async () => {
         await page.goto('/site-details', { waitUntil: 'domcontentloaded' }); await k.settle(3000);
-        const names = (await main.locator('tbody tr').allInnerTexts()).map(t => (t.match(/Site T2 Pmr2-\d{10}/i) || [])[0]).filter(Boolean);
+        // Sites & Storage since 24 Nov 2026: one card per site; its "⋯" button is labelled "Actions for site <name>".
+        const names = (await main.getByRole('button', { name: /^Actions for site / }).evaluateAll(bs => bs.map(b => b.getAttribute('aria-label'))))
+          .map(t => (String(t).match(/Site T2 Pmr2-\d{10}/i) || [])[0]).filter(Boolean);
         // 2611211745 was deleted on 22 Nov 2026 (SCP-DEF-081); 2611220013 received the E2E deliveries after the header reset.
-        site = process.env.SCP_SITE07_SITE || names.find(n => /2611220013/.test(n)) || names.sort().pop();
-        s.observe(`site: ${site}`);
-        expect(site, 'a run site "Site T2 Pmr2-…"').toBeTruthy();
+        // Only a site known to have received run deliveries may be used (25 Nov 2026: the newest run site had none, so the
+        // delete was allowed and the result was not meaningful). SCP_SITE07_SITE names another site with deliveries.
+        site = process.env.SCP_SITE07_SITE || names.find(n => /2611220013/.test(n));
+        s.observe(`site: ${site || '(none with run deliveries listed)'}`);
+        expect(site, 'a run site with deliveries ("Site T2 Pmr2-2611220013" or SCP_SITE07_SITE)').toBeTruthy();
       }, { critical: true });
-      await s.step('Its row action "Delete" (row menu or delete icon), confirm if asked → refused or warned; after a reload the site is still listed', async () => {
-        const row = () => main.locator('tbody tr').filter({ hasText: site }).first();
-        const r = await deleteVia(async () => {
-          const menu = row().locator('img[alt="Menu"], button[aria-label*="menu" i]').first();
-          if (await menu.isVisible().catch(() => false)) { await menu.click(); await k.settle(500); return; }
-          const del = row().locator('img[alt="Delete"], [title="Delete"], button:has-text("Delete")').first();
-          await del.click(); await k.settle(800);
-          throw Object.assign(new Error('clicked'), { clicked: true });
-        }).catch(async e => {
-          if (!e.clicked) throw e;
-          const dialog = layers().filter({ has: page.getByRole('button', { name: /^(Delete|Yes|Confirm)$/ }) }).last();
-          let dialogText = '';
-          if (await dialog.isVisible().catch(() => false)) { dialogText = (await dialog.innerText()).replace(/\s+/g, ' ').slice(0, 300); await dialog.getByRole('button', { name: /^(Delete|Yes|Confirm)$/ }).last().click(); await k.settle(2000); }
-          return { dialogText, message: await messages() };
-        });
-        s.observe(`dialog: ${r.dialogText || '(none)'} · message: ${r.message || '(none)'}`);
+      await s.step('Its card menu "⋯" › "Delete site", confirm if asked → refused or warned; after a reload the site is still listed', async () => {
+        const actions = () => main.getByRole('button', { name: `Actions for site ${site}`, exact: true });
+        await actions().click(); await k.settle(600);
+        await page.getByRole('menuitem', { name: 'Delete site' }).click(); await k.settle(1200);
+        const dialog = layers().filter({ has: page.getByRole('button', { name: /^(Delete|Delete site|Yes|Confirm)$/ }) }).last();
+        let dialogText = '';
+        if (await dialog.isVisible().catch(() => false)) { dialogText = (await dialog.innerText()).replace(/\s+/g, ' ').slice(0, 300); await dialog.getByRole('button', { name: /^(Delete|Delete site|Yes|Confirm)$/ }).last().click(); await k.settle(2000); }
+        s.observe(`dialog: ${dialogText || '(none)'} · message: ${await messages() || '(none)'}`);
         await page.reload({ waitUntil: 'domcontentloaded' }); await k.settle(3000);
-        await expect(row(), `"${site}" still listed (delete of a site with deliveries must be refused)`).toBeVisible({ timeout: 15000 });
+        await expect(actions(), `"${site}" still listed (delete of a site with deliveries must be refused)`).toBeVisible({ timeout: 15000 });
       }, { attempts: 1 }); // a retry would look for a site the first attempt may already have deleted
     });
   } });

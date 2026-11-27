@@ -500,8 +500,14 @@ function e2eKit(page, { config, navigator, outDir }) {
       await expect(page).toHaveURL(/\/procurement-log/);
       await expect.poll(async () => /\d+ items?/.test(await main.innerText().catch(() => '')), { timeout: 30000, message: 'Procurement Log loaded' }).toBe(true);
       await settle(2000);
-      await k.search(number);
-      const listed = await expect.poll(() => k.rows().filter({ hasText: number }).count(), { timeout: 15000 }).toBeGreaterThan(0).then(() => true, () => false);
+      // 25 Nov 2026: a search typed while the list is still loading once returned "0 items" for a submittal that exists
+      // (the same search found it later) – search again once before reporting it as not listed.
+      let listed = false;
+      for (let attempt = 0; attempt < 2 && !listed; attempt++) {
+        if (attempt) { await k.search(''); await settle(3000); }
+        await k.search(number);
+        listed = await expect.poll(() => k.rows().filter({ hasText: number }).count(), { timeout: 20000 }).toBeGreaterThan(0).then(() => true, () => false);
+      }
       return { listed, count: ((await main.innerText()).match(/\d+ items?/) || ['?'])[0] };
     },
     // Submittal and component pages as redesigned by the staging release of 23 Nov 2026 (evening): the component opens

@@ -7,8 +7,9 @@ const { focus, setNavPath } = require('./pm-visuals');
 const PM = 'Project Management';
 // Page name used by the scenarios → route, the menu groups that contain it (outermost first) and, when it differs, the
 // entry's label in the menu. Menu layout of the staging release of 23 Nov 2026 (evening): Project Management is grouped
-// into Project Settings / Materials / Inventory Settings / Imports / Integrations, "Site Details" is listed as
-// "Sites & Storage", and PreShipping Checklist is no longer in the menu (groups: null → opened by its route).
+// into Project Settings / Materials / Inventory Settings / Imports / Integrations and "Site Details" is listed as
+// "Sites & Storage". Staging of 24 Nov 2026: PreShipping Checklist is back under Project Settings (while the project's
+// Pre-Shipping Checklist option is On); NCRs, Inventory Rebuild and Excel Import are new entries.
 const MENU = {
   'Booking Integration': { route: 'booking-integration', groups: [PM, 'Integrations'] },
   'TheLink Integration': { route: 'thelink-integration', groups: [PM, 'Integrations'] },
@@ -20,7 +21,10 @@ const MENU = {
   'First Delivery Inspection Config': { route: 'first-delivery-inspection-config', groups: [PM, 'Project Settings'] },
   'Inventory Control': { route: 'inventory-control', groups: [PM, 'Inventory Settings'] },
   'Material Master': { route: 'material-master', groups: [PM, 'Materials'] },
-  'PreShipping Checklist': { route: 'preshipping-checklist', groups: null },
+  'PreShipping Checklist': { route: 'preshipping-checklist', groups: [PM, 'Project Settings'] },
+  'NCRs': { route: 'ncrs', groups: [PM] },
+  'Inventory Rebuild': { route: 'inventory-rebuild', groups: [PM, 'Inventory Settings'] },
+  'Excel Import': { route: 'excel-import', groups: [PM, 'Imports'] },
   'Bulk Upload Status': { route: 'bulk-upload-status', groups: [PM, 'Imports'] },
   'Procurement Log Configuration': { route: 'procurement-log-configuration', groups: [PM, 'Project Settings'] },
   'Site Details': { route: 'site-details', groups: [PM], menu: 'Sites & Storage' },

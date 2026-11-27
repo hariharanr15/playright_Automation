@@ -8,13 +8,21 @@ const { spawnSync } = require('child_process');
 
 const root = path.resolve(__dirname, '..');
 const SUITES = [
+  // 26 Nov 2026: all smoke suites first (as in the overnight run of 25–26 Nov), then the regression suites.
+  { suite: 'pl-smoke', npm: 'procurement:smoke', title: 'Procurement Log smoke' },
+  { suite: 'smoke', npm: 'pm:smoke', title: 'Project Management smoke' },
+  { suite: 'app-smoke', npm: 'modules:smoke', title: 'Other modules smoke' },
+  { suite: 'new-pages', npm: 'new-pages', title: 'New pages smoke (My Work, Loads, Messages, NCRs, EPD Tracker, TOV, Imports)' },
+  // The new Procurement Log "Inventory" tab runs on NeuralRays_Demo (it does not load on heavy-data NRVC_Hall); one
+  // record per run ("INV <YYMMDD-HHMM>"), user rule of 25 Nov 2026.
+  { suite: 'inv-tab', npm: 'inv-tab', title: 'Inventory tab (NeuralRays_Demo)', env: { SCP_PROJECT_NAME: 'NeuralRays_Demo', SCP_PL_SITE: 'Location 1' } },
   { suite: 'app-regression', npm: 'modules:regression', title: 'Other modules regression' },
   { suite: 'tickets', npm: 'tickets:regression', title: 'Ticket regression (BUGS)' },
   { suite: 'regression', npm: 'pm:regression', title: 'Project Management regression part 1' },
   { suite: 'pl-regression2', npm: 'procurement:regression2', title: 'Procurement Log regression part 2' },
   { suite: 'regression2', npm: 'pm:regression2', title: 'Project Management regression part 2' },
   { suite: 'pl-regression', npm: 'procurement:regression', title: 'Procurement Log regression part 1' },
-  { suite: 'inv-regression', npm: 'inventory:regression', title: 'Inventory regression' },
+  // inv-regression (old Inventory Management page, removed 24 Nov 2026) is replaced by inv-tab above.
   { suite: 'pl-regression3', npm: 'procurement:regression3', title: 'Procurement Log regression part 3' },
   // FDI-REG-06…10 need an "Auditor Not Yet Assigned" inspection that Procurement Log part 3 creates (new material →
   // delivery → GRN → FDI row). Other modules runs first, before that record exists, so these cases always skipped there;
@@ -29,6 +37,13 @@ const SUITES = [
   { suite: 'cfg-live', npm: 'cfg-live', title: 'Configuration Options live effects (Pre-Shipping, GRN, alert batch)' },
   { suite: 'roles', npm: 'roles', title: 'Role-based access (read-only)' },
   { suite: 'ana-ent', npm: 'ana-ent', title: 'Analytics and Enterprise validation' },
+  { suite: 'p1', npm: 'p1', title: 'P1 redesign regression (Dashboard urgent issues, PL views, User Management, Supplier List)' },
+  { suite: 'p2', npm: 'p2', title: 'P2 modules regression (Documents, EPD Tracker, Shipments, Aggregate Stats)' },
+  { suite: 'loads', npm: 'loads', title: 'Loads regression (All Loads, Build load, Unallocated Deliveries, Discrepancies – read-only)' },
+  { suite: 'np-e2e', npm: 'np-e2e', title: 'New pages E2E (load → expected → receive → discrepancies → NCR; smoke chain + regression)' },
+  { suite: 'my-work', npm: 'my-work', title: 'My Work regression (glance, 6 sections, task actions, Supplier view)' },
+  { suite: 'tov-epd', npm: 'tov-epd', title: 'TOV Analytics + EPD Tracker regression (forecast, payment terms, invoiced/outflow, EPD settings)' },
+  { suite: 'import-rebuild', npm: 'import-rebuild', title: 'Excel Import + Inventory Rebuild (NeuralRays_Demo) + Messages', env: { SCP_PROJECT_NAME: 'NeuralRays_Demo', SCP_PL_SITE: 'Location 1' } },
   { suite: 'e2e-smoke', npm: 'e2e:smoke', title: 'E2E smoke (TC-01 … TC-26, incl. Enterprise and International Shipments)' }
 ];
 const args = process.argv.slice(2);
@@ -49,7 +64,7 @@ for (const s of chosen) {
   console.log(`\n==================== ${s.title} (${s.suite}) – ${new Date().toLocaleTimeString('en-GB')} ====================`);
   const res = spawnSync('node', [path.join('scripts', 'run-pm-flow.js'), s.suite, ...(s.only ? [`--only=${s.only}`] : []),
     ...(args.includes('--headless') ? ['--headless'] : [])],
-    { cwd: root, stdio: 'inherit', shell: false, env: { ...process.env, PM_FLOW_VIDEO: process.env.PM_FLOW_VIDEO || 'on', PM_FLOW_STEP_SHOTS: process.env.PM_FLOW_STEP_SHOTS || 'on' } });
+    { cwd: root, stdio: 'inherit', shell: false, env: { ...process.env, ...(s.env || {}), PM_FLOW_VIDEO: process.env.PM_FLOW_VIDEO || 'on', PM_FLOW_STEP_SHOTS: process.env.PM_FLOW_STEP_SHOTS || 'on' } });
   const fresh = fs.readdirSync(pmDir).filter(d => !before.has(d) && d.startsWith(`${s.suite}-`)).sort();
   entry.reportDir = fresh.length ? path.join(pmDir, fresh[fresh.length - 1]) : null;
   entry.exitCode = res.status; entry.finishedAt = new Date().toISOString();

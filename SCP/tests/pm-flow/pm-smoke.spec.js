@@ -65,29 +65,35 @@ test('Project Management – Smoke', async ({ page, browserName }) => {
     // ---------- PM-SMK-002 Menu structure ----------
     await run.scenario(meta('PM-SMK-002', 'Menu', 'Project Management menu structure', null), async s => {
       const item = label => navigator.menuItem(label);
-      await s.step(`Left menu: click "Project Management" if collapsed → "Configuration Options" and the other entries are visible`, async () => {
-        if (!(await item('Configuration Options').isVisible().catch(() => false))) { await focus(item(PM)); await item(PM).click(); }
-        await visible(item('Configuration Options'), 'Project Management entries');
+      // Menu of the staging release of 24 Nov 2026: Project Management opens into groups (Reference Data removed).
+      const GROUPS = {
+        'Project Settings': ['Configuration Options', 'Procurement Log Configuration', 'First Delivery Inspection Config', 'PreShipping Checklist', 'System Messages'],
+        Materials: ['Material Master', 'Material Category', 'Common UoM', 'Common Utilities', 'Watched Materials'],
+        'Inventory Settings': ['Inventory Control', 'Inventory Rebuild'],
+        Imports: ['Excel Import', 'Bulk Upload Status', 'Submittal Manager'],
+        Integrations: ['Booking Integration', 'TheLink Integration', 'XER Import']
+      };
+      await s.step(`Left menu: click "Project Management" if collapsed → "Project Settings", "Sites & Storage", "NCRs", "Materials", "Inventory Settings", "Imports", "Integrations" are visible`, async () => {
+        if (!(await item('Project Settings').isVisible().catch(() => false))) { await focus(item(PM)); await item(PM).click(); }
+        await visible(item('Project Settings'), 'Project Management entries');
       }, { critical: true });
-      await s.step(`Left menu › Project Management: expand "Integrations" and "Reference Data" → "XER Import" and "Common UoM" are visible`, async () => {
-        for (const [group, child] of [['Integrations', 'XER Import'], ['Reference Data', 'Common UoM']]) {
-          if (!(await item(child).isVisible().catch(() => false))) { await focus(item(group)); await item(group).click(); }
-          await visible(item(child), `${group} entries`);
+      await s.step(`Left menu › Project Management: expand each group → Project Settings, Materials, Inventory Settings, Imports and Integrations show their entries`, async () => {
+        for (const [group, kids] of Object.entries(GROUPS)) {
+          if (!(await item(kids[0]).isVisible().catch(() => false))) { await focus(item(group)); await item(group).click(); }
+          await visible(item(kids[0]), `${group} entries`);
         }
       }, { critical: true });
-      await s.step(`Left menu › Project Management: read the entry list → 14 entries in the expected order, both sub-menus match, no "Setup Wizard"`, async () => {
-        const tree = await page.locator('nav').evaluate((nav, pm) => {
+      await s.step(`Left menu › Project Management: read the entry list → 7 entries in the expected order, each group lists its pages, no "Setup Wizard" and no "Reference Data"`, async () => {
+        const tree = await page.locator('nav').evaluate((nav, { pm, groups }) => {
           const btn = [...nav.querySelectorAll('button')].find(b => b.innerText.trim() === pm);
           const list = btn.closest('li').querySelector('ul');
           const direct = [...list.children].map(li => li.querySelector('button')?.innerText.trim()).filter(Boolean);
           const kids = name => { const b = [...list.querySelectorAll('button')].find(x => x.innerText.trim() === name); const ul = b?.closest('li')?.querySelector('ul'); return ul ? [...ul.querySelectorAll('button')].map(x => x.innerText.trim()) : []; };
-          return { direct, integrations: kids('Integrations'), reference: kids('Reference Data') };
-        }, PM);
-        expect(tree.direct).toEqual(['Integrations', 'Reference Data', 'Configuration Options', 'First Delivery Inspection Config', 'Inventory Control', 'Inventory Rebuild',
-          'Material Master', 'PreShipping Checklist', 'Bulk Upload Status', 'Procurement Log Configuration', 'Site Details', 'Submittal Manager',
-          'System Messages', 'Watched Materials']);
-        expect(tree.integrations).toEqual(['Booking Integration', 'TheLink Integration', 'XER Import']);
-        expect(tree.reference).toEqual(['Common Utilities', 'Common UoM', 'Material Category']);
+          return { direct, groups: Object.fromEntries(groups.map(g => [g, kids(g)])) };
+        }, { pm: PM, groups: Object.keys(GROUPS) });
+        s.observe(`Project Management: ${tree.direct.join(', ')}`);
+        expect(tree.direct).toEqual(['Project Settings', 'Sites & Storage', 'NCRs', 'Materials', 'Inventory Settings', 'Imports', 'Integrations']);
+        for (const [group, kids] of Object.entries(GROUPS)) expect(tree.groups[group], `${group} entries`).toEqual(kids);
         expect(tree.direct, 'Setup Wizard is hidden once setup is complete').not.toContain('Setup Wizard');
       });
     });
@@ -323,13 +329,16 @@ test('Project Management – Smoke', async ({ page, browserName }) => {
 
     // ---------- Site Details ----------
     await run.scenario(meta('PM-SMK-017', 'Site Details', 'Site Details list and Add form'), async s => {
-      await s.step(`Left menu › Project Management › "Site Details" → page opens`, () => navigator.open('Site Details'), { critical: true });
-      await s.step(`Site Details: look at buttons and table headers → "Add Site", "Upload", "Export" visible; columns Site Type, Name, City, Country, Locations`, async () => {
-        for (const name of ['Add Site', 'Upload', 'Export']) await visible(main.getByRole('button', { name, exact: true }), name);
-        expect(await headers(main.locator('table').first())).toEqual(expect.arrayContaining(['Site Type', 'Name', 'City', 'Country', 'Locations']));
+      await s.step(`Left menu › Project Management › "Sites & Storage" → page opens`, () => navigator.open('Site Details'), { critical: true });
+      // Sites & Storage since 24 Nov 2026: site cards instead of a table; "Bulk upload" and "Sites report" replace Upload / Export.
+      await s.step(`Sites & Storage: look at the toolbar and the list → "Search sites…", "<n> sites", buttons "Bulk upload", "Sites report", "Add site"; each site card has a "⋯" menu`, async () => {
+        await visible(main.getByPlaceholder('Search sites…'), 'Search sites');
+        await visible(main.getByText(/^\d+ sites?$/), 'Site count');
+        for (const name of [/^Bulk upload/, /^Sites report$/, /^Add site$/]) await visible(main.getByRole('button', { name }), String(name));
+        await visible(main.getByRole('button', { name: /^Actions for site / }), 'Site card menu');
       });
-      await s.step(`Site Details: click "Add Site", then close with Cancel/X → form shows Site Type *, Name *, Address, City, Country; nothing saved`, async () => {
-        await openForm('Add Site', 'Add Site');
+      await s.step(`Sites & Storage: click "Add site", then close with Cancel/X → form "Add Site" shows Site Type *, Name *, Address, City, Country; nothing saved`, async () => {
+        await openForm('Add site', 'Add Site');
         await inModal([/^Site Type\s*\*$/, /^Name\s*\*$/, 'Address', 'City', 'Country']);
         await navigator.closeOverlay();
       });

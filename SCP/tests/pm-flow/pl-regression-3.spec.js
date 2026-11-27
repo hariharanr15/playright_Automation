@@ -589,7 +589,10 @@ test('Procurement Log – regression part 3', async ({ page, browserName }) => {
         await expect(page.locator('main tbody tr').filter({ hasText: NEW_MATERIAL })).toHaveCount(1, { timeout: 30000 });
       });
     });
-    await run.scenario(int03, async s => {
+    // 24 Nov 2026: Inventory Management was removed from the menu and the Procurement Log "Inventory" tab shows
+    // "Couldn't load inventory." – the stock check waits for client question 2 (set SCP_INV_TAB_READY to run it).
+    if (!process.env.SCP_INV_TAB_READY) run.skip(int03, 'Skipped (25 Nov 2026): Inventory Management removed; the Procurement Log "Inventory" tab shows "Couldn\'t load inventory." – awaiting client question 2');
+    else await run.scenario(int03, async s => {
       // Purpose: goods received through the GRN must reach Inventory with the exact quantity.
       // Expected: the "Inventory" column of the new material equals the 4 units delivered in good condition
       // (PL-REG-DLV-10/11b). The material is created by this run, so it has no other stock.

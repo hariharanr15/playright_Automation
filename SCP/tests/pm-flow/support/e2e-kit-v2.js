@@ -303,6 +303,32 @@ function e2eKitV2(page, { kit, navigator, outDir, config, site }) {
     // ---------------- Procurement Log: row Alert ----------------
     // Alert panel rows (Field Type | Condition | Value | Message | Users | Status); the run's rule is found by its message.
     async alertRow(message) { return page.getByRole('row').filter({ hasText: message }).first(); },
+    // Issue justification of 27 Nov 2026: alerts are built on a numeric custom field, which the user creates in Project
+    // Management › Procurement Log Configuration › "+ Add Log Fields". One "Alert Count <stamp>" field is created the first
+    // time and reused by later runs (any existing "Alert Count …(Custom)" row), so the Procurement Log gains one column only.
+    async ensureAlertField(stamp) {
+      await navigator.open('Procurement Log Configuration');
+      const rows = main.locator('tbody tr');
+      await expect(rows.first(), 'Procurement Log Configuration fields listed').toBeVisible({ timeout: 30000 });
+      const fieldName = async row => clean((await row.innerText()).split(/\(Custom\)/i)[0]).replace(/^\d+\s+/, '');
+      const existing = rows.filter({ hasText: /Alert Count[\s\S]*\(Custom\)/i }).first();
+      if (await existing.count()) return { name: await fieldName(existing), created: false };
+      await main.getByRole('button', { name: /Add Log Fields/ }).click();
+      const form = layer('Add Procurement Log Fields');
+      await expect(form, '"Add Procurement Log Fields" form').toBeVisible({ timeout: 10000 });
+      const name = `Alert Count ${stamp}`;
+      await form.getByRole('textbox').first().fill(name);
+      await form.getByRole('button', { name: 'Choose Field Type' }).click();
+      const types = (await listbox().getByRole('option').allInnerTexts()).map(clean);
+      const numeric = types.find(t => /^(number|numeric|integer|decimal)/i.test(t)) || types.find(t => /num|int|decimal/i.test(t));
+      expect(numeric, `A numeric Field Type is offered (offered: ${types.join(', ')})`).toBeTruthy();
+      await listbox().getByRole('option', { name: numeric, exact: true }).first().click();
+      await form.getByRole('button', { name: 'Add', exact: true }).click();
+      await expect(form, 'Form closes after "Add"').toBeHidden({ timeout: 15000 });
+      const row = rows.filter({ hasText: /Alert Count[\s\S]*\(Custom\)/i }).first();
+      await expect(row, `"${name}(Custom)" listed`).toBeVisible({ timeout: 15000 });
+      return { name: await fieldName(row), created: true, type: numeric, types };
+    },
     async createAlert({ number, field, condition, value, message, user }) {
       await fresh(); await k.search(number);
       await rowMenu(number, 'Alert');
@@ -311,7 +337,9 @@ function e2eKitV2(page, { kit, navigator, outDir, config, site }) {
       await page.getByRole('button', { name: 'Add Alert' }).click();
       await page.getByRole('button', { name: 'Choose Field' }).click();
       const fields = (await listbox().getByRole('option').allInnerTexts()).map(clean);
-      const chosenField = field && fields.find(f => norm(f) === norm(field)) ? field : fields[0];
+      const loose = f => norm(f).replace(/[^a-z0-9]/g, '');
+      const chosenField = field ? fields.find(f => loose(f) === loose(field)) : fields[0];
+      expect(chosenField, `Alert Field "${field || '(first)'}" offered (offered: ${fields.join(', ') || 'none'})`).toBeTruthy();
       await listbox().getByRole('option', { name: chosenField, exact: true }).first().click();
       await k.pick('Choose Condition', condition);
       await page.getByRole('textbox', { name: 'Enter value' }).fill(String(value));
@@ -422,6 +450,10 @@ function e2eKitV2(page, { kit, navigator, outDir, config, site }) {
     // Add Inspector: member by e-mail, a project role (preferred, else the first), "Specific Materials" → the material.
     async addInspector({ email, role, material }) {
       await v2.openFdiConfig();
+      // The inspectors table fills after the page: wait for its rows before deciding the member is not listed yet.
+      const table = main.locator('table').filter({ has: page.getByText('Materials Scope') }).first();
+      await table.locator('tbody tr').first().waitFor({ timeout: 30000 }).catch(() => null);
+      await v2.inspectorRow(email).waitFor({ timeout: 5000 }).catch(() => null);
       if (await v2.inspectorRow(email).count()) return { created: false, row: clean(await v2.inspectorRow(email).innerText()) };
       await main.getByRole('button', { name: 'Add Inspector', exact: true }).click();
       const form = layer('Add Inspector');
@@ -434,11 +466,29 @@ function e2eKitV2(page, { kit, navigator, outDir, config, site }) {
       const chosenRole = roles.find(r => norm(r) === norm(role)) || roles[0];
       await roleSelect.selectOption({ label: chosenRole });
       await form.getByText('Specific Materials', { exact: true }).click();
+      // 25 Nov 2026: the material list fills after a delay and the full name once found nothing ("No material matches
+      // that search") – wait for it, then retry with the last word of the name, before reporting what is offered.
       const search = form.getByPlaceholder(/Search materials/);
-      if (await search.isVisible().catch(() => false)) await search.fill(material);
-      await form.locator('label', { hasText: exactI(material) }).first().click();
+      const option = form.locator('label', { hasText: exactI(material) }).first();
+      const offered = () => option.waitFor({ timeout: 15000 }).then(() => true, () => false);
+      let found = false;
+      for (const query of [material, String(material).split(/\s+/).pop(), '']) {
+        if (await search.isVisible().catch(() => false)) { await search.fill(''); await search.pressSequentially(query, { delay: 40 }); }
+        if ((found = await offered())) break;
+      }
+      if (!found) throw new Error(`Add Inspector › Specific Materials does not offer "${material}". Offered: ${clean(await form.innerText()).split('Materials').pop().slice(0, 300)}`);
+      await option.click();
       await form.getByRole('button', { name: 'Add', exact: true }).click();
-      await expect(form, 'Add Inspector form closes').toBeHidden({ timeout: 15000 });
+      // The app refuses a member who is already an inspector ("This person is already on the Inspectors list for this
+      // project."): close the form and report the existing row.
+      const already = form.getByText(/already on the Inspectors list/i);
+      await expect.poll(async () => (await already.isVisible().catch(() => false)) || !(await form.isVisible().catch(() => false)), { timeout: 15000, message: 'Add Inspector form closes' }).toBe(true);
+      if (await already.isVisible().catch(() => false)) {
+        await form.getByRole('button', { name: /^(Close|×|✕)$/ }).first().click().catch(() => page.keyboard.press('Escape'));
+        await expect(form).toBeHidden({ timeout: 10000 }).catch(() => page.keyboard.press('Escape'));
+        await expect(v2.inspectorRow(email), 'Existing inspector listed').toBeVisible({ timeout: 15000 });
+        return { created: false, row: clean(await v2.inspectorRow(email).innerText()) };
+      }
       await expect(v2.inspectorRow(email), 'Inspector listed').toBeVisible({ timeout: 15000 });
       return { created: true, member: memberLabel, role: chosenRole, row: clean(await v2.inspectorRow(email).innerText()) };
     },
@@ -449,6 +499,10 @@ function e2eKitV2(page, { kit, navigator, outDir, config, site }) {
       await k.menu('First Delivery Inspections').catch(() => page.goto('/first-delivery-inspections', { waitUntil: 'domcontentloaded' }));
       await v2.keepSite('First Delivery Inspections list');
       await expect(main.getByRole('combobox').first(), 'FDI filters').toBeVisible({ timeout: 30000 });
+      // Since 24 Nov 2026 the list opens grouped by material category, which hides the Supplier and Status filters and
+      // the inspection rows: untick the grouping (the filters are then Material, Supplier, Status in that order).
+      const group = main.getByRole('checkbox', { name: 'Group by material category' });
+      if (await group.isChecked().catch(() => false)) { await group.uncheck(); await settle(2500); }
       await settle(1500);
     },
     async fdiFilter({ material, supplier, status }) {

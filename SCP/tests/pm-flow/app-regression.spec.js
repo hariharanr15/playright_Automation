@@ -47,6 +47,8 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
       await k.menu(name, group).catch(() => null);
       await page.goto(route, { waitUntil: 'domcontentloaded' }); // a same-route menu click keeps a leftover form open
       await k.settle(1500);
+      // a page load lets the app pick the newest (run-created) site in the header (OBS-INV-12): put the run site back
+      if (await k.keepSite().catch(() => false)) await k.settle(1500);
     };
     const download = async trigger => {
       const dl = page.waitForEvent('download', { timeout: 60000 });
@@ -387,28 +389,49 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
 
     // ======================= First Delivery Inspections =======================
     const FDI = 'First Delivery Inspections';
-    const fdiOpen = () => open('/first-delivery-inspections', FDI);
-    const fdiRows = () => k.rows();
+    // Since 24 Nov 2026 the page opens grouped by material category; with the grouping unticked it shows the category
+    // summary table first and then the inspections (the table with "Outcome"). The FDI cases use the inspection rows.
+    const fdiOpen = async () => {
+      await open('/first-delivery-inspections', FDI);
+      const group = main.getByRole('checkbox', { name: 'Group by material category' });
+      if (await group.isChecked().catch(() => false)) { await group.uncheck(); await k.settle(2500); }
+    };
+    const fdiTable = () => main.locator('table').filter({ has: page.getByRole('columnheader', { name: 'Outcome' }) }).first();
+    const fdiRows = () => fdiTable().locator('tbody tr').filter({ has: page.locator('td') });
+    // Since 24 Nov 2026 the page opens grouped by material category (summary table, filters Material and Search only).
+    // Unticking "Group by material category" shows the inspection list with the filters Search, Material, Supplier,
+    // Status, Assigned To (inspector email) and delivery dates. The inspection rows are the table with the "Outcome" column.
     await run.scenario(meta('FDI-REG-04', FDI, 'Filters narrow rows', 'Positive'), async s => {
-      await s.step(`First Delivery Inspections (/first-delivery-inspections): status dropdown "All Statuses" › "Inspection Completed" → only completed inspections listed; reset to "All Statuses" → original row count returns`, async () => {
-        // 13 Nov 2026: the filter was chosen while the list was still loading, and the late load replaced the filtered rows
-        // (user: the filter works). Wait until the list has loaded and its row count is stable before choosing the status.
-        await fdiOpen(); await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => null);
-        let all = -1; for (const end = Date.now() + 15000; Date.now() < end;) { const n = await fdiRows().count(); if (n > 0 && n === all) break; all = n; await page.waitForTimeout(1500); }
-        s.observe(`${all} rows`);
-        const sel = main.locator('select').filter({ has: page.locator('option', { hasText: 'All Statuses' }) }).first();
-        const opt = (await sel.locator('option').allInnerTexts()).find(t => /^Inspection Completed$/i.test(t.trim()));
-        await sel.selectOption({ label: opt }); await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => null); await k.settle(1500);
-        await expect.poll(async () => (await fdiRows().allInnerTexts()).every(t => /Inspection\s+Completed/i.test(t)), { message: 'Status filter leaves other statuses listed', timeout: 15000 }).toBe(true);
-        s.observe(`${await fdiRows().count()} rows with "Inspection Completed"`);
-        await sel.selectOption({ index: 0 }); await k.settle(1500);
-        await expect.poll(() => fdiRows().count(), { timeout: 15000 }).toBe(all);
-      });
-      await s.step(`First Delivery Inspections: type "zz-nobody@example.com" in "Inspector email" → "No inspections found."; clear the field`, async () => {
-        await main.getByPlaceholder('Inspector email').fill('zz-nobody@example.com'); await k.settle(1500);
-        await expect(main.getByText('No inspections found.')).toBeVisible();
-        await main.getByPlaceholder('Inspector email').fill(''); await k.settle(1000);
-      });
+      const inspections = () => main.locator('table').filter({ has: page.getByRole('columnheader', { name: 'Outcome' }) }).first().locator('tbody tr').filter({ has: page.locator('td') }).filter({ hasNotText: /^\s*No (inspections?|results|data)/i }); // the empty state is a row too
+      const group = () => main.getByRole('checkbox', { name: 'Group by material category' });
+      // the list fills in steps (1 row, then all): a count is taken once three reads 2 s apart agree
+      const stable = async () => { const seen = []; for (const end = Date.now() + 40000; Date.now() < end;) { seen.push(await inspections().count()); const l = seen.slice(-3); if (l.length === 3 && l[0] > 0 && l.every(v => v === l[0])) return l[0]; await page.waitForTimeout(2000); } return seen.pop(); };
+      let all = 0;
+      try {
+        await s.step(`First Delivery Inspections: untick "Group by material category" → the inspection list (Material, Category, Supplier, Submittal, Delivery Date, Assigned To, Status, Outcome) is shown`, async () => {
+          await fdiOpen(); await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => null);
+          if (await group().isChecked().catch(() => false)) { await group().uncheck(); await k.settle(2000); }
+          all = await stable(); s.observe(`${all} inspection rows`);
+          expect(all, 'Inspection rows listed').toBeGreaterThan(0);
+        }, { critical: true });
+        await s.step(`Status filter "All Statuses" › "Inspection Completed" → only completed inspections listed; back to "All Statuses" → original row count returns`, async () => {
+          const sel = main.locator('select').filter({ has: page.locator('option', { hasText: 'All Statuses' }) }).first();
+          const opt = (await sel.locator('option').allInnerTexts()).find(t => /^Inspection Completed$/i.test(t.trim())) || (await sel.locator('option').allInnerTexts()).find(t => /Completed/i.test(t));
+          await sel.selectOption({ label: opt }); await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => null); await k.settle(1500);
+          await expect.poll(async () => (await inspections().allInnerTexts()).every(t => /Completed/i.test(t)), { message: 'Status filter leaves other statuses listed', timeout: 15000 }).toBe(true);
+          s.observe(`"${opt}": ${await inspections().count()} of ${all} rows`);
+          await sel.selectOption({ index: 0 }); await k.settle(1500);
+          expect(await stable(), 'rows after "All Statuses"').toBe(all);
+        });
+        await s.step(`"Assigned To": type "zz-nobody@example.com" in "Inspector email" → "No inspections found."; clear the field → rows return`, async () => {
+          await main.getByPlaceholder('Inspector email').fill('zz-nobody@example.com'); await k.settle(1500);
+          await expect(main.getByText(/No inspections found/i).first()).toBeVisible({ timeout: 15000 });
+          await main.getByPlaceholder('Inspector email').fill(''); await k.settle(1500);
+          expect(await stable(), 'rows after clearing the email').toBe(all);
+        });
+      } finally {
+        if (!(await group().isChecked().catch(() => true))) { await group().check().catch(() => null); await k.settle(1000); } // restore the default view
+      }
     });
     await run.scenario(meta('FDI-REG-05', FDI, 'No FDI audit trail (PL-R10)', 'Info'), async s => {
       await s.step(`Open First Delivery Inspections → no "Audit Trail" control on the page`, async () => { await fdiOpen(); await expect(page.getByText('Audit Trail', { exact: true })).toHaveCount(0); });
@@ -416,7 +439,7 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
     await run.scenario(meta('FDI-REG-01b', FDI, 'One inspection per material (FDI-R1)', 'Negative'), async s => {
       await s.step(`Open First Delivery Inspections, read the Material column of every row → no material appears more than once`, async () => {
         await fdiOpen(); const mats = [];
-        for (const r of await fdiRows().all()) mats.push(await col(r, 'Material'));
+        for (const r of await fdiRows().all()) mats.push(await col(r, 'Material', fdiTable())); // headers of the inspection table, not of the category summary
         const dup = mats.filter((m, i) => m && mats.indexOf(m) !== i);
         s.observe(`${mats.length} inspections`);
         expect(dup, 'Materials with more than one inspection').toEqual([]);
@@ -426,23 +449,29 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
     run.skip(meta('FDI-REG-01a', FDI, 'Second delivery creates none', 'Negative'), 'Runs in pl-regression-3');
     run.skip(meta('FDI-REG-01c', FDI, 'Access needed', 'Role'), 'Needs a role without FDI access; changing shared roles is out of scope (PM role scenarios cover the model)');
 
-    const target = () => fdiRows().filter({ hasText: /Auditor Not Yet Assigned/i }).filter({ hasText: /Auto Fdi|Pld|Pl[tr]/i }).first();
+    const runTarget = () => fdiRows().filter({ hasText: /Auditor Not Yet Assigned/i }).filter({ hasText: /Auto Fdi|Pld|Pl[tr]/i }).first();
+    // 26 Nov 2026 (user decision): a full run submits more inspections than it creates; when no unassigned run inspection
+    // is left, an older unassigned inspection of the project that offers "Self Assign" is used instead.
+    const olderTarget = () => fdiRows().filter({ hasText: /Auditor Not Yet Assigned/i }).filter({ has: page.getByRole('button', { name: 'Self Assign' }) }).first();
+    let target = runTarget;
     // The FDI list loads slowly: count() right after opening saw an empty table, so these cases were skipped even when
     // unassigned run inspections existed (20 Nov 2026: 49 such rows). Wait for one to render before deciding.
     const hasTarget = await (async () => {
       await fdiOpen();
-      return target().waitFor({ state: 'visible', timeout: 30000 }).then(() => true, () => false);
+      if (await runTarget().waitFor({ state: 'visible', timeout: 30000 }).then(() => true, () => false)) return true;
+      target = olderTarget;
+      return olderTarget().waitFor({ state: 'visible', timeout: 10000 }).then(() => true, () => false);
     })();
     if (hasTarget) {
       let mat = '';
       await run.scenario(meta('FDI-REG-06', FDI, 'Self Assign', 'Positive'), async s => {
-        await s.step(`First Delivery Inspections: on a run row "Auditor Not Yet Assigned" click "Self Assign" → toast "You have been assigned as the auditor for this inspection"`, async () => {
-          mat = await col(target(), 'Material'); s.observe(`Inspection for ${mat}`);
+        await s.step(`First Delivery Inspections: on a run row "Auditor Not Yet Assigned" (or, when none is left, an older one) click "Self Assign" → toast "You have been assigned as the auditor for this inspection"`, async () => {
+          mat = (await col(target(), 'Material', fdiTable())).split(/\n/)[0].trim(); s.observe(`${target === runTarget ? 'Run' : 'Older (no run inspection left)'} inspection for ${mat}`);
           await target().getByRole('button', { name: 'Self Assign' }).click();
           await toast('You have been assigned as the auditor for this inspection');
         }, { critical: true });
         await s.step(`Reload First Delivery Inspections → that material's row shows "Awaiting Inspection Completion" and the signed-in user as assignee`, async () => {
-          await page.reload(); await k.settle(1500);
+          await fdiOpen(); // reload = open again (keeps the run site, ungroups the list)
           const r = fdiRows().filter({ hasText: mat }).first();
           await expect(r).toContainText(/Awaiting Inspection Completion/i);
           await expect(r).toContainText(config.username);
@@ -452,9 +481,9 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
       await run.scenario(meta('FDI-REG-07', FDI, 'Unassign Self and reassign', 'Positive'), async s => {
         await s.step(`First Delivery Inspections: on the row click "Unassign Self", reload → row shows "Auditor Not Yet Assigned"`, async () => {
           await mine().getByRole('button', { name: 'Unassign Self' }).click(); await k.settle(1500);
-          await page.reload(); await k.settle(1500); await expect(mine()).toContainText(/Auditor Not Yet Assigned/i);
+          await fdiOpen(); await expect(mine()).toContainText(/Auditor Not Yet Assigned/i);
         });
-        await s.step(`First Delivery Inspections: click "Self Assign" on the same row → toast "You have been assigned"; reload the page`, async () => { await mine().getByRole('button', { name: 'Self Assign' }).click(); await toast('You have been assigned'); await page.reload(); await k.settle(1500); });
+        await s.step(`First Delivery Inspections: click "Self Assign" on the same row → toast "You have been assigned"; reload the page`, async () => { await mine().getByRole('button', { name: 'Self Assign' }).click(); await toast('You have been assigned'); await fdiOpen(); });
       });
       run.skip(meta('FDI-REG-02', FDI, 'Assign inspector', 'Positive'), 'Covered by FDI-REG-06 (self assignment is the assignment path for this role)');
       const form = async () => { await mine().getByRole('button', { name: 'Fill Inspection Report' }).click(); await expect(page).toHaveURL(/\/form/); await page.getByRole('button', { name: 'Submit Inspection' }).waitFor({ timeout: 30000 }); };
@@ -485,6 +514,15 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
           const png = path.join(tmp, `${RUN}.png`); fs.writeFileSync(png, PNG);
           const ch = page.waitForEvent('filechooser'); await page.getByRole('button', { name: /Add photo/i }).click(); await (await ch).setFiles(png);
           await k.settle(1500);
+          // Since 24 Nov 2026 the form ends with a required "Inspection outcome" ("Does the product match the approved
+          // submittal? *" and "Inspection status *"); without it Submit is refused. Fill it right before submitting.
+          const outcome = page.locator('main').getByText('Inspection outcome', { exact: true }).locator('xpath=..');
+          if (await outcome.isVisible().catch(() => false)) for (const wanted of [/^Yes\b/i, /^Accepted$/i]) {
+            const sel = outcome.locator('select').filter({ has: page.locator('option', { hasText: wanted }) }).first();
+            if (!(await sel.count())) continue;
+            const opt = (await sel.locator('option').allInnerTexts()).find(o => wanted.test(o.trim()));
+            if (opt) await sel.selectOption({ label: opt.trim() });
+          }
           await page.getByRole('button', { name: 'Submit Inspection' }).click();
           await expect(page.getByText('Inspection Detail').first()).toBeVisible({ timeout: 30000 });
         }, { critical: true });
@@ -498,7 +536,7 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
       });
       run.skip(meta('FDI-REG-11', FDI, 'FAIL answer path', 'Positive'), done?.status === 'Passed' ? 'Covered by FDI-REG-10 (first answer FAIL with observation)' : 'FDI-REG-10 failed');
       run.skip(meta('FDI-REG-03', FDI, 'Complete inspection form', 'Positive'), 'Covered by FDI-REG-08…10');
-    } else for (const id of ['06', '07', '02', '08', '09', '10', '11', '03']) run.skip(meta(`FDI-REG-${id}`, FDI, 'Needs an unassigned run inspection', 'Dependent'), 'No "Auditor Not Yet Assigned" run inspection; run npm run procurement:regression3 first');
+    } else for (const id of ['06', '07', '02', '08', '09', '10', '11', '03']) run.skip(meta(`FDI-REG-${id}`, FDI, 'Needs an unassigned run inspection', 'Dependent'), 'No unassigned inspection that offers "Self Assign" (neither run-created nor older)');
     run.skip(meta('FDI-REG-12', FDI, 'Sync to Provider', 'Integration'), 'Pushes to Procore (external system); not executed');
 
     // ======================= Document Management =======================
@@ -730,29 +768,12 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
           expect(page.url(), 'Open goes to the shipments list, not the shipment (OBS-SHP-3)').toMatch(new RegExp(esc(shipSub)));
         });
       });
-      await run.scenario(meta('SHP-REG-05', SHP, 'Status change persists', 'Positive'), async s => {
-        let tile = 0;
-        const inTransit = async () => Number(((await main.innerText()).match(/In Transit\s*(\d+)|(\d+)\s*In Transit/) || []).slice(1).find(Boolean) || NaN);
-        await s.step(`International Shipments (/international-shipments): note the "In Transit" tile count, set the logged row's status select to "In Transit"`, async () => {
-          await intlShip(); tile = await inTransit();
-          const sel = shipRow().locator('select').first(); await sel.selectOption({ label: 'In Transit' }); await k.settle(2000);
-        }, { critical: true });
-        await s.step(`After the status change, read the confirmation message → toast text noted (no assertion)`, async () => { s.observe(`Toast: ${(await anyToast()) || '(none)'}`); });
-        await s.step(`Reopen International Shipments → row status select still "In Transit" and the "In Transit" tile is one higher`, async () => {
-          await intlShip(); await expect(shipRow().locator('select').first()).toHaveValue(/in.?transit/i);
-          if (!Number.isNaN(tile)) expect(await inTransit()).toBe(tile + 1);
-        });
-        await s.step(`Reopen Enterprise Shipments → the logged row's Status shows "In Transit"`, async () => { await entShip(); expect(await col(shipRow(), 'Status')).toMatch(/In Transit/i); });
-        noteSlowLoads(s);
-      });
-      await run.scenario(meta('SHP-REG-06', SHP, 'Status change confirmation', 'Positive'), async s => {
-        await s.step(`International Shipments: set the row's status select to "Shipped" → a confirmation toast appears`, async () => {
-          await intlShip(true); await shipRow().locator('select').first().selectOption({ label: 'Shipped' }); await k.settle(1200);
-          const t = await anyToast(); s.observe(`Toast: ${t || '(none)'}`);
-          expect(t, 'Status change gives no confirmation (OBS-SHP-2)').toBeTruthy();
-        });
-        noteSlowLoads(s);
-      });
+      // 24 Nov 2026 redesign: International Shipments has no per-row status select any more – the status comes from
+      // ShipsGo tracking and a row offers only "Edit" (container / BoL / shipping line) and "Track". Skipped until the
+      // client confirms that manual status changes were removed (client question 9).
+      const SHP_STATUS = 'Skipped (25 Nov 2026): no manual status control since the redesign – status updates come from ShipsGo tracking; awaiting client confirmation (question 9)';
+      run.skip(meta('SHP-REG-05', SHP, 'Status change persists', 'Positive'), SHP_STATUS);
+      run.skip(meta('SHP-REG-06', SHP, 'Status change confirmation', 'Positive'), SHP_STATUS);
       await run.scenario(meta('SHP-REG-08', SHP, 'Required Date from procurement', 'Integration'), async s => {
         await s.step(`International Shipments: read "Required Date" of the logged row → it is not "-"`, async () => { await intlShip(true); const v = await col(shipRow(), 'Required Date'); s.observe(`Required Date: ${v}`); expect(v, 'Required Date is "-" (OBS-PL-19)').not.toBe('-'); });
         noteSlowLoads(s);
@@ -816,7 +837,7 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
       ['DSH-REG-05', 'Notifications', /Lead time changed\.\s+New expected delivery/, 'Lead time notification', 'Lead time changed'],
       ['DSH-REG-06', 'Alerts', /New submittal '.+' was added\./, 'New submittal alert', 'New submittal'],
       ['DSH-REG-07', 'Tasks', /Create PO\.\s+Last Possible Ordering Date/, 'Create PO task', 'Create PO'],
-      ['DSH-REG-08', 'Tasks', /Notification has been triggered for Pre-Shipping Checklist\./, 'Pre-shipping task', 'Pre-Shipping Checklist'],
+      ['DSH-REG-08', 'Tasks', /Notification has been triggered for Pre-Shipping Checklist\.?/, 'Pre-shipping task', 'Pre-Shipping Checklist'],
       ['DSH-REG-09', 'Notifications', /Delivery for Item/, 'Trigger Alert reaches the user (PL-R14, OBS-DSH-1)', 'Delivery for Item']
     ];
     // 13 Nov 2026 (user: DSH-REG-05/06/07 work): each tab opens filtered to "Unread" and lists hundreds of entries, so an
@@ -827,7 +848,10 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
         await state.click(); await k.settle(500);
         await page.getByRole('option', { name: 'All', exact: true }).or(page.getByText('All', { exact: true })).last().click(); await k.settle(1500);
       }
-      const inputs = main.locator('input:visible:not([type="checkbox"]):not([type="radio"])');
+      // 24 Nov 2026: the dashboard has date inputs (type=date) before the search box – type only into a text/search box,
+      // preferring one whose placeholder says "Search".
+      const text = 'input:visible:not([type="checkbox"]):not([type="radio"]):not([type="date"]):not([type="datetime-local"]):not([type="number"])';
+      const inputs = (await main.locator(`${text}[placeholder*="earch"]`).count()) ? main.locator(`${text}[placeholder*="earch"]`) : main.locator(text);
       for (let i = 0; i < await inputs.count(); i += 1) {
         const box = inputs.nth(i);
         if (/\d{2}\/\d{2}\/\d{4}/.test(await box.inputValue().catch(() => ''))) continue;
@@ -861,7 +885,9 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
     // 23 Nov 2026 (user: run the pending Enterprise cases): ENT-REG-02 uses a run submittal whose lead time is not confirmed
     // (the Configuration Options seed: ordered with a PO, lead time not confirmed); ENT-REG-03 compares the CSV
     // (long format "Metric,Key,Value") with the on-screen Supplier table.
-    await run.scenario(meta('ENT-REG-02', ENT, 'Supplier Inbox lists run items', 'Integration', { navPath: [ENT, 'Supplier Inbox'] }), async s => {
+    // 24 Nov 2026: Supplier Inbox was removed (/supplier-inbox opens My Work) – skipped until client question 3 is answered.
+    if (!process.env.SCP_SUPPLIER_INBOX) run.skip(meta('ENT-REG-02', ENT, 'Supplier Inbox lists run items', 'Integration', { navPath: [ENT, 'Supplier Inbox'] }), 'Skipped (25 Nov 2026): Supplier Inbox removed – /supplier-inbox opens My Work; awaiting client question 3');
+    else await run.scenario(meta('ENT-REG-02', ENT, 'Supplier Inbox lists run items', 'Integration', { navPath: [ENT, 'Supplier Inbox'] }), async s => {
       const seedFile = path.join(__dirname, '..', '..', 'reports', 'cfg-alert-seed.json');
       const seed = fs.existsSync(seedFile) ? JSON.parse(fs.readFileSync(seedFile, 'utf8')).notConfirmed : null;
       const heads = async () => (await main.locator('h1,h2,h3,h4,h5,[role=tab]').allInnerTexts()).map(t => t.replace(/\s+/g, ' ').trim()).filter(Boolean);
@@ -926,9 +952,9 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
         await open('/subcontractor-issues', 'SubContractor Issues', ANA); await k.settle(2000);
         const all = await k.rows().count();
         const first = all ? ((await k.rows().first().getByRole('cell').first().innerText()) || '').trim() : '';
-        await main.getByPlaceholder('Search…').fill(first.slice(0, 6)); await k.settle(1500);
+        await main.getByPlaceholder(/^Search( subcontractor or project)?…$/) /* placeholder "Search subcontractor or project…" since 24 Nov 2026 */.fill(first.slice(0, 6)); await k.settle(1500);
         const n = await k.rows().count();
-        await main.getByPlaceholder('Search…').fill(`zz${RUN}`); await k.settle(1500);
+        await main.getByPlaceholder(/^Search( subcontractor or project)?…$/) /* placeholder "Search subcontractor or project…" since 24 Nov 2026 */.fill(`zz${RUN}`); await k.settle(1500);
         const none = await k.rows().count();
         s.observe(`${all} → ${n} for "${first.slice(0, 6)}"; ${none} for "zz${RUN}"`);
         expect(n, 'Search returned more rows than the full list').toBeLessThanOrEqual(all);
@@ -941,7 +967,7 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
       let shown = 0;
       await s.step(`Analytics › SubContractor Issues: open the page, clear "Search…" → table rows are listed`, async () => {
         await open('/subcontractor-issues', 'SubContractor Issues', ANA); await k.settle(2000);
-        await main.getByPlaceholder('Search…').fill(''); await k.settle(1000);
+        await main.getByPlaceholder(/^Search( subcontractor or project)?…$/) /* placeholder "Search subcontractor or project…" since 24 Nov 2026 */.fill(''); await k.settle(1000);
         shown = await k.rows().count(); s.observe(`${shown} row(s) shown`);
         expect(shown, 'SubContractor Issues lists no rows to export').toBeGreaterThan(0);
       });

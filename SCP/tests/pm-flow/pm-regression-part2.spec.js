@@ -34,10 +34,11 @@ const exactI = value => new RegExp(`^\\s*${esc(String(value).trim())}\\s*$`, 'i'
 const norm = value => String(value || '').toLowerCase().replace(/\s+/g, '');
 
 // Scenarios that need another module, a later day, outside help or an approval are recorded, not run.
+// 25 Nov 2026: cases that run in their own suite are no longer listed here, so they are counted once in the totals:
+// PM-REG-FDI-05a…n (fdi-settings), PM-REG-ROLE-01…24 (roles), PM-REG-INT-02 and PM-REG-SITE-07 (pm-decisions).
 const DEFERRED = [
   ['PM-REG-NAV-08', 'Navigation', 'Setup Wizard disappears after completion', 'Not run: completing the Setup Wizard on SCP_Testing_Ram cannot be undone and CFG-17 / PSC-05 need it unconfigured – needs product-owner go-ahead'],
   ['PM-REG-NAV-09', 'Navigation', 'Wizard data matches module pages', 'Not run: same as NAV-08 (completes the Setup Wizard on SCP_Testing_Ram)'],
-  ['PM-REG-INT-02', 'Integrations › Booking Integration', 'Booking: submit with empty Booking ID', 'Not run: submitting the Booking form may change NRVC_Hall\'s booking link – needs approval'],
   ['PM-REG-CFG-09', 'Configuration Options', 'Pre-Shipping toggle gates checklist', 'Cross-module (Procurement Log delivery approval) – Regression part 3'],
   ['PM-REG-CFG-10', 'Configuration Options', 'GRN toggle effect', 'Cross-module (delivery GRN options) – Regression part 3'],
   ['PM-REG-CFG-11', 'Configuration Options', 'Archive period effect', 'Cross-module (Management Dashboard read items over 60 days) – Regression part 3'],
@@ -46,7 +47,6 @@ const DEFERRED = [
   ['PM-REG-CFG-15', 'Configuration Options', 'Lead time not confirmed alert', 'Two-phase: seed today, verify after the 05:00–06:00 IST batch – Regression part 3'],
   ['PM-REG-CFG-16', 'Configuration Options', 'No alert before threshold', 'Two-phase batch check – Regression part 3'],
   ['PM-REG-CFG-17', 'Configuration Options', 'Unconfigured settings: in-app only', 'Two-phase batch check on SCP_Testing_Ram – Regression part 3'],
-  ...['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'].map(letter => [`PM-REG-FDI-05${letter}`, 'First Delivery Inspection Config', 'Setting effect on the inspection form', 'Cross-module (needs a delivery and its FDI inspection form) – Regression part 3']),
   ['PM-REG-FDI-18', 'First Delivery Inspection Config', 'Invite → accept → activate → disable', 'Needs Yopmail acceptance and the inspector login (existing Cucumber flow) – Regression part 3'],
   ['PM-REG-FDI-26a', 'First Delivery Inspection Config', 'Invite from User Management is unaffected', 'Cross-module (User Management invite) – Regression part 3'],
   ['PM-REG-FDI-28', 'First Delivery Inspection Config', 'Disabled and pending inspectors cannot self-assign', 'Needs the inspector login and an FDI record – Regression part 3'],
@@ -58,8 +58,6 @@ const DEFERRED = [
   ['PM-REG-MM-11', 'Material Master', 'Delete material in use', 'Not run: if the app allows it, a material used by submittals would be deleted (R14) – needs approval'],
   ['PM-REG-PSC-04', 'PreShipping Checklist', 'Disabled question hidden downstream', 'Cross-module (Procurement Log delivery checklist) – Regression part 3'],
   ['PM-REG-PLC-06', 'Procurement Log Configuration', 'Drag reorder', 'Cross-module (Procurement Log column order) – Regression part 3'],
-  ['PM-REG-SITE-07', 'Site Details', 'Delete site in use', 'Not run: if the app allows it, a site with deliveries would be deleted (R14) – needs approval'],
-  ...Array.from({ length: 24 }, (_, i) => [`PM-REG-ROLE-${pad(i + 1)}`, 'Role-based access', 'Role-based access', 'Role suite (Regression part 3): needs the Org Admin portal session and separate role logins'])
 ];
 
 test.setTimeout(3 * 60 * 60 * 1000);
@@ -480,7 +478,9 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     await sc('PM-REG-REF-07', 'Configuration Options', 'New currency utility appears in Configuration Options', async s => {
       await s.step(`Sidebar › Project Management › "Configuration Options" → page opens`, () => navigator.open('Configuration Options'), { critical: true });
       await s.step(`Click the "Currency Type" dropdown → its options include "${data.currName}" (original alert weeks and currency noted)`, async () => {
-        data.weeksOriginal = await weekValues();
+        // A negative week left by the known defect SCP-DEF (PM-REG-CFG-06 saves -1) is not an original to restore:
+        // the restore steps write 1 instead (product owner: any value except a negative one, R69).
+        data.weeksOriginal = (await weekValues()).map(v => (/^\d+$/.test(String(v).trim()) ? v : '1'));
         data.currencyOriginal = clean(await currencyButton().innerText());
         const options = await dropdownOptions(currencyButton());
         data.currencyOptions = options;
@@ -925,7 +925,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       // Uploads first: "Photos are mandatory?" can only be ticked while uploads is ticked.
       for (const index of [1, 0, 2, 3]) await setSetting(SETTINGS[index], data.fdiInitial[index].checked);
       await saveFdi(); await reload();
-      expect((await fdiSettings()).map(item => item.checked), 'FDI Settings restored').toEqual(data.fdiInitial.map(item => item.checked));
+      await expect.poll(async () => (await fdiSettings()).map(item => item.checked), { timeout: 15000, message: 'FDI Settings restored' }).toEqual(data.fdiInitial.map(item => item.checked));
     };
     await sc('PM-REG-FDI-02a', 'First Delivery Inspection Config', 'No contradictory state is saved', async s => {
       await s.step(`Sidebar › Project Management › "First Delivery Inspection Config" → page opens`, () => navigator.open('First Delivery Inspection Config'), { critical: true });
@@ -945,6 +945,12 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       }
     });
     await sc('PM-REG-FDI-04', 'First Delivery Inspection Config', 'Save persists each setting (Yes and No)', async s => {
+      // Runs on its own too (--only): open the page and record the original settings when PM-REG-FDI-02a did not.
+      if (!data.fdiInitial) await s.step('Sidebar › Project Management › "First Delivery Inspection Config" → record the four FDI Settings', async () => {
+        await navigator.open('First Delivery Inspection Config');
+        await expect.poll(async () => (await fdiSettings()).length, { timeout: 20000 }).toBe(4);
+        await page.waitForTimeout(2000); data.fdiInitial = await fdiSettings();
+      }, { critical: true });
       try {
         for (const [index, label] of SETTINGS.entries()) {
           for (const pass of [0, 1]) {
@@ -953,7 +959,8 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
               const target = pass ? data.fdiInitial[index].checked : !data.fdiInitial[index].checked;
               await setSetting(label, target);
               await saveFdi(); await reload();
-              expect((await fdiSettings())[index].checked, `${label} = ${target ? 'Yes' : 'No'} after reload`).toBe(target);
+              // The settings load after the page: poll so an unticked default is not read before the saved value arrives.
+              await expect.poll(async () => (await fdiSettings())[index]?.checked, { timeout: 15000, message: `${label} = ${target ? 'Yes' : 'No'} after reload` }).toBe(target);
             });
           }
         }
@@ -1006,6 +1013,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
         await openForm('Add Inspector', 'Add Inspector');
         data.roles = await realOptions(roleSelect());
         data.freeMembers = await freeMembers();
+        data.allMembers = await realOptions(memberSelect());
         await closeForm();
         const outcome = await addInspector({ role: data.roles[0] });
         s.observe(`message: ${outcome.message || '(none)'}`);
@@ -1013,13 +1021,19 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
         await closeForm();
       });
       await s.step(`"Add Inspector": choose a Project Member but no Project Role, click "Add" → form stays open, member not added to the table`, async () => {
-        expect(data.freeMembers.length, 'A project member who is not an inspector yet').toBeGreaterThan(0);
-        const outcome = await addInspector({ member: data.freeMembers[0] });
+        // Inspectors cannot be deleted, so free project members run out over the runs. Then any member is used: with no
+        // role chosen the form must still stay open and the Inspectors table must not change.
+        const member = data.freeMembers[0] || data.allMembers[0];
+        expect(member, 'A project member in the list').toBeTruthy();
+        if (!data.freeMembers.length) s.observe(`no free project member left – used ${member.replace(/[\w.+-]+@neuralrays\.ai/i, '***@neuralrays.ai')}`);
+        const before = await inspectorCount();
+        const outcome = await addInspector({ member });
         s.observe(`message: ${outcome.message || '(none)'}`);
         expect(outcome.closed, 'Not added').toBe(false);
         await closeForm();
-        const email = (data.freeMembers[0].match(/[\w.+-]+@[\w.-]+/) || [])[0];
-        if (email) await expect(inspectorTable().locator('tbody tr').filter({ hasText: email }), `${email} not added`).toHaveCount(0);
+        const email = (member.match(/[\w.+-]+@[\w.-]+/) || [])[0];
+        if (data.freeMembers.length && email) await expect(inspectorTable().locator('tbody tr').filter({ hasText: email }), `${email} not added`).toHaveCount(0);
+        expect(await inspectorCount(), 'Inspectors table unchanged').toBe(before);
       });
     });
     await sc('PM-REG-FDI-25', 'First Delivery Inspection Config', 'Several inspectors can be added', async s => {
@@ -1087,6 +1101,14 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
     await sc('PM-REG-FDI-23', 'First Delivery Inspection Config', 'Enable/Disable inspector', async s => {
       const row = () => inspectorRow(data.inspectorA.name);
+      // A reused inspector A can still be Disabled from an earlier run: enable it first so the case starts from "Enabled".
+      if (/^Disabled$/i.test((await row().locator('td').nth(4).innerText().catch(() => '')).trim())) {
+        await s.step('Inspector A is Disabled from an earlier run: click "Enable", confirm, reload → "Enabled" (setup)', async () => {
+          await click(row().getByRole('button', { name: 'Enable', exact: true }), 'Enable');
+          await confirmDelete(); await reload();
+          await expect(row().locator('td').nth(4)).toHaveText('Enabled');
+        });
+      }
       for (const [action, enabled] of [['Disable', 'Disabled'], ['Enable', 'Enabled']]) {
         await s.step(`Inspector A row: click "${action}", confirm, reload → Enabled column shows "${enabled}", role kept`, async () => {
           await click(row().getByRole('button', { name: action, exact: true }), action);
@@ -1656,11 +1678,24 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
     });
 
     // ================= Site Details =================
-    const siteRows = () => main.locator('tbody tr').evaluateAll(rows => rows.map(r => [...r.cells].map(c => c.innerText.trim())));
-    const siteByName = async name => (await siteRows()).filter(cells => norm(cells[2]) === norm(name));
-    const siteRow = name => main.locator('tbody tr').filter({ has: page.locator('td:nth-child(3)', { hasText: exactI(name) }) }).first();
+    // Sites & Storage since 24 Nov 2026: one card per site. The card button reads "<name> <type> <n> storage location(s)
+    // <address>", its "⋯" button is labelled "Actions for site <name>"; an open card shows the inline "ADD LOCATION" row
+    // (Location type Building / Area / Laydown / Bay, Location name, Parent location, Add) and its locations.
+    const siteNames = () => main.getByRole('button', { name: /^Actions for site / }).evaluateAll(bs => bs.map(b => b.getAttribute('aria-label').replace(/^Actions for site /, '').trim()));
+    const siteByName = async name => (await siteNames()).filter(n => norm(n) === norm(name));
+    // case-insensitive: uploads store names in title case ("PMR2-…" is listed as "Pmr2-…")
+    const siteActions = name => main.getByRole('button', { name: new RegExp(`^Actions for site ${esc(String(name).trim())}$`, 'i') }).first();
+    const siteCard = name => siteActions(name).locator('xpath=preceding-sibling::button[1]');
+    const openCard = async name => {
+      const card = siteCard(name);
+      await visible(card, `Site card ${name}`);
+      if ((await card.getAttribute('aria-expanded')) !== 'true') { await click(card, `Site card ${name}`); await page.waitForTimeout(800); }
+      // the open card's ADD LOCATION row is the first one after its "⋯" button
+      const after = what => siteActions(name).locator(`xpath=following::${what}[1]`);
+      return { type: after('select'), name: after('input'), add: after('button[normalize-space()="Add"]') };
+    };
     const addSite = async ({ type, name, city, country }) => {
-      await openForm('Add Site', 'Add Site');
+      await openForm('Add site', 'Add Site');
       if (type) await choose(modal().getByRole('button', { name: 'Choose Site' }), type, 'Site Type');
       if (name) await modal().locator('label', { hasText: /^Name/ }).locator('xpath=following::input[1]').fill(name);
       if (city) await modal().locator('label', { hasText: 'City' }).locator('xpath=following::input[1]').fill(city);
@@ -1673,19 +1708,23 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       if (!outcome.closed) await closeForm();
       return outcome;
     };
+    // Inline form: "closed" = the location was accepted (name box emptied); otherwise the reason is recorded.
     const addLocation = async (site, type, name) => {
       await closeForm();
-      await click(siteRow(site).getByRole('button', { name: 'ADD', exact: true }), 'ADD location');
-      await expect(modal(), 'Add Location').toBeVisible({ timeout: 10000 });
-      if (type) await choose(modal().getByRole('button', { name: 'Choose Location' }), type, 'Location Type');
-      if (name) await textInputs(modal()).first().fill(name);
-      const outcome = await submit('Add');
-      if (!outcome.closed) await closeForm();
-      return outcome;
+      const form = await openCard(site);
+      if (type) await form.type.selectOption({ label: type });
+      const box = form.name;
+      await box.fill(name || '');
+      const add = form.add;
+      if (await add.isDisabled()) return { closed: false, message: '"Add" disabled' };
+      await click(add, 'Add location');
+      await page.waitForTimeout(2500);
+      const closed = (await box.inputValue().catch(() => '')) === '';
+      return { closed, message: await feedback() };
     };
-    const locationsOf = async name => firstNumber(((await siteByName(name))[0] || [])[5] || '0');
+    const locationsOf = async name => firstNumber(((await siteCard(name).getAttribute('aria-label').catch(() => null)) || await siteCard(name).innerText().catch(() => '') || '').match(/(\d+) storage locations?/)?.[1] || '0');
     await sc('PM-REG-SITE-03', 'Site Details', 'Add Site – required', async s => {
-      await s.step(`Sidebar › Project Management › "Site Details" → page opens`, () => navigator.open('Site Details'), { critical: true });
+      await s.step(`Sidebar › Project Management › "Sites & Storage" → page opens`, () => navigator.open('Site Details'), { critical: true });
       data.siteCount = await pageCount();
       for (const [label, values] of [['nothing', {}], ['no Site Type', { name: `Gate R ${RUN}` }], ['no Name', { type: 'Site' }]]) {
         await s.step(`"Add Site": submit with ${label} → form stays open, nothing added`, async () => {
@@ -1711,9 +1750,9 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-SITE-05', 'Site Details', 'Add Location', async s => {
-      await s.step(`Row "ADD" (location) on "${data.site}": Location Type "Construction Area", name "Loc ${RUN}", click "Add" → form closes, Locations count up by 1`, async () => {
+      await s.step(`Open the "${data.site}" card › ADD LOCATION: Location type "Building", name "Loc ${RUN}", click "Add" → accepted, storage location count up by 1`, async () => {
         const before = await locationsOf(data.site);
-        const outcome = await addLocation(data.site, 'Construction Area', `Loc ${RUN}`);
+        const outcome = await addLocation(data.site, 'Building', `Loc ${RUN}`);
         expect(outcome.closed, `Added (${outcome.message || 'no message'})`).toBe(true);
         await expect.poll(() => locationsOf(data.site), { timeout: 15000 }).toBe(before + 1);
       });
@@ -1726,9 +1765,9 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-SITE-10', 'Site Details', 'Duplicate location name', async s => {
-      await s.step(`Row "ADD" on "${data.site}": "Loc ${RUN}" again, Construction Area, click "Add" → outcome recorded, Locations count unchanged`, async () => {
+      await s.step(`"${data.site}" card › ADD LOCATION: "Loc ${RUN}" again, Building, click "Add" → outcome recorded, storage location count unchanged`, async () => {
         const before = await locationsOf(data.site);
-        const outcome = await addLocation(data.site, 'Construction Area', `Loc ${RUN}`);
+        const outcome = await addLocation(data.site, 'Building', `Loc ${RUN}`);
         s.observe(`form ${outcome.closed ? 'closed' : 'stayed open'}; message: ${outcome.message || '(none)'}`);
         expect(await locationsOf(data.site), 'Locations count unchanged').toBe(before);
       });
@@ -1736,30 +1775,42 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
 
     // ----- Site Details uploads -----
     const siteFile = (id, rows) => writeUpload({ template: data.siteTemplate, sheet: 'Sheet1', rows, output: path.join(files, `${id.toLowerCase()}-${RUN}.xlsx`) });
+    // The bulk upload still accepts only the old location types (Construction Area, …); "Building" is rejected with
+    // "location_type is not exist" (25 Nov 2026) although the page offers Building / Area / Laydown / Bay – client question.
     const siteRowData = (site_name, location_name, extra = {}) => ({ site_name, site_type: 'Site', location_name, location_type: 'Construction Area', ...extra });
     const siteUpload = async (s, id, rows) => {
       const file = siteFile(id, rows);
       data.uploads = data.uploads || {};
       data.uploads[id] = path.basename(file);
-      const message = await uploadFrom('Upload', file);
+      const message = await siteUploadFrom(file);
       const { seen } = await handleUploadDialogs();
       if (seen.length) s.observe(seen.join(' » '));
       s.observe(`message: ${message || await feedback() || '(none)'}`);
       await navigator.ready(); await page.waitForTimeout(2000); await reload();
     };
+    const siteUploadFrom = async file => {
+      await closeForm();
+      await click(main.getByRole('button', { name: /^Bulk upload/ }), 'Bulk upload');
+      const chooser = page.waitForEvent('filechooser', { timeout: 15000 });
+      await click(page.getByRole('menuitem', { name: 'Upload sites file' }), 'Upload sites file');
+      await (await chooser).setFiles(file);
+      await page.waitForTimeout(3000);
+      return feedback();
+    };
     const siteListed = async name => (await siteByName(name)).length;
     const sitesNotCreated = async (...names) => { for (const name of names) expect(await siteListed(name), `${name} not created`).toBe(0); };
     await sc('UPL-SITE-02', 'Site Details › Upload', 'Valid upload creates a site with locations', async s => {
-      await s.step(`Click "Upload" › "Download Template" → site template downloads`, async () => {
-        await click(button('Upload'), 'Upload');
-        const file = await download(page.getByText('Download Template', { exact: true }).first(), 'Download Template');
+      await s.step(`Click "Bulk upload" › "Download template" → site template downloads`, async () => {
+        await click(main.getByRole('button', { name: /^Bulk upload/ }), 'Bulk upload');
+        const file = await download(page.getByRole('menuitem', { name: 'Download template' }), 'Download template');
         data.siteTemplate = file.path;
         await page.keyboard.press('Escape'); await page.mouse.click(5, 300);
       }, { critical: true });
       await s.step(`"Upload": site "Site U ${RUN}" with locations "Loc A ${RUN}" and "Loc B ${RUN}", confirm the dialogs, reload → result recorded`, () => siteUpload(s, 'UPL-SITE-02', [siteRowData(`Site U ${RUN}`, `Loc A ${RUN}`), siteRowData(`Site U ${RUN}`, `Loc B ${RUN}`)]), { critical: true });
       await s.step(`Sites table → "Site U ${RUN}" listed once with 2 locations`, async () => {
         await expect.poll(() => siteListed(`Site U ${RUN}`), { timeout: 30000 }).toBe(1);
-        expect(await locationsOf(`Site U ${RUN}`)).toBe(2);
+        // the card's storage-location count can lag behind the card itself after the reload
+        await expect.poll(() => locationsOf(`Site U ${RUN}`), { timeout: 30000, message: 'storage locations of the uploaded site' }).toBe(2);
       });
     });
     await sc('UPL-SITE-03', 'Site Details › Upload', 'Fully invalid file', async s => {
@@ -1822,7 +1873,7 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       const before = await pageCount();
       for (const [label, file] of [['.pdf', writeText(path.join(files, `upl-site-11-${RUN}.pdf`), '%PDF-1.4\n%%EOF\n')], ['.csv', writeText(path.join(files, `upl-site-11-${RUN}.csv`), `site_name,site_type,location_name,location_type\nSite Q ${RUN},Site,Loc Q ${RUN},Construction Area\n`)]]) {
         await s.step(`"Upload": choose a ${label} file instead of the template, then confirm → messages recorded, reload`, async () => {
-          const first = await uploadFrom('Upload', file);
+          const first = await siteUploadFrom(file);
           s.observe(`message: ${first || '(none)'}; after confirming: ${await confirmUpload() || '(none)'}`);
           await reload();
         });
@@ -2129,10 +2180,15 @@ test('Project Management – Regression (part 2: data-creating)', async ({ page 
       });
     });
     await sc('PM-REG-WM-10', 'Watched Materials', 'One user can watch every category', async s => {
-      await s.step(`Dropdown "Category": add a watch for every category not yet watched → number added recorded`, async () => {
+      // Since 24 Nov 2026 NRVC_Hall has the ~360 CSI default categories: the watch is added for every run category
+      // ("PMR2-" names, removed again by PM-REG-WM-*), not for every category of the project.
+      await s.step(`Dropdown "Category": add a watch for every run category ("PMR2-…") not yet watched → number added recorded`, async () => {
         await main.locator('select').nth(1).selectOption({ label: 'Category' }); await page.waitForTimeout(500);
         const watched = new Set((await watchRows()).filter(row => row[0] === 'Category').map(row => norm(row[1])));
-        const pending = (await selectOptions(main.locator('select').nth(2))).filter(v => !/^Select/.test(v) && !watched.has(norm(v)));
+        const offered = (await selectOptions(main.locator('select').nth(2))).filter(v => !/^Select/.test(v));
+        data.categoryWatchOptions = offered.filter(v => /PMR2-/i.test(v));
+        s.observe(`${offered.length} categories offered, ${data.categoryWatchOptions.length} run categories`);
+        const pending = data.categoryWatchOptions.filter(v => !watched.has(norm(v)));
         for (const value of pending) await addWatch('Category', value);
         s.observe(`added ${pending.length} category watch(es)`);
       });
