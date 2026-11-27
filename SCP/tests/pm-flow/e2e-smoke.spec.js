@@ -1283,13 +1283,18 @@ test('SCP – End-to-end smoke', async ({ page }) => {
         });
         const plTotal = M.reduce((x, m) => x + (m.valueDelivered?.amount || 0), 0);
         const plCurrency = M[0].valueDelivered?.currency || '';
-        await s.step(`Procurement value of the new category → Spend rises by the submittal's total Procurement Log "Value Delivered" (${M.map(m => m.valueDelivered?.text).join(' + ')}), in the same currency`, async () => {
+        // BUGS-596 (dev review 27 Nov 2026): Dashboard spend = received quantity × (price ÷ ordered quantity), where the
+        // component Value is the price and the ordered quantity is the full QTY once a PO number exists. Each run component
+        // is delivered in full (logDelivery qty = QTY), so the expected rise is Σ Value; it must also equal the Procurement
+        // Log "Value Delivered" and use the project currency (the $ part is SCP-DEF-049).
+        const expectedSpend = M.reduce((x, m) => x + (m.qty ? m.qty * (m.value / m.qty) : 0), 0);
+        await s.step(`Procurement value of the new category → Spend rises by Σ received × (Value ÷ ordered QTY) = ${M.map(m => `${m.qty} × (${m.value} ÷ ${m.qty})`).join(' + ')} = ${expectedSpend} (BUGS-596), equal to the Procurement Log "Value Delivered" (${M.map(m => m.valueDelivered?.text).join(' + ')}), in the same currency`, async () => {
           const delta = na.spend - nb.spend;
-          const pass = delta === plTotal && na.currency === plCurrency;
-          row('Procurement value', `${newCat}: spend`, nb.spend, na.spend, `+${plTotal} ${plCurrency}`, pass,
-            `dashboard "${na.cells?.[7] || ''}"; Procurement Log Value Delivered ${M.map(m => `${m.name} ${m.valueDelivered?.text}`).join(' + ')}; Σ QTY × Value = ${M.reduce((x, m) => x + m.qty * m.value, 0)}`);
-          s.observe(`Dashboard change ${delta} ${na.currency}; Procurement Log ${plTotal} ${plCurrency}`);
-          if (!pass) throw new Error(`Dashboard spend differs from the Procurement Log Value Delivered: dashboard +${delta} ${na.currency}, Procurement Log ${plTotal} ${plCurrency}`);
+          const pass = delta === expectedSpend && delta === plTotal && na.currency === plCurrency;
+          row('Procurement value', `${newCat}: spend`, nb.spend, na.spend, `+${expectedSpend} ${plCurrency}`, pass,
+            `dashboard "${na.cells?.[7] || ''}"; BUGS-596 formula ${expectedSpend}; Procurement Log Value Delivered ${M.map(m => `${m.name} ${m.valueDelivered?.text}`).join(' + ')}; old rule Σ QTY × Value = ${M.reduce((x, m) => x + m.qty * m.value, 0)}`);
+          s.observe(`Dashboard change ${delta} ${na.currency}; expected (BUGS-596) ${expectedSpend}; Procurement Log ${plTotal} ${plCurrency}`);
+          if (!pass) throw new Error(`Dashboard spend differs from the Procurement Log Value Delivered: dashboard +${delta} ${na.currency}, expected ${expectedSpend} (received × Value ÷ ordered QTY, BUGS-596), Procurement Log ${plTotal} ${plCurrency}`);
         });
         if (oldCat && norm(oldCat) !== norm(newCat)) {
           const ob = b.categories[oldCat] || { total: 0, open: 0, spend: 0 }; const oa = a.categories[oldCat] || { total: 0, open: 0, spend: 0 };

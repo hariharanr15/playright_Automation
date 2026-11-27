@@ -360,6 +360,7 @@ test('New pages – E2E chain', async ({ page, browserName }) => {
         s.observe(`photo pickers: damage ${!!f1}, delivery note ${!!f2}; after the photo: ${R.viewOnly ? 'form became view-only' : 'still editable'}`);
         if (R.viewOnly) { await go(R.loadUrl + '/receive'); await k.settle(2000); ({ row, opts } = await fillForm()); s.observe('form refilled without photos (see NPE-REG-21)'); }
         await main.getByRole('textbox', { name: /Anything else/ }).fill(`${TAG} receipt`);
+        R.receivedAt = Date.now(); // NPE-REG-12 compares the shown date with the IST date of this moment
         await main.getByRole('button', { name: 'Confirm receipt' }).click(); await k.settle(4000);
       }, { critical: true });
       await s.step('→ "LD-N received as RCV-…"; fields read-only; history "Received 2.00 into <location>"; load page status Checked in with the Receipt button', async () => {
@@ -436,6 +437,19 @@ test('New pages – E2E chain', async ({ page, browserName }) => {
       });
     });
 
+    // ---- First Delivery Inspections of the run product (27 Nov 2026: the NCR re-inspection is raised there as a new
+    // inspection; the list does not name the NCR, so NPE-REG-08 takes the inspection that appeared after the request) ----
+    const todayIst = () => { const t = new Date(Date.now() + 5.5 * 3600e3).toISOString(); return `${t.slice(8, 10)}/${t.slice(5, 7)}/${t.slice(0, 4)}`; };
+    const fdiTable = () => main.locator('table').filter({ has: page.getByRole('columnheader', { name: 'Material', exact: true }) }).first();
+    const fdiOpen = async () => {
+      await go('/first-delivery-inspections');
+      const grp = main.getByRole('checkbox', { name: /Group by material category/i }).first();
+      if (await grp.isChecked().catch(() => false)) { await grp.click(); await k.settle(2500); }
+      const box = main.locator('input[type="search"]').first();
+      await box.fill(LINE); await box.press('Enter'); await k.settle(4000);
+    };
+    const fdiTodayRows = () => fdiTable().locator('tbody tr').filter({ hasText: LINE }).filter({ hasText: todayIst() });
+    const fdiToday = async () => { await fdiOpen(); return (await fdiTodayRows().allInnerTexts()).map(clean); };
     await run.scenario(meta('NPE-SMK-06', 'NCRs', 'NCR workflow: Rework → Approve (GC QA/QC) → Work done → Awaiting re-inspection', 'Positive'), async s => {
       if (ncr && ncr.status !== 'Passed') throw new Error('NCR not raised (NPE-SMK-05)');
       const step = async (label, action, expected) => s.step(label, async () => {
@@ -450,6 +464,9 @@ test('New pages – E2E chain', async ({ page, browserName }) => {
         await ncrPanel().getByRole('button', { name: 'Save', exact: true }).click();
       }, 'Awaiting approval');
       await step('"Approve (GC QA/QC)" → "In progress"; history "approved gc"', () => ncrPanel().getByRole('button', { name: 'Approve (GC QA/QC)' }).click(), 'In progress');
+      await s.step(`First Delivery Inspections (ungrouped) › search ${LINE} → count of inspections dated today, before the re-inspection request (baseline for NPE-REG-08)`, async () => {
+        R.fdiBefore = await fdiToday(); s.observe(`${R.fdiBefore.length} inspection(s) of ${LINE} dated today`);
+      });
       await step('"Work done: request re-inspection" → "Awaiting re-inspection"; history "reinspection requested"', () => ncrPanel().getByRole('button', { name: 'Work done: request re-inspection' }).click(), 'Awaiting re-inspection');
       await s.step('NCR list › status "Awaiting re-inspection", search NCR-N → listed with Corrective action "Rework"; Dashboard "Open NCRs" up by 1', async () => {
         await go('/ncrs'); await select('All statuses').selectOption({ label: 'Awaiting re-inspection' }); await k.settle(2000);
@@ -553,11 +570,17 @@ test('New pages – E2E chain', async ({ page, browserName }) => {
         await main.locator('table').first().locator('tbody tr').filter({ hasText: LINE }).first().getByRole('button', { name: 'Add' }).click(); await k.settle(1500);
         const row = main.getByRole('heading', { name: 'This load' }).locator('xpath=ancestor::*[2]').locator('tbody tr').filter({ hasText: LINE }).first();
         const left = Number(((clean(await row.innerText())).match(/of ([\d,]+) left/) || [])[1].replace(/,/g, ''));
-        await row.getByRole('spinbutton').fill(String(left + 5)); await k.settle(1000);
+        await row.getByRole('spinbutton').fill(String(left + 5));
+        const save = main.getByRole('button', { name: 'Save load' });
+        const first = await save.isEnabled();
+        await row.getByRole('spinbutton').press('Tab'); // leave the field, as a user does before saving
+        // The guard is judged after it settles: Save is polled for up to 8 s; the first read is reported too, because on
+        // 26–27 Nov Save stayed enabled for a few seconds (once for good).
+        const t0 = Date.now(); let saveEnabled = await save.isEnabled();
+        while (saveEnabled && Date.now() - t0 < 8000) { await page.waitForTimeout(500); saveEnabled = await save.isEnabled(); }
         const value = Number(await row.getByRole('spinbutton').inputValue());
-        const saveEnabled = await main.getByRole('button', { name: 'Save load' }).isEnabled();
-        s.observe(`left ${left}; typed ${left + 5}; field now ${value}; Save ${saveEnabled ? 'enabled' : 'disabled'}`);
-        expect(value <= left || !saveEnabled, 'quantity above what is left is not accepted').toBe(true);
+        s.observe(`left ${left}; typed ${left + 5}; field now ${value}; Save right after typing ${first ? 'enabled' : 'disabled'}, after leaving the field ${saveEnabled ? 'still enabled after 8 s' : `disabled after ${((Date.now() - t0) / 1000).toFixed(1)} s`}`);
+        expect(value <= left || !saveEnabled, 'quantity above what is left is not accepted (Save still enabled 8 s after leaving the field)').toBe(true);
       });
       await s.step('With a line in the load the open list shows "Showing Division N only: a load carries one CSI division."', async () => {
         await expect(main.getByText(/a load carries one CSI division/).first()).toBeVisible();
@@ -618,6 +641,50 @@ test('New pages – E2E chain', async ({ page, browserName }) => {
       s.observe(path.join(' · '));
       return { ncr, final, path };
     };
+    await run.scenario(meta('NPE-REG-08', 'NCRs', 'Re-inspection (First Delivery Inspection) closes the Rework NCR', 'Positive'), async s => {
+      // Dev review "SCP Business Logic and Flow Changes" (27 Nov 2026): a re-inspection for repair or rework is raised as a
+      // First Delivery Inspection; recording it (pass) closes the NCR and releases the quantity on hold.
+      if (!R.fdiBefore) throw new Error('No inspection baseline from NPE-SMK-06 (the NCR did not reach "Awaiting re-inspection")');
+      let row;
+      await s.step(`First Delivery Inspections (ungrouped) › search ${LINE} → one more inspection dated today than before "Work done: request re-inspection" ("Auditor Not Yet Assigned")`, async () => {
+        const now = await fdiToday();
+        s.observe(`before the request ${R.fdiBefore.length}, now ${now.length} inspection(s) of ${LINE} dated today`);
+        expect(now.length, 'A re-inspection inspection is raised when the NCR asks for re-inspection').toBeGreaterThan(R.fdiBefore.length);
+        row = fdiTodayRows().filter({ hasText: /Auditor Not Yet Assigned/i }).first();
+        await expect(row).toBeVisible({ timeout: 15000 });
+      }, { critical: true });
+      await s.step('That inspection › "Self Assign" → "Fill Inspection Report" › answer every question "Pass", add a photo, outcome "Yes" / accepted › "Submit Inspection" → "Inspection Detail" shows "inspection completed"', async () => {
+        await row.getByRole('button', { name: 'Self Assign' }).click(); await k.settle(3000);
+        await fdiOpen();
+        const mine = fdiTodayRows().filter({ hasText: config.username }).filter({ has: page.getByRole('button', { name: /Fill Inspection Report/i }) }).first();
+        await mine.getByRole('button', { name: /Fill Inspection Report/i }).click();
+        await page.getByRole('button', { name: 'Submit Inspection' }).waitFor({ timeout: 30000 }); await k.settle(1500);
+        const pass = page.getByRole('button', { name: /^pass$/i }).or(page.getByRole('radio', { name: /^pass$/i }));
+        for (let i = 0, n = await pass.count(); i < n; i++) await pass.nth(i).click().catch(() => null);
+        const png = require('path').join(require('os').tmpdir(), `npe-${Date.now()}.png`);
+        require('fs').writeFileSync(png, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'));
+        const ch = page.waitForEvent('filechooser'); await page.getByRole('button', { name: /Add photo/i }).click(); await (await ch).setFiles(png); await k.settle(2000);
+        const outcome = main.getByText('Inspection outcome', { exact: true }).locator('xpath=..');
+        const chosen = [];
+        if (await outcome.isVisible().catch(() => false)) for (const wanted of [/^Yes\b/i, /^(Accepted|Passed?|Complete)/i]) {
+          const sel = outcome.locator('select').filter({ has: page.locator('option', { hasText: wanted }) }).first();
+          if (!(await sel.count())) continue;
+          const opt = (await sel.locator('option').allInnerTexts()).find(o => wanted.test(o.trim()));
+          if (opt) { await sel.selectOption({ label: opt.trim() }); chosen.push(opt.trim()); }
+        }
+        await page.getByRole('button', { name: 'Submit Inspection' }).click();
+        await expect(page.getByText('Inspection Detail').first()).toBeVisible({ timeout: 30000 });
+        await expect(page.getByText(/inspection completed/i).first()).toBeVisible();
+        s.observe(`outcome: ${chosen.join(' / ') || '(no outcome section)'}`);
+      }, { critical: true });
+      await s.step(`NCR ${R.ncr || '(run NCR)'} → status "Closed" and no quantity on hold`, async () => {
+        await go(R.ncrUrl);
+        const head = clean(await ncrPanel().innerText());
+        s.observe(head.slice(0, 200));
+        expect(head, 'The completed re-inspection did not close the NCR').toMatch(new RegExp(`${R.ncr} Closed`));
+        expect(head).not.toMatch(/\d+ \w+ on hold/);
+      });
+    });
     await run.scenario(meta('NPE-REG-23', 'NCRs', 'NCR "Use as is" path (from the Over delivery discrepancy)', 'Positive'), async s => {
       await s.step('Over delivery discrepancy › Raise NCR › corrective action "Use as is" + note › Save › follow the offered actions → ends Closed or Awaiting re-inspection; path recorded', async () => {
         if (!R.line2) throw new Error('No Over delivery discrepancy in this run (the load has one line)');
@@ -639,15 +706,6 @@ test('New pages – E2E chain', async ({ page, browserName }) => {
         expect(r.final).toMatch(/Closed|Awaiting re-inspection/);
       });
     });
-    await run.scenario(meta('NPE-REG-08', 'NCRs', 'Re-inspection closes the NCR', 'Positive'), async s => {
-      await s.step('NCR in "Awaiting re-inspection" → a re-inspection / close action is offered (pass → Closed, quantity released)', async () => {
-        await go(R.ncrUrl);
-        const head = clean(await ncrPanel().innerText());
-        const actions = (await ncrPanel().getByRole('button').allInnerTexts()).map(clean).filter(b => b && !/^(PDF|Close ✕|Save|\+ Photo|LD-\d+)$/.test(b));
-        s.observe(`${head.slice(0, 120)} · actions: ${actions.join(', ') || 'none'}`);
-        expect(actions.some(b => /inspect|pass|close|accept/i.test(b)), 'Question to the dev team: no re-inspection / close action is offered to the Project Admin – who closes an NCR?').toBe(true);
-      });
-    });
     await run.scenario(meta('NPE-REG-09', 'Unallocated Deliveries', 'Unplanned arrival allocated to its component (needs Delivery Management)', 'Positive'), async s => {
       await s.step('Unallocated Deliveries → a way to record or receive an unplanned arrival is offered', async () => {
         await go('/unallocated-deliveries');
@@ -660,9 +718,12 @@ test('New pages – E2E chain', async ({ page, browserName }) => {
       await s.step('Discrepancy "Received after ROJ" of the run load → "received <date>" equals the IST date of the receipt', async () => {
         if (!R.lateText) throw new Error('No "Received after ROJ" discrepancy recorded by NPE-SMK-04');
         const shown = R.lateText.match(/received (\d+ \w+ \d{4})/)[1];
-        const today = new Date(Date.now() + 5.5 * 3600e3).toUTCString().slice(5, 16).replace(/^0/, '');
-        s.observe(`shown "${shown}", IST date of the receipt "${today}"`);
-        expect(shown, 'The receipt date is shown in UTC, not in IST (receipt after midnight IST shows the previous day)').toBe(today);
+        const at = R.receivedAt || Date.now();
+        const day = ms => new Date(ms).toUTCString().slice(5, 16).replace(/^0/, '');
+        const ist = day(at + 5.5 * 3600e3), utc = day(at);
+        const conclusive = ist !== utc; // only receipts between 00:00 and 05:30 IST fall on different IST and UTC dates
+        s.observe(`shown "${shown}", IST date of the receipt "${ist}", UTC date "${utc}"${conclusive ? '' : ' – same date in IST and UTC at this time of day, so a UTC display cannot be told apart (seen at 02:58 IST on 27 Nov)'}`);
+        expect(shown, 'The receipt date is shown in UTC, not in IST (receipt after midnight IST shows the previous day)').toBe(ist);
       });
     });
     await run.scenario(meta('NPE-REG-10', 'Loads', 'All loads search finds a load by its number', 'Positive'), async s => {

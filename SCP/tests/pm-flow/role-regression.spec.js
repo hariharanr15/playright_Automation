@@ -340,12 +340,17 @@ test('Role-based access – regression (read-only)', async ({ page, browserName 
     for (const [id, title, reason] of [
       ['PM-REG-ROLE-02', 'Admin can edit role access', 'Needs a role change; this suite only reads the configured access (user decision 22 Nov 2026)'],
       ['PM-REG-ROLE-06', 'A role change applies to a signed-in user', 'Needs a role change; this suite only reads the configured access'],
-      ['PM-REG-ROLE-09', 'Nav matches permission keys', 'The session permission list to compare with is not exposed to the tests yet'],
       ['PM-REG-ROLE-10', 'Disabled FDI inspector', 'Covered by PM-REG-FDI-18 (needs an inspector login)'],
       ['PM-REG-ROLE-12', 'Role assigned at user creation (SCP)', 'Needs YOPmail invite acceptance (Cloudflare check, not bypassed)'],
       ['PM-REG-ROLE-13', 'Org Admin creates a user in the portal', 'Expected (user, 22 Nov 2026): the Org Admin can create a user in the organisation admin portal. Creating a platform user is a write in the shared portal: awaiting approval (the new user could then be activated automatically through mail.tm)'],
       ['PM-REG-ROLE-22', 'Org Admin can create a project in any organization', 'Expected (user, 22 Nov 2026): the Org Admin can create projects in any organisation in the admin portal. The New Project form has no organisation field (Project Name, Region, Address, Project Owner e-mail, HubSpot link); creating a project cannot be undone: awaiting approval'],
       ['PM-REG-ROLE-23', 'Project Admin limited to their associated organization', 'No Project-Admin-only account (the Project Admin account is a platform admin)'],
     ]) run.skip(meta(id, title, 'Role'), reason);
+    // No-skip rule (27 Nov 2026): runs and fails with the question until the dev team answers.
+    await run.scenario(meta('PM-REG-ROLE-09', 'Nav matches permission keys', 'Role'), async s => {
+      await s.step('Signed-in session permission list → every left-menu entry matches a permission key the role holds', async () => {
+        throw new Error('Question to the dev team (no-skip rule, 27 Nov 2026): where can the tests read the session permission list (SSO permission codes) of a signed-in user? New actions check role names (dev review 27 Nov), so the list is needed to compare the menu with the role.');
+      });
+    });
   } });
 });

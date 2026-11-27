@@ -870,7 +870,12 @@ test('Remaining modules – regression', async ({ page, browserName }) => {
         });
       });
     }
-    run.skip(meta('DSH-REG-10', DSH, 'Daily alert batch', 'Integration'), 'No expected result yet: which alerts the 05:00–06:00 IST batch creates is not defined (question for the team, 22 Nov 2026). A met alert rule is checked by PL-REG-ALR-05');
+    // No-skip rule (27 Nov 2026): a case waiting on the dev team runs and fails with the question until it is answered.
+    await run.scenario(meta('DSH-REG-10', DSH, 'Daily alert batch', 'Integration'), async s => {
+      await s.step('Daily alert batch (05:00–06:00 IST) → the alerts it creates are listed in Management Dashboard › Alerts', async () => {
+        throw new Error('Question to the dev team (no-skip rule, 27 Nov 2026): which alerts does the 05:00–06:00 IST batch create, and for which conditions? Without a defined result this check cannot pass. (A met alert rule is checked by PL-REG-ALR-05.)');
+      });
+    });
     await run.scenario(meta('DSH-REG-11', DSH, 'View in Procurement Log', 'Integration'), async s => {
       await s.step(`Management Dashboard: click "View in Procurement Log →" → opens /procurement-log with "Only my watched" checked`, async () => {
         await dash(); await main.getByText('View in Procurement Log →').first().click(); await k.settle(2000);

@@ -622,7 +622,11 @@ test('Project Management – Regression (part 1: read-only and form-only)', asyn
     });
     skip('PM-REG-FDI-25a', 'First Delivery Inspection Config', 'Inspector list kept after navigating away', PART2);
     skip('PM-REG-FDI-42c', 'First Delivery Inspection Config', 'Empty Questions list', `${PART2} – an empty question set`);
-    skip('PM-REG-FDI-50', 'First Delivery Inspection Config', 'Question list requests are organization-scoped', 'API endpoint not confirmed yet');
+    await sc('PM-REG-FDI-50', 'First Delivery Inspection Config', 'Question list requests are organization-scoped', async s => {
+      await s.step('First Delivery Inspection Config › question list request → carries the organisation and returns only its questions', async () => {
+        throw new Error('Question to the dev team (no-skip rule, 27 Nov 2026): which API endpoint returns the FDI question list, and which parameter scopes it to the organisation? The endpoint is not confirmed, so the check cannot run.');
+      });
+    });
 
     // ================= Inventory Control =================
     await sc('PM-REG-INV-01', 'Inventory Control', 'Empty state', async s => {
