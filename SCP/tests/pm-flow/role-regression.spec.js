@@ -134,7 +134,7 @@ test('Role-based access – regression (read-only)', async ({ page, browserName 
     });
 
     try {
-      if (setup.status === 'Passed') {
+      if (setup?.status === 'Passed') { // setup is undefined when --only leaves it out
         await run.scenario(meta('PM-REG-ROLE-08', 'Each account sees exactly the menu entries its role enables', 'Role'), async s => {
           for (const acct of ACCOUNTS) {
             await s.step(`${acct.key} (${acct.role}): for every enabled/disabled "Menu: …" permission that names a left-menu entry → the entry is shown only when it is enabled`, async () => {

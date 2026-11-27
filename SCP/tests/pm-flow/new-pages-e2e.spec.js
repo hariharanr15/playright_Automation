@@ -581,7 +581,7 @@ test('New pages – E2E chain', async ({ page, browserName }) => {
         const value = Number(await row.getByRole('spinbutton').inputValue());
         s.observe(`left ${left}; typed ${left + 5}; field now ${value}; Save right after typing ${first ? 'enabled' : 'disabled'}, after leaving the field ${saveEnabled ? 'still enabled after 8 s' : `disabled after ${((Date.now() - t0) / 1000).toFixed(1)} s`}`);
         expect(value <= left || !saveEnabled, 'quantity above what is left is not accepted (Save still enabled 8 s after leaving the field)').toBe(true);
-      });
+      }, { attempts: 1 }); // one attempt: a retry re-reads a settled form and hid the defect on 27 Nov
       await s.step('With a line in the load the open list shows "Showing Division N only: a load carries one CSI division."', async () => {
         await expect(main.getByText(/a load carries one CSI division/).first()).toBeVisible();
       });
@@ -681,7 +681,7 @@ test('New pages – E2E chain', async ({ page, browserName }) => {
         await go(R.ncrUrl);
         const head = clean(await ncrPanel().innerText());
         s.observe(head.slice(0, 200));
-        expect(head, 'The completed re-inspection did not close the NCR').toMatch(new RegExp(`${R.ncr} Closed`));
+        expect(head, `Question to the dev team: the inspection raised after "Work done: request re-inspection" was completed (pass, outcome Yes / Accepted) but ${R.ncr} stays "Awaiting re-inspection" – how is the re-inspection linked to the NCR, and what closes it?`).toMatch(new RegExp(`${R.ncr} Closed`));
         expect(head).not.toMatch(/\d+ \w+ on hold/);
       });
     });

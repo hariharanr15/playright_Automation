@@ -1,6 +1,6 @@
 # SCP – consolidated issues, bugs, blockers and skipped cases (27 Nov 2026)
 
-_Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 · latest result of every case from the 26 Nov full regression, its re-runs and the new-module suites (Loads, NCRs, My Work, TOV, EPD, Excel Import, Inventory Rebuild, Messages) up to 27 Nov 03:00 IST · 872 cases, 709 passed._
+_Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 · latest result of every case from the 26 Nov full regression, its re-runs and the new-module suites (Loads, NCRs, My Work, TOV, EPD, Excel Import, Inventory Rebuild, Messages) up to 27 Nov 13:00 IST, updated with the dev feedback of 27 Nov (issue justification and "SCP Business Logic and Flow Changes") · 873 cases, 711 passed._
 
 ## 1. Summary
 
@@ -8,25 +8,25 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 |---|---|---|---|
 | Bug – Known Defect | 44 | Registered application defect that still reproduces | Dev team |
 | Bug – new defect candidate | 15 | Application behaviour that looks wrong; dev team to confirm | Dev team |
-| Blocker / question | 4 | Test cannot complete until the environment changes or the dev team answers | Dev / platform team |
-| Withdrawn after feedback | 2 | Not an issue per the 27 Nov issue justification; the test will be updated | QA |
-| Answered – test update | 1 | The dev review answers the question; the test will follow the described flow | QA |
+| Blocker / question | 8 | Test cannot complete until the environment changes or the dev team answers | Dev / platform team |
+| Withdrawn after feedback | 1 | Not an issue per the 27 Nov issue justification; the test will be updated | QA |
+| Answered – test update | 0 | The dev review answers the question; the test will follow the described flow | QA |
 | Automation re-check | 0 | Test-side issue, already fixed; re-verified in the next run | QA |
-| Skipped | 99 | Not run, with the reason and what is needed (section 4) | See owner |
+| Skipped | 96 | Not run, with the reason and what is needed (section 4) | See owner |
 
 **Module-wise**
 
 | # | Module | Known Defects | New defect candidates | Blockers / questions | Skipped |
 |---|---|---|---|---|---|
 | 1 | Procurement Log | 7 | 0 | 0 | 2 |
-| 2 | Loads, Discrepancies & NCRs | 0 | 4 | 1 | 1 |
+| 2 | Loads, Discrepancies & NCRs | 0 | 4 | 2 | 1 |
 | 3 | My Work | 0 | 1 | 0 | 0 |
-| 4 | Management Dashboard | 4 | 0 | 0 | 1 |
+| 4 | Management Dashboard | 4 | 0 | 1 | 0 |
 | 5 | Alerts, Notifications & Tasks | 0 | 1 | 0 | 0 |
 | 6 | First Delivery Inspections | 1 | 0 | 0 | 12 |
-| 7 | Project Management | 19 | 1 | 0 | 37 |
+| 7 | Project Management | 19 | 1 | 1 | 36 |
 | 8 | User Management | 4 | 0 | 0 | 5 |
-| 9 | Roles & Access | 0 | 2 | 0 | 8 |
+| 9 | Roles & Access | 0 | 2 | 1 | 7 |
 | 10 | Inventory | 0 | 0 | 0 | 23 |
 | 11 | Inventory Rebuild | 0 | 1 | 0 | 0 |
 | 12 | Excel Import | 0 | 0 | 1 | 0 |
@@ -45,27 +45,29 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 | Ref | Test case | Module | Type | Issue |
 |---|---|---|---|---|
 | N-01 | TC-14 | Procurement Log | ~~Withdrawn~~ (not an issue) | Procurement alert cannot be created – custom fields gone from Procurement Log Configuration |
-| N-02 | PL-REG-TAB-05 | Procurement Log | ~~Withdrawn~~ (not an issue) | Column "Issues" appears twice in By submittal / By material |
-| N-03 | NPE-REG-08 | Loads, Discrepancies & NCRs | Answered | Rework NCR stops at "Awaiting re-inspection" – no action to re-inspect or close |
-| N-04 | NPE-REG-09 | Loads, Discrepancies & NCRs | Blocker | Unallocated Deliveries: no way to create or record an unplanned arrival |
-| N-05 | NPE-REG-19 | Loads, Discrepancies & NCRs | Defect candidate | A deleted load number is given to the next load |
-| N-06 | NPE-REG-21 | Loads, Discrepancies & NCRs | Defect candidate | Adding a damage photo makes the receipt form view-only |
-| N-07 | NPE-REG-12 | Loads, Discrepancies & NCRs | Defect candidate | "Received after ROJ" discrepancy shows the UTC date, not the project date (IST) |
-| N-08 | NPE-REG-05 | Loads, Discrepancies & NCRs | Defect candidate | Build load accepts a quantity above what is left on the line |
-| N-09 | MW-REG-07 | My Work | Defect candidate | My Work › Submittals: Project filter shows "All my projects (0)" |
+| N-02 | NPE-REG-08 | Loads, Discrepancies & NCRs | Question | Re-inspection completed but the Rework NCR stays "Awaiting re-inspection" |
+| N-03 | NPE-REG-09 | Loads, Discrepancies & NCRs | Blocker | Unallocated Deliveries: no way to create or record an unplanned arrival |
+| N-04 | NPE-REG-19 | Loads, Discrepancies & NCRs | Defect candidate | A deleted load number is given to the next load |
+| N-05 | NPE-REG-21 | Loads, Discrepancies & NCRs | Defect candidate | Adding a damage photo makes the receipt form view-only |
+| N-06 | NPE-REG-12 | Loads, Discrepancies & NCRs | Defect candidate | "Received after ROJ" discrepancy shows the UTC date, not the project date (IST) |
+| N-07 | NPE-REG-05 | Loads, Discrepancies & NCRs | Defect candidate | Build load accepts a quantity above what is left on the line |
+| N-08 | MW-REG-07 | My Work | Defect candidate | My Work › Submittals: Project filter shows "All my projects (0)" |
+| N-09 | DSH-REG-10 | Management Dashboard | Question | Daily alert batch – which alerts it creates is not defined |
 | N-10 | TC-23B | Alerts, Notifications & Tasks | Defect candidate | No "First delivery of <material> received" task after the first delivery of a new material |
-| N-11 | PM-REG-SITE-10 | Project Management | Defect candidate | ADD LOCATION accepts a duplicate location name in the same site |
-| N-12 | PM-REG-ROLE-08 | Roles & Access | Defect candidate | Supplier menu shows Project Management although the role does not enable it |
-| N-13 | PM-REG-ROLE-05 | Roles & Access | Defect candidate | Supplier / Subcontractor without Project Management access can open Material Master by URL |
-| N-14 | IR-REG-01 | Inventory Rebuild | Defect candidate | Inventory Rebuild shows dates as MM/DD/YYYY with 12-hour time |
-| N-15 | XI-REG-04 | Excel Import | Question | Excel Import is not listed in Bulk Upload Status |
-| N-16 | SHP-REG-18 | International Shipments | Defect candidate | "N at risk" counter ignores the Destination filter |
-| N-17 | SHP-REG-20 | International Shipments | Defect candidate | Active Delay Alerts: 272 cards but only 2 distinct alerts |
-| N-18 | SHP-REG-15 | International Shipments | Defect candidate | Delay Alerts: every affected shipment lists the same alert 136 times |
-| N-19 | ANV-AGG-10 | Analytics | Defect candidate | Aggregate Stats values in $ on an INR project |
-| N-20 | TV-REG-08 | TOV Analytics | Defect candidate | TOV Invoiced Orders / Outflow Projection: search does not filter |
-| N-21 | ET-REG-07 | EPD Tracker | Question | EPD Tracker: no way to give an EPD an expiry date, so Expiring / Expired cannot be tested |
-| N-22 | MS-REG-03 | Messages | Blocker | Messages cannot be tested – Delivery Management / Booking Integration not connected on staging |
+| N-11 | PM-REG-FDI-50 | Project Management | Question | FDI question list – API endpoint and organisation scope not confirmed |
+| N-12 | PM-REG-SITE-10 | Project Management | Defect candidate | ADD LOCATION accepts a duplicate location name in the same site |
+| N-13 | PM-REG-ROLE-08 | Roles & Access | Defect candidate | Supplier menu shows Project Management although the role does not enable it |
+| N-14 | PM-REG-ROLE-05 | Roles & Access | Defect candidate | Supplier / Subcontractor without Project Management access can open Material Master by URL |
+| N-15 | PM-REG-ROLE-09 | Roles & Access | Question | Menu vs permission keys – session permission list not available to the tests |
+| N-16 | IR-REG-01 | Inventory Rebuild | Defect candidate | Inventory Rebuild shows dates as MM/DD/YYYY with 12-hour time |
+| N-17 | XI-REG-04 | Excel Import | Question | Excel Import is not listed in Bulk Upload Status |
+| N-18 | SHP-REG-18 | International Shipments | Defect candidate | "N at risk" counter ignores the Destination filter |
+| N-19 | SHP-REG-20 | International Shipments | Defect candidate | Active Delay Alerts: 272 cards but only 2 distinct alerts |
+| N-20 | SHP-REG-15 | International Shipments | Defect candidate | Delay Alerts: every affected shipment lists the same alert 136 times |
+| N-21 | ANV-AGG-10 | Analytics | Defect candidate | Aggregate Stats values in $ on an INR project |
+| N-22 | TV-REG-08 | TOV Analytics | Defect candidate | TOV Invoiced Orders / Outflow Projection: search does not filter |
+| N-23 | ET-REG-07 | EPD Tracker | Question | EPD Tracker: no way to give an EPD an expiry date, so Expiring / Expired cannot be tested |
+| N-24 | MS-REG-03 | Messages | Blocker | Messages cannot be tested – Delivery Management / Booking Integration not connected on staging |
 
 ## 3. Details by module
 
@@ -198,23 +200,6 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Status:** registered, pending dev-team confirmation.
 
-#### N-02 · PL-REG-TAB-05 – Column "Issues" appears twice in By submittal / By material
-
-**Type:** Withdrawn · **Evidence:** p1-2026-11-26T11-30-18-267Z
-
-**Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header.
-
-**Steps to reproduce:**
-
-1. Procurement Log › tab "By submittal" → read the column headers.
-2. Tab "By material" → read the column headers.
-
-**Expected:** Every column name appears once.
-
-**Actual:** Both views show the column "Issues" twice.
-
-**Feedback 27 Nov:** Issue justification (27 Nov): not an issue – the two "Issues" columns have the same name but different uses. The test will be updated to accept both columns.
-
 #### N-01 · TC-14 – Procurement alert cannot be created – custom fields gone from Procurement Log Configuration
 
 **Type:** Withdrawn · **Evidence:** e2e-smoke-2026-11-26T13-09-12-885Z
@@ -235,9 +220,9 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.2 Loads, Discrepancies & NCRs
 
-#### N-08 · NPE-REG-05 – Build load accepts a quantity above what is left on the line
+#### N-07 · NPE-REG-05 – Build load accepts a quantity above what is left on the line
 
-**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T01-54-29-468Z
+**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T07-06-38-115Z
 
 **Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header. An open product line, e.g. PLT2611130841-SUB-P (20,000 pieces).
 
@@ -254,9 +239,9 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Feedback 27 Nov:** Business Logic and Flow Changes (dev review 12→23 Nov), §2 and row 15: load lines are checked against the outstanding quantity (required − received − on other open loads − deliveries not yet arrived). This confirms the expected result.
 
-#### N-07 · NPE-REG-12 – "Received after ROJ" discrepancy shows the UTC date, not the project date (IST)
+#### N-06 · NPE-REG-12 – "Received after ROJ" discrepancy shows the UTC date, not the project date (IST)
 
-**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T01-54-29-468Z
+**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T07-06-38-115Z
 
 **Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header. A load in "Expected" whose line has a ROJ date before today.
 
@@ -271,9 +256,9 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Feedback 27 Nov:** Business Logic and Flow Changes (dev review 12→23 Nov): not covered by the review.
 
-#### N-05 · NPE-REG-19 – A deleted load number is given to the next load
+#### N-04 · NPE-REG-19 – A deleted load number is given to the next load
 
-**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T01-54-29-468Z
+**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T07-06-38-115Z
 
 **Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header.
 
@@ -287,9 +272,9 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Actual:** The new load is numbered LD-0008 again (26 Nov, 21:03 run).
 
-#### N-06 · NPE-REG-21 – Adding a damage photo makes the receipt form view-only
+#### N-05 · NPE-REG-21 – Adding a damage photo makes the receipt form view-only
 
-**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T01-54-29-468Z
+**Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T07-06-38-115Z
 
 **Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header. A load in "Expected".
 
@@ -303,28 +288,31 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Actual:** Right after the photo is added the page shows "You can view this load but not receive it." and the form turns view-only; the receipt can only be confirmed without the photo (0 photos on the receipt).
 
-#### N-03 · NPE-REG-08 – Rework NCR stops at "Awaiting re-inspection" – no action to re-inspect or close
+#### N-02 · NPE-REG-08 – Re-inspection completed but the Rework NCR stays "Awaiting re-inspection"
 
-**Type:** Answered · **Evidence:** np-e2e-2026-11-27T01-54-29-468Z
+**Type:** Question · **Evidence:** np-e2e-2026-11-27T07-06-38-115Z
 
 **Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header. A received load with a "Damaged" discrepancy.
 
 **Steps to reproduce:**
 
 1. Loads › Discrepancies › the Damaged row › Raise NCR.
-2. Corrective action "Rework" + Note › Save → Awaiting approval.
-3. Approve (GC QA/QC) → In progress › "Work done: request re-inspection" → Awaiting re-inspection.
-4. Look for the next action on the NCR.
+2. Corrective action "Rework" + Note › Save → Awaiting approval; Approve (GC QA/QC) → In progress.
+3. First Delivery Inspections (untick "Group by material category") › search the product submittal → note the number of inspections dated today.
+4. NCR › "Work done: request re-inspection" → Awaiting re-inspection.
+5. First Delivery Inspections › same search → one more inspection dated today ("Auditor Not Yet Assigned") (OK).
+6. That inspection › Self Assign › Fill Inspection Report › answers Pass, a photo, outcome "Yes" / "Accepted" › Submit Inspection → "inspection completed" (OK).
+7. Open the NCR again.
 
-**Expected:** A re-inspection / close action (pass → Closed, quantity released).
+**Expected:** The NCR is Closed and the quantity on hold is released.
 
-**Actual:** No action offered to the Project Admin; NCR-005 stays "Awaiting re-inspection · 1 Pieces on hold". "Use as is" and "Reject and return" NCRs can be closed by the Project Admin.
+**Actual:** NCR-014 stays "Awaiting re-inspection · 1 Pieces on hold" (27 Nov 12:36 IST). The inspection list does not show which NCR an inspection belongs to.
 
-**Feedback 27 Nov:** Business Logic and Flow Changes (dev review 12→23 Nov), §2 and row 24: the re-inspection of a Rework / Repair NCR is raised as a new First Delivery Inspection record. The test will open that FDI, record the result and check the NCR closes.
+**Question to the dev team:** How is the re-inspection linked to the NCR, and what closes a Rework / Repair NCR?
 
-#### N-04 · NPE-REG-09 – Unallocated Deliveries: no way to create or record an unplanned arrival
+#### N-03 · NPE-REG-09 – Unallocated Deliveries: no way to create or record an unplanned arrival
 
-**Type:** Blocker · **Evidence:** np-e2e-2026-11-27T01-54-29-468Z
+**Type:** Blocker · **Evidence:** np-e2e-2026-11-27T07-06-38-115Z
 
 **Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header.
 
@@ -343,7 +331,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.3 My Work
 
-#### N-09 · MW-REG-07 – My Work › Submittals: Project filter shows "All my projects (0)"
+#### N-08 · MW-REG-07 – My Work › Submittals: Project filter shows "All my projects (0)"
 
 **Type:** Defect candidate · **Evidence:** my-work-2026-11-26T19-30-58-391Z
 
@@ -457,6 +445,22 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Status:** registered, pending dev-team confirmation.
 
+#### N-09 · DSH-REG-10 – Daily alert batch – which alerts it creates is not defined
+
+**Type:** Question · **Evidence:** app-regression-2026-11-27T07-04-25-704Z
+
+**Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header.
+
+**Steps to reproduce:**
+
+1. Next morning after 05:00–06:00 IST: Management Dashboard › Alerts.
+
+**Expected:** The alerts the daily batch is meant to create are listed.
+
+**Actual:** Not testable: no defined list of alerts the batch creates (runs and fails with the question since 27 Nov).
+
+**Question to the dev team:** Which alerts does the 05:00–06:00 IST batch create, and for which conditions?
+
 ### 3.5 Alerts, Notifications & Tasks
 
 #### N-10 · TC-23B – No "First delivery of <material> received" task after the first delivery of a new material
@@ -498,7 +502,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.7 Project Management
 
-#### N-11 · PM-REG-SITE-10 – ADD LOCATION accepts a duplicate location name in the same site
+#### N-12 · PM-REG-SITE-10 – ADD LOCATION accepts a duplicate location name in the same site
 
 **Type:** Defect candidate · **Area:** Site Details · **Evidence:** regression2-2026-11-26T08-59-57-300Z
 
@@ -849,6 +853,22 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Test message:** Site upload with an existing site name (other case) added a location to that site (3 → 4) instead of rejecting the row (R46)
 
+#### N-11 · PM-REG-FDI-50 – FDI question list – API endpoint and organisation scope not confirmed
+
+**Type:** Question · **Area:** FDI settings · **Evidence:** regression-2026-11-27T07-05-29-212Z
+
+**Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header.
+
+**Steps to reproduce:**
+
+1. Project Management › First Delivery Inspection Config › open the question list.
+
+**Expected:** The question-list request carries the organisation and returns only its questions.
+
+**Actual:** Not testable: the endpoint is not confirmed (runs and fails with the question since 27 Nov).
+
+**Question to the dev team:** Which API endpoint returns the FDI question list, and which parameter scopes it to the organisation?
+
 ### 3.8 User Management
 
 #### K-32 · SL-REG-15 – Promote to SSO Organisation
@@ -920,7 +940,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.9 Roles & Access
 
-#### N-13 · PM-REG-ROLE-05 – Supplier / Subcontractor without Project Management access can open Material Master by URL
+#### N-14 · PM-REG-ROLE-05 – Supplier / Subcontractor without Project Management access can open Material Master by URL
 
 **Type:** Defect candidate · **Evidence:** roles-2026-11-26T11-15-43-811Z
 
@@ -938,7 +958,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Feedback 27 Nov:** Business Logic and Flow Changes (dev review 12→23 Nov), row 6 / gap 7: role-name check (see PM-REG-ROLE-08).
 
-#### N-12 · PM-REG-ROLE-08 – Supplier menu shows Project Management although the role does not enable it
+#### N-13 · PM-REG-ROLE-08 – Supplier menu shows Project Management although the role does not enable it
 
 **Type:** Defect candidate · **Evidence:** roles-2026-11-26T11-15-43-811Z
 
@@ -956,9 +976,25 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Feedback 27 Nov:** Business Logic and Flow Changes (dev review 12→23 Nov), row 6 / gap 7: the new actions check the ROLE NAME (contains "admin" / "subcontractor"), not the SSO permission codes. The Supplier test role is named "Voyage Control Admin", which contains "admin" – a likely cause. Same for T508-18 (SCP-DEF-076).
 
+#### N-15 · PM-REG-ROLE-09 – Menu vs permission keys – session permission list not available to the tests
+
+**Type:** Question · **Evidence:** roles-2026-11-27T07-28-34-223Z
+
+**Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NRVC_Hall · site "Warehoust _NR" selected in the header. Supplier and Subcontractor test accounts.
+
+**Steps to reproduce:**
+
+1. Sign in as each account; compare the left menu with the permission keys of the role.
+
+**Expected:** Every menu entry matches a permission key the role holds.
+
+**Actual:** Not testable: the session permission list (SSO codes) is not exposed (runs and fails with the question since 27 Nov).
+
+**Question to the dev team:** Where can the tests read the session permission list of a signed-in user?
+
 ### 3.11 Inventory Rebuild
 
-#### N-14 · IR-REG-01 – Inventory Rebuild shows dates as MM/DD/YYYY with 12-hour time
+#### N-16 · IR-REG-01 – Inventory Rebuild shows dates as MM/DD/YYYY with 12-hour time
 
 **Type:** Defect candidate · **Evidence:** import-rebuild-2026-11-26T20-24-53-520Z
 
@@ -975,7 +1011,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.12 Excel Import
 
-#### N-15 · XI-REG-04 – Excel Import is not listed in Bulk Upload Status
+#### N-17 · XI-REG-04 – Excel Import is not listed in Bulk Upload Status
 
 **Type:** Question · **Evidence:** import-rebuild-2026-11-26T20-28-10-971Z
 
@@ -994,7 +1030,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.13 International Shipments
 
-#### N-18 · SHP-REG-15 – Delay Alerts: every affected shipment lists the same alert 136 times
+#### N-20 · SHP-REG-15 – Delay Alerts: every affected shipment lists the same alert 136 times
 
 **Type:** Defect candidate · **Evidence:** p2-2026-11-26T11-36-53-566Z
 
@@ -1009,7 +1045,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Actual:** 109 of 109 rows repeat an alert – e.g. 136 entries, 1 distinct ("Red Sea route disruptions") in one row.
 
-#### N-16 · SHP-REG-18 – "N at risk" counter ignores the Destination filter
+#### N-18 · SHP-REG-18 – "N at risk" counter ignores the Destination filter
 
 **Type:** Defect candidate · **Evidence:** p2-2026-11-26T11-36-53-566Z
 
@@ -1027,7 +1063,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Feedback 27 Nov:** Business Logic and Flow Changes (dev review 12→23 Nov), rows 36 / 41: shipment risk now adds a 7-day port-to-site buffer, so more shipments are at risk; the counter should still follow the Destination filter.
 
-#### N-17 · SHP-REG-20 – Active Delay Alerts: 272 cards but only 2 distinct alerts
+#### N-19 · SHP-REG-20 – Active Delay Alerts: 272 cards but only 2 distinct alerts
 
 **Type:** Defect candidate · **Evidence:** p2-2026-11-26T11-36-53-566Z
 
@@ -1062,7 +1098,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.15 Analytics
 
-#### N-19 · ANV-AGG-10 – Aggregate Stats values in $ on an INR project
+#### N-21 · ANV-AGG-10 – Aggregate Stats values in $ on an INR project
 
 **Type:** Defect candidate · **Evidence:** p2-2026-11-26T11-36-53-566Z
 
@@ -1207,7 +1243,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.16 TOV Analytics
 
-#### N-20 · TV-REG-08 – TOV Invoiced Orders / Outflow Projection: search does not filter
+#### N-22 · TV-REG-08 – TOV Invoiced Orders / Outflow Projection: search does not filter
 
 **Type:** Defect candidate · **Evidence:** tov-epd-2026-11-26T19-58-56-213Z
 
@@ -1225,7 +1261,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.17 EPD Tracker
 
-#### N-21 · ET-REG-07 – EPD Tracker: no way to give an EPD an expiry date, so Expiring / Expired cannot be tested
+#### N-23 · ET-REG-07 – EPD Tracker: no way to give an EPD an expiry date, so Expiring / Expired cannot be tested
 
 **Type:** Question · **Evidence:** tov-epd-2026-11-27T01-49-23-150Z
 
@@ -1265,7 +1301,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.19 Messages
 
-#### N-22 · MS-REG-03 – Messages cannot be tested – Delivery Management / Booking Integration not connected on staging
+#### N-24 · MS-REG-03 – Messages cannot be tested – Delivery Management / Booking Integration not connected on staging
 
 **Type:** Blocker · **Evidence:** import-rebuild-2026-11-26T20-20-24-012Z
 
@@ -1281,7 +1317,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Question to the dev team:** Can the platform team connect Booking Integration on staging?
 
-## 4. Skipped (99) – module-wise, with what is needed to run
+## 4. Skipped (96) – module-wise, with what is needed to run
 
 | Reason | Cases | Owner | Needed to run |
 |---|---|---|---|
@@ -1293,7 +1329,6 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 | Test data – second project | 4 | Dev team | A second project in the NRVC_Hall organisation (Q-FDI-8). |
 | External system | 3 | None | Access to the external system (Procore / TheLink). |
 | Client decision – Supplier Inbox removed | 3 | Client | Decision: retire these cases or move them to My Work (question 3). |
-| Information from Dev | 3 | Dev team | The API endpoint / permission list / batch-alert definition. |
 | Manual / dropped by decision | 3 | None | Kept manual or dropped on an earlier decision. |
 | Account / data from Dev | 3 | Dev team | An account or data only the dev team can prepare. |
 | Mailbox (YOPmail Cloudflare) | 2 | None | A real invite acceptance; the Cloudflare check is not bypassed. |
@@ -1315,13 +1350,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 | Test case | What it checks | Reason recorded | Needed to run | Owner |
 |---|---|---|---|---|
-| LD-REG-13 | A receipt with damaged or short units raises a discrepancy | Question to the dev team (26 Nov 2026): the runs received damaged units today (PL-REG-DLV, E2E) but Discrepancies shows 0. Is a discrepancy raised automatically from the receipt, or only by hand / thr | Business Logic and Flow Changes (dev review 12→23 Nov), §1 / gap 4: discrepancies are raised only from LOAD receipts; a delivery on the old delivery screen keeps the old rules and raises none. Covered by NPE-SMK-04; this case will be retired. | QA |
-
-**Management Dashboard (1)**
-
-| Test case | What it checks | Reason recorded | Needed to run | Owner |
-|---|---|---|---|---|
-| DSH-REG-10 | Daily alert batch | No expected result yet: which alerts the 05:00–06:00 IST batch creates is not defined (question for the team, 22 Nov 2026). A met alert rule is checked by PL-REG-ALR-05 | The API endpoint / permission list / batch-alert definition. | Dev team |
+| LD-REG-13 | A receipt with damaged or short units raises a discrepancy | Retired (27 Nov 2026, dev review "SCP Business Logic and Flow Changes"): discrepancies are raised only from LOAD receipts; a delivery logged on the component page keeps the old rules and raises none.  | Business Logic and Flow Changes (dev review 12→23 Nov), §1 / gap 4: discrepancies are raised only from LOAD receipts; a delivery on the old delivery screen keeps the old rules and raises none. Covered by NPE-SMK-04; this case will be retired. | QA |
 
 **First Delivery Inspections (12)**
 
@@ -1340,12 +1369,11 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 | FDI-REG-11 | FAIL answer path | Covered by FDI-REG-10 (first answer FAIL with observation) | Nothing – the check runs elsewhere (counted there). | None |
 | T548-04 | Organisation sets are shared within the organisation only | Set SCP_FDI_SECOND_PROJECT and/or SCP_TKT548_OTHER_ORG_PROJECT (project ids) to run | A second project in the NRVC_Hall organisation (Q-FDI-8). | Dev team |
 
-**Project Management (37)**
+**Project Management (36)**
 
 | Test case | What it checks | Reason recorded | Needed to run | Owner |
 |---|---|---|---|---|
 | PM-SMK-004 | TheLink Integration page loads | Deferred: no TheLink access, out of scope for now (R7) | Access to the external system (Procore / TheLink). | None |
-| PM-REG-FDI-50 | Question list requests are organization-scoped | API endpoint not confirmed yet | The API endpoint / permission list / batch-alert definition. | Dev team |
 | PM-REG-CFG-18 | Currency is set per project | Not run: SCP_Testing_Ram's Configuration Options cannot be saved while its week fields are empty ("… is required"), and filling them would permanently configure that project (CFG-17 and the Setup Wiza | An explicit go-ahead for a write that cannot be undone or changes shared settings. | User / Client |
 | PM-REG-MM-11 | Delete material in use | Not run: if the app allows it, a material used by submittals would be deleted (R14) – needs approval | An explicit go-ahead for a write that cannot be undone or changes shared settings. | User / Client |
 | PM-REG-NAV-08 | Setup Wizard disappears after completion | Not run: completing the Setup Wizard on SCP_Testing_Ram cannot be undone and CFG-17 / PSC-05 need it unconfigured – needs product-owner go-ahead | An explicit go-ahead for a write that cannot be undone or changes shared settings. | User / Client |
@@ -1392,12 +1420,11 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 | UM-REG-04 | Organization optional | Covered as a step of UM-REG-01 | Nothing – the check runs elsewhere (counted there). | None |
 | UM-REG-05 | Add Another User | Covered as a step of UM-REG-01 | Nothing – the check runs elsewhere (counted there). | None |
 
-**Roles & Access (8)**
+**Roles & Access (7)**
 
 | Test case | What it checks | Reason recorded | Needed to run | Owner |
 |---|---|---|---|---|
 | PM-REG-ROLE-23 | Project Admin limited to their associated organization | No Project-Admin-only account (the Project Admin account is a platform admin) | An account or data only the dev team can prepare. | Dev team |
-| PM-REG-ROLE-09 | Nav matches permission keys | The session permission list to compare with is not exposed to the tests yet | The API endpoint / permission list / batch-alert definition. | Dev team |
 | PM-REG-ROLE-12 | Role assigned at user creation (SCP) | Needs YOPmail invite acceptance (Cloudflare check, not bypassed) | A real invite acceptance; the Cloudflare check is not bypassed. | None |
 | PM-REG-ROLE-02 | Admin can edit role access | Needs a role change; this suite only reads the configured access (user decision 22 Nov 2026) | An explicit go-ahead for a write that cannot be undone or changes shared settings. | User / Client |
 | PM-REG-ROLE-06 | A role change applies to a signed-in user | Needs a role change; this suite only reads the configured access | An explicit go-ahead for a write that cannot be undone or changes shared settings. | User / Client |
@@ -1489,12 +1516,15 @@ _Source: "SCP Business Logic and Flow Changes" (develop 12 Nov → 23 Nov, read-
 
 | Test case | Change | Status |
 |---|---|---|
-| TC-14 (E2E smoke) | Create a numeric custom field with "+ Add Log Fields" (one per run, named with date and time), then create the alert on it | To do |
-| PL-REG-TAB-05 (P1) | Accept the two "Issues" columns (same name, different use); check every other column name is unique | To do |
-| NPE-REG-08 (np-e2e) | After "Work done: request re-inspection", open the re-inspection FDI in First Delivery Inspections, record a pass and check the NCR closes | To do |
-| LD-REG-13 (loads) | Retire – covered by NPE-SMK-04 (discrepancies are raised from load receipts only) | To do |
-| NPE-REG-09 (np-e2e) | Keep failing with the reason "Delivery Management not connected on staging" (blocker, not a question) | To do |
-| TC-23 / TC-24 (E2E smoke) | Recalculate the expected Dashboard spend with received quantity × (price ÷ ordered quantity) (BUGS-596) | To do |
+| TC-14 (E2E smoke) | Create or reuse one numeric "Alert Count" custom field ("+ Add Log Fields"), then create the alert on it | Done – runs with the full E2E smoke (Sunday) |
+| PL-REG-TAB-05 (P1) | Accept the two "Issues" columns; every other column name unique | Done – passed 27 Nov 12:33 |
+| NPE-REG-08 (np-e2e) | Complete the inspection raised by "Work done: request re-inspection" (pass), then check the NCR closes | Done – ran 27 Nov 12:36: inspection raised (6 → 7) and completed, but NCR-014 stayed "Awaiting re-inspection" → new question to the dev team |
+| LD-REG-13 (loads) | Retired – covered by NPE-SMK-04 | Done – 27 Nov 12:36 |
+| NPE-REG-09 (np-e2e) | Fails as blocked: Delivery Management not connected on staging | Done – 27 Nov 12:36 |
+| NPE-REG-05 (np-e2e) | Save load judged after leaving the field (8 s), one attempt only | Done – 27 Nov: Save stayed enabled 8 s after leaving the field (defect reproduced); single attempt from the next run |
+| NPE-REG-12 (np-e2e) | Compare with the IST date of the receipt; say when IST and UTC dates are equal | Done – passed 27 Nov (not conclusive at 12:36 IST) |
+| TC-23 / TC-24 (E2E smoke) | Expected Dashboard spend = received quantity × (price ÷ ordered quantity) (BUGS-596) | Done – runs with the full E2E smoke (Sunday) |
+| DSH-REG-10, PM-REG-FDI-50, PM-REG-ROLE-09 | Run and fail with the question to the dev team instead of skipping | Done – each fails with its question (27 Nov) |
 | Gaps 1–5, 8, 9, 13, 14, 17 (section 6) | New test cases as planned in section 6 | Planned |
 
 _All feedback, answers and decisions are kept in this document only – nothing is written to Jira._
