@@ -150,6 +150,33 @@ test('Import, Rebuild and Messages – regression', async ({ page, browserName }
       });
     });
 
+    // Gap 5 of the dev review "SCP Business Logic and Flow Changes" (27 Nov 2026): the import writes required quantity, unit,
+    // ROJ, PO and lead time without the component edit validation. Each invalid value is uploaded alone for the EXISTING
+    // Procore submittal + material found by XI-REG-03 and only previewed – nothing is imported (Preview only, then leave).
+    await run.scenario(meta('XI-GAP-05', 'Excel Import', 'Invalid quantity, unit, ROJ and lead time are rejected for an existing submittal (dev review gap 5)', 'Negative'), async s => {
+      if (!R.t) throw new Error('No target row (XI-REG-03)');
+      const cases = [
+        ['Quantity -5', 'Submittal No,Material Name,Quantity', [R.t.sub, R.t.mat, -5]],
+        ['Quantity 0', 'Submittal No,Material Name,Quantity', [R.t.sub, R.t.mat, 0]],
+        ['Unit "ZZZ" (not a unit of the project)', 'Submittal No,Material Name,Quantity,Unit', [R.t.sub, R.t.mat, R.t.qty, 'ZZZ']],
+        ['ROJ "31/02/2026" (no such date)', 'Submittal No,Material Name,Quantity,ROJ', [R.t.sub, R.t.mat, R.t.qty, '31/02/2026']],
+        ['Lead time -2 weeks', 'Submittal No,Material Name,Quantity,Lead Time', [R.t.sub, R.t.mat, R.t.qty, -2]],
+      ];
+      for (const [label, head, row] of cases) {
+        await s.step(`Upload ${R.t.sub} / ${R.t.mat} with ${label} › Preview → the row is rejected or flagged ("1 rejected" or a message in "Rows that need attention"), not "1 to update"; leave without importing`, async () => {
+          await upload(s, csv(`xi-gap-${cases.findIndex(c => c[0] === label)}.csv`, [row], head), 1);
+          await main.getByRole('button', { name: 'Preview' }).click(); await k.settle(4000);
+          const pv = clean(await main.innerText());
+          const summary = (pv.match(/\d+ to create · \d+ to update · \d+ rejected/) || [])[0] || '(no summary)';
+          const attention = pv.includes('Rows that need attention') ? pv.slice(pv.indexOf('Rows that need attention'), pv.indexOf('Rows that need attention') + 220) : '';
+          s.observe(`${label}: ${summary}${attention ? ` · ${attention}` : ''}`);
+          await go('/excel-import'); // never imported
+          expect(/1 rejected/.test(summary) || /invalid|must|negative|not a valid|unknown|greater than/i.test(attention),
+            `${label} would be imported without validation ("${summary}") – dev review gap 5`).toBe(true);
+        });
+      }
+    });
+
     // ================================================= Inventory Rebuild =================================================
     await run.scenario(meta('IR-REG-01', 'Inventory Rebuild', 'Page shows the last nightly run, dry-run results and history', 'Positive'), async s => {
       await s.step('Project Management › Inventory Settings › Inventory Rebuild → description, Run Dry Run, Rebuild, "Last nightly run" with date and status, History columns Date, Run by, Kind, Outcome, Reason, Total difference', async () => {

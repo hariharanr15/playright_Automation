@@ -13,6 +13,10 @@
 const { test, expect } = require('@playwright/test');
 const { runPmSuite } = require('./support/pm-flow');
 const { plKit } = require('./support/pl-flow');
+const { LoginPage } = require('../../pages/login.page');
+const { PlatformChooserPage } = require('../../pages/platform-chooser.page');
+const { ProjectSelectorPage } = require('../../pages/project-selector.page');
+const { SiteSelectorPage } = require('../../pages/site-selector.page');
 
 const SUITE = 'New Pages E2E';
 const d = new Date(Date.now() + 5.5 * 3600 * 1000).toISOString(); // IST
@@ -85,6 +89,7 @@ test('New pages – E2E chain', async ({ page, browserName }) => {
         }
         await expect(page).toHaveURL(/\/loads\/[0-9a-f-]{36}$/, { timeout: 30000 }); await k.settle(2500);
         R.load = REUSE; R.loadUrl = new URL(page.url()).pathname; s.observe(`${R.load} · ${await status()}`);
+        R.rcv = (clean(await main.innerText()).match(/RCV-\d+/) || [])[0]; // a received load shows "Receipt RCV-N"
         R.line2 = (await main.getByRole('heading', { name: 'This load' }).locator('xpath=ancestor::*[2]').locator('tbody tr').filter({ hasText: LINE }).count()) > 1;
       }, { critical: true });
     }) : await run.scenario(meta('NPE-SMK-01', 'Loads', `Build load: ${QTY} pieces of ${LINE} on ${SITE}, Save → LD-N Pending`, 'Positive'), async s => {
@@ -325,6 +330,87 @@ test('New pages – E2E chain', async ({ page, browserName }) => {
       });
     });
 
+    // ---- Dev review gaps (section 6 of ISSUES_CONSOLIDATED_2026-11-27): figures of the run line in the Procurement Log ----
+    // Submittal page header: "<N> Pieces required … Received <n> Damaged <n>"; component page of the large line: receipts
+    // table RECEIPT / RECEIVED QTY / GOOD / DAMAGED / STORED IN.
+    const openLineSubmittal = async () => {
+      await k.openLog(); await k.search(LINE); await k.settle(3000);
+      await main.getByRole('cell', { name: LINE, exact: true }).first().click();
+      await page.waitForURL(/[?&]submittal=/, { timeout: 30000 }); await k.settle(5000);
+    };
+    const lineFigures = async () => {
+      await openLineSubmittal();
+      const t = clean(await main.innerText());
+      const num = re => Number(((t.match(re) || [])[1] || '').replace(/,/g, ''));
+      const comps = (t.match(/43 Inches [\d,]+ Pieces/g) || []);
+      return { required: num(/([\d,]+) Pieces required/), received: num(/Received ([\d,]+) Damaged/), damaged: num(/Damaged ([\d,]+)/), components: comps.length, list: comps.join(' | ') };
+    };
+    const openLineComponent = async () => {
+      await openLineSubmittal();
+      const btns = page.getByRole('button', { name: 'More actions for 43 Inches', exact: true });
+      const idx = await btns.evaluateAll(bs => bs.findIndex(b => { let e = b; for (let i = 0; i < 6 && e; i++) { e = e.parentElement; if (e && /Pieces/.test(e.innerText)) return /20,000 Pieces/.test(e.innerText); } return false; }));
+      expect(idx, 'the 20,000-piece component of the run line').toBeGreaterThanOrEqual(0);
+      await btns.nth(idx).scrollIntoViewIfNeeded();
+      await btns.nth(idx).click({ timeout: 8000 }).catch(() => btns.nth(idx).dispatchEvent('click'));
+      await page.getByRole('menuitem', { name: 'Open component', exact: true }).click();
+      await page.waitForURL(/[?&]schedule=/, { timeout: 30000 }); await k.settle(5000);
+    };
+    // Delivery rows of the component page, by the text of each VISIBLE "Delivery actions" button's own row (27 Nov: the
+    // component page can be stacked twice – breadcrumb L3 and L4 – and the hidden copy's buttons shifted the index).
+    const actionButtons = () => page.getByRole('button', { name: 'Delivery actions', exact: true }).filter({ visible: true });
+    const rowTexts = () => actionButtons().evaluateAll(bs => bs.map(b => { let e = b; while (e && !(e.parentElement && e.parentElement.children.length > 1 && /\d/.test(e.innerText) && e.innerText.length > 20)) e = e.parentElement; return (e ? e.innerText : '').replace(/\s+/g, ' ').trim(); }));
+    const rowIndexes = async re => (await rowTexts()).map((r, i) => re.test(r) ? i : -1).filter(i => i >= 0);
+    const rowAction = async (i, item) => {
+      const b = actionButtons().nth(i); await b.scrollIntoViewIfNeeded().catch(() => null);
+      await b.click({ timeout: 8000 }).catch(() => b.dispatchEvent('click'));
+      await page.getByRole('menuitem', { name: item, exact: true }).first().click();
+    };
+    // Gap 4 (High): "The old delivery screen still receives the same components under older rules, without checking open
+    // loads". While the run load is open (Expected), "Log delivery" on the same component should be refused or warned. A
+    // delivery the app accepts is deleted again at once, so the chain is not changed.
+    await run.scenario(meta('NPE-GAP-04', 'Loads', '"Log delivery" on a component that is on an open load is refused or warned (dev review gap 4)', 'Negative'), async s => {
+      if (!R.load) throw new Error('No run load (NPE-SMK-01)');
+      await s.step(`Procurement Log › ${LINE} › component 43 Inches (20,000 Pieces) › Open component → "On a load" shows the run load's ${QTY} pieces`, async () => {
+        await openLineComponent();
+        const t = clean(await main.innerText()); s.observe((t.match(/On a load [\d,]+/) || ['On a load ?'])[0]);
+        expect(Number(((t.match(/On a load ([\d,]+)/) || [])[1] || '0').replace(/,/g, ''))).toBeGreaterThan(0);
+      }, { critical: true });
+      await s.step(`"Log delivery" › today, first location, item 43 Inches, QTY 1 › Add → refused or a warning that the component is on open load ${R.load}; a delivery the app accepts is deleted again`, async () => {
+        // Counted from the "Expected · N deliveries" heading (row locators also match nested grids: 1 delivery read as 3 on
+        // 27 Nov) and only the run's own new delivery – "Not on a load", 1 piece – is ever deleted (the 27 Nov clean-up took
+        // the last row and removed the load's own delivery).
+        const expectedCount = async () => Number((clean(await main.innerText()).match(/Expected · (\d+) deliver/) || [])[1] || 0);
+        // The run's delivery is the row "<today> 1 Not on a load …" (never a row of a load).
+        const looseIdx = () => rowIndexes(/^\d\d\/\d\d\/\d{4} 1 Not on a load /);
+        const before = await expectedCount(), looseBefore = (await looseIdx()).length;
+        await k.logDeliveryButton().click();
+        const d = k.dialog('Add Delivery', 'Add');
+        await expect(d).toBeVisible({ timeout: 15000 });
+        await k.day(d.getByRole('textbox').first(), new Date());
+        await d.getByRole('button', { name: /^(All Locations|Choose Location)$/ }).click();
+        await k.listbox().getByRole('option').filter({ hasNotText: /^(All Locations|Choose Location)$/ }).first().click();
+        await d.getByRole('button', { name: 'Choose Item Name' }).click(); await k.listbox().getByRole('option', { name: '43 Inches', exact: true }).first().click();
+        const dialogText = clean(await d.innerText());
+        await d.getByRole('spinbutton').first().fill('1');
+        await d.getByRole('button', { name: 'Add', exact: true }).click(); await k.settle(3000);
+        const stillOpen = await page.getByRole('heading', { name: 'Add Delivery', exact: true }).isVisible().catch(() => false);
+        const msg = clean(await page.locator('[role="alert"], .Toastify__toast, [class*="toast"]').allInnerTexts().then(a => a.join(' ')).catch(() => ''));
+        const warned = /load|LD-\d+|already/i.test(msg + ' ' + dialogText);
+        const after = await expectedCount();
+        s.observe(`dialog ${stillOpen ? 'stayed open' : 'closed'}; message "${msg || '(none)'}"; expected deliveries ${before} → ${after}`);
+        if (stillOpen) await k.closeDialog('Add Delivery').catch(() => page.keyboard.press('Escape'));
+        const looseAfter = after > before ? await looseIdx() : [];
+        s.observe(`loose 1-piece rows before ${looseBefore}, after ${looseAfter.length}`);
+        if (after > before && looseAfter.length === looseBefore + 1) {
+          await rowAction(looseAfter[looseAfter.length - 1], 'Delete delivery'); await k.settle(1000);
+          const ok = page.getByRole('button', { name: /^(Delete|Yes|Confirm)/ }).last();
+          if (await ok.isVisible().catch(() => false)) await ok.click();
+          await k.settle(2500);
+          s.observe(`accepted delivery deleted again; expected deliveries now ${await expectedCount()}`);
+        } else if (after > before) s.observe('accepted delivery NOT deleted: it could not be told apart from the load delivery – delete it by hand');
+        expect(after === before || warned, `"Log delivery" accepted 1 piece on the component while ${R.load} is open, without a warning (gap 4)`).toBe(true);
+      }, { attempts: 1 }); // a write: never repeated
+    });
     const receive = await run.scenario(meta('NPE-SMK-03', 'Loads', `Receive: ${RECEIVED} of ${QTY} received, ${DAMAGED} damaged → RCV, load Checked in`, 'Positive'), async s => {
       await s.step(`Load › "Receive" → form with Expected ${QTY}; set Received ${RECEIVED}, Damaged ${DAMAGED}, Stored at = first location of ${SITE}, note; "Confirm receipt"`, async () => {
         await go(R.loadUrl); await main.getByRole('button', { name: 'Receive' }).click();
@@ -410,6 +496,55 @@ test('New pages – E2E chain', async ({ page, browserName }) => {
         expect(R.after.chipDisc - R.base.chipDisc, '"Delivery discrepancies" chip').toBe(added);
         expect(R.after.myWorkOpenIssues - R.base.myWorkOpenIssues, 'My Work Open issues').toBe(added);
       });
+    });
+
+    // ---- Dev review gap 8 (27 Nov 2026): a trade can receive its own load and resolve its own discrepancies. Read-only:
+    // the Subcontractor account opens the run load's discrepancies and the test records which actions are offered; nothing
+    // is clicked. Then the Project Admin signs in again and the chain continues. ----
+    const switchTo = async (s, who, user, pass) => {
+      await page.context().clearCookies(); await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); }).catch(() => null);
+      await page.goto(config.loginUrl, { waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('heading', { name: 'Welcome To Voyage Control' })).toBeVisible({ timeout: 30000 });
+      await new LoginPage(page).login(user, pass);
+      const appOrigin = new URL(config.baseUrl).origin;
+      await page.waitForURL(u => /platforms\/choose/i.test(u.pathname) || u.origin === appOrigin, { timeout: 45000 });
+      if (/platforms\/choose/i.test(page.url())) await new PlatformChooserPage(page, config).openSupplyChainPlanner();
+      await expect(page).toHaveURL(new RegExp(appOrigin.replace(/[.]/g, '\\.')), { timeout: 45000 });
+      await new ProjectSelectorPage(page, config).ensureProject(config.projectName);
+      await new SiteSelectorPage(page).ensureSite(SITE).catch(e => s.observe(`${who}: site "${SITE}" not chosen (${String(e.message).split('\n')[0]})`));
+    };
+    await run.scenario(meta('NPE-GAP-08', 'Discrepancies', 'A Subcontractor cannot resolve or raise an NCR on the discrepancies of a load (GC only) (dev review gap 8)', 'Role'), async s => {
+      const SUB_USER = process.env.SCP_SUBCONTRACTOR_USERNAME, SUB_PASS = process.env.SCP_SUBCONTRACTOR_PASSWORD;
+      try {
+        await s.step(`Log out; sign in as the Subcontractor account (SCP_SUBCONTRACTOR_*) › ${config.projectName}`, async () => {
+          if (!SUB_USER || !SUB_PASS) throw new Error('Blocked: SCP_SUBCONTRACTOR_USERNAME / _PASSWORD not set in SCP/.env');
+          await switchTo(s, 'Subcontractor', SUB_USER, SUB_PASS);
+        }, { attempts: 1 }); // not critical: a critical failure would also block the sign-in back below
+        await s.step(`Loads › Discrepancies › status All › search ${'LD-N'} → the run discrepancies, if listed for the Subcontractor, offer no "Resolve" and no "Raise NCR" (read-only, nothing clicked)`, async () => {
+          await go('/discrepancies');
+          await select('Resolved').selectOption({ label: 'All' }).catch(() => null); await k.settle(2500);
+          await main.getByRole('searchbox').first().fill(R.load); await k.settle(3000);
+          const rows = (await discRow().allInnerTexts()).map(clean); s.observe(`listed for the Subcontractor: ${rows.length ? rows.join(' ¦ ') : 'none'}`);
+          if (!rows.length) throw new Error(`Blocked: the Subcontractor account does not see the discrepancies of ${R.load} (its trade is not the run line's company), so gap 8 cannot be shown with this account – a load of the Subcontractor's own trade is needed`);
+          const offered = [];
+          for (const kind of ['Short delivery', 'Damaged']) {
+            const row = discRow().filter({ hasText: new RegExp(`^${kind}`) }).first();
+            if (!(await row.count())) continue;
+            await row.click(); await k.settle(2500);
+            for (const b of ['Resolve', 'Raise NCR']) {
+              const btn = main.getByRole('button', { name: b, exact: true });
+              if (await btn.count() && await btn.first().isEnabled().catch(() => false)) offered.push(`${kind}: ${b}`);
+            }
+            await page.keyboard.press('Escape').catch(() => null); await k.settle(800);
+          }
+          s.observe(`actions offered to the Subcontractor: ${offered.join(', ') || 'none'}`);
+          expect(offered, `The Subcontractor can act on the discrepancies of ${R.load} (gap 8: should be GC only)`).toEqual([]);
+        }, { attempts: 1 });
+      } finally {
+        await s.step('Log out; sign in again as the Project Admin › project and site → the chain continues', async () => {
+          await switchTo(s, 'Project Admin', config.username, config.password);
+        }, { critical: true });
+      }
     });
 
     const ncr = await run.scenario(meta('NPE-SMK-05', 'NCRs', 'Raise NCR on the Damaged discrepancy → NCR Open, quantity on hold', 'Positive'), async s => {
@@ -626,6 +761,7 @@ test('New pages – E2E chain', async ({ page, browserName }) => {
       const url = new URL(page.url()).pathname; await go(url);
       const head = () => ncrPanel().innerText().then(clean);
       const ncr = ((await head()).match(/NCR-\d+/) || [])[0];
+      const held = Number(((await head()).match(/(\d+) \w+ on hold/) || [])[1] || 0);
       await select('Choose a corrective action…').selectOption({ label: action });
       await ncrPanel().getByRole('textbox', { name: 'Note' }).first().fill(`${TAG} ${action}`);
       await ncrPanel().getByRole('button', { name: 'Save', exact: true }).click(); await k.settle(3000); await go(url);
@@ -639,7 +775,7 @@ test('New pages – E2E chain', async ({ page, browserName }) => {
       }
       const final = ((await head()).match(/NCR-\d+ (Open|Awaiting approval|In progress|Awaiting re-inspection|Closed)\b/) || [])[1] || '';
       s.observe(path.join(' · '));
-      return { ncr, final, path };
+      return { ncr, final, path, held };
     };
     await run.scenario(meta('NPE-REG-08', 'NCRs', 'Re-inspection (First Delivery Inspection) closes the Rework NCR', 'Positive'), async s => {
       // Dev review "SCP Business Logic and Flow Changes" (27 Nov 2026): a re-inspection for repair or rework is raised as a
@@ -692,19 +828,36 @@ test('New pages – E2E chain', async ({ page, browserName }) => {
         expect(r.final).toMatch(/Closed|Awaiting re-inspection/);
       });
     });
+    await run.scenario(meta('NPE-GAP-02a', 'NCRs', 'Run line figures before "Reject and return" (baseline for gap 2)', 'Setup'), async s => {
+      await s.step(`Procurement Log › ${LINE} → submittal "Pieces required", "Received", and the 43 Inches component lines`, async () => {
+        R.gap2 = await lineFigures(); s.observe(JSON.stringify(R.gap2));
+        expect(R.gap2.required).toBeGreaterThan(0);
+      });
+    });
     await run.scenario(meta('NPE-REG-24', 'NCRs', 'NCR "Reject and return" path (from the Received after ROJ discrepancy)', 'Positive'), async s => {
       await s.step('Received after ROJ discrepancy › Raise NCR › corrective action "Reject and return" + note › Save › follow the offered actions → ends Closed or Awaiting re-inspection; path recorded', async () => {
-        const r = await ncrPath(s, 'Received after ROJ', 'Reject and return');
+        const r = R.rr = await ncrPath(s, 'Received after ROJ', 'Reject and return');
         expect(r.final).toMatch(/Closed|Awaiting re-inspection/);
       });
     });
 
+    // Gap 2 (High): "Reject and return leaves goods in stock and in Received QTY; the replacement adds Required again".
+    await run.scenario(meta('NPE-GAP-02', 'NCRs', '"Reject and return" takes the goods out of Received and does not add to Required (dev review gap 2)', 'Negative'), async s => {
+      if (!R.gap2 || !R.rr?.held) throw new Error('No baseline (NPE-GAP-02a) or no returned quantity (NPE-REG-24)');
+      const after = await (async () => { let a; await s.step(`Procurement Log › ${LINE} after NPE-REG-24 (${R.rr.ncr}, ${R.rr.held} returned) → read the figures again`, async () => { a = await lineFigures(); s.observe(`before ${JSON.stringify(R.gap2)} · after ${JSON.stringify(a)}`); }, { critical: true }); return a; })();
+      await s.step(`Submittal "Pieces required" unchanged (${R.gap2.required}): a replacement line, if any, replaces the returned quantity instead of adding to it`, async () => {
+        expect(after.required, `Required went from ${R.gap2.required} to ${after.required} after returning ${R.rr.held} – the replacement line is counted on top (gap 2)`).toBe(R.gap2.required);
+      });
+      await s.step(`Submittal "Received" down by the returned ${R.rr.held} (${R.gap2.received} → ${R.gap2.received - R.rr.held})`, async () => {
+        expect(after.received, `Received stays ${after.received} after returning ${R.rr.held} – returned goods are still counted as received (gap 2)`).toBe(R.gap2.received - R.rr.held);
+      });
+    });
     await run.scenario(meta('NPE-REG-25', 'NCRs', 'NCR "Repair" path (from the second Received after ROJ discrepancy)', 'Positive'), async s => {
       await s.step('Second "Received after ROJ" discrepancy (the load\'s second line) › Raise NCR › corrective action "Repair" + note › Save › follow the offered actions → ends Closed or Awaiting re-inspection; path recorded', async () => {
         if (!R.line2) throw new Error('No second Received after ROJ discrepancy in this run (the load has one line)');
         const r = await ncrPath(s, 'Received after ROJ', 'Repair');
         expect(r.final).toMatch(/Closed|Awaiting re-inspection/);
-      });
+      }, { attempts: 1 }); // raises an NCR: a retry finds no open discrepancy left and hides the first error (27 Nov)
     });
     await run.scenario(meta('NPE-REG-09', 'Unallocated Deliveries', 'Unplanned arrival allocated to its component (needs Delivery Management)', 'Positive'), async s => {
       await s.step('Unallocated Deliveries → a way to record or receive an unplanned arrival is offered', async () => {
@@ -724,6 +877,35 @@ test('New pages – E2E chain', async ({ page, browserName }) => {
         const conclusive = ist !== utc; // only receipts between 00:00 and 05:30 IST fall on different IST and UTC dates
         s.observe(`shown "${shown}", IST date of the receipt "${ist}", UTC date "${utc}"${conclusive ? '' : ' – same date in IST and UTC at this time of day, so a UTC display cannot be told apart (seen at 02:58 IST on 27 Nov)'}`);
         expect(shown, 'The receipt date is shown in UTC, not in IST (receipt after midnight IST shows the previous day)').toBe(ist);
+      });
+    });
+    // Gap 13 (Medium): "No ConditionAtDelivery (GRN) record for load receipts; two shortage formulas".
+    await run.scenario(meta('NPE-GAP-13', 'Loads', 'The load receipt shows on the component with its received, good and damaged quantities and a GRN (dev review gap 13)', 'Integration'), async s => {
+      if (!R.rcv) throw new Error('No receipt in this run (NPE-SMK-03)');
+      let row;
+      await s.step(`Procurement Log › ${LINE} › component 43 Inches (20,000 Pieces) › Open component → Received table lists ${R.rcv}`, async () => {
+        await openLineComponent();
+        row = k.deliveryRows().filter({ hasText: R.rcv }).first();
+        await expect(row, `${R.rcv} on the component page`).toBeVisible({ timeout: 20000 });
+        s.observe(clean(await row.innerText()));
+      }, { critical: true });
+      await s.step(`${R.rcv} → RECEIVED QTY ${RECEIVED}, GOOD ${RECEIVED - DAMAGED}, DAMAGED ${DAMAGED} (load: expected ${QTY}, received ${RECEIVED}, damaged ${DAMAGED})`, async () => {
+        const n = (clean(await row.innerText()).match(/RCV-\d+ \d{2}\/\d{2}\/\d{4} (\d+) (\d+) (\d+)/) || []).slice(1).map(Number);
+        s.observe(`received ${n[0]}, good ${n[1]}, damaged ${n[2]}`);
+        expect(n, `Component page shows received ${n[0]} / good ${n[1]} / damaged ${n[2]} for a receipt of ${RECEIVED} (${DAMAGED} damaged) out of ${QTY} expected – the receipt and the GRN use different quantities (gap 13)`).toEqual([RECEIVED, RECEIVED - DAMAGED, DAMAGED]);
+      });
+      await s.step(`${R.rcv} "Delivery actions" → "Generate GRN" and "View delivery details" are offered (a GRN record exists or can be made)`, async () => {
+        const items = await k.deliveryMenu(row); s.observe(items.join(', '));
+        expect(items).toEqual(expect.arrayContaining(['Generate GRN', 'View delivery details']));
+      });
+      // Preparation for gap 3 (correcting a received delivery): read the "Correct delivery" form and close it unsaved.
+      await s.step(`${R.rcv} "Delivery actions" › "Correct delivery" → "Edit Delivery" form; record its fields and values; close without saving`, async () => {
+        await k.deliveryAction(row, 'Correct delivery');
+        const form = page.getByRole('heading', { name: 'Edit Delivery', exact: true }).locator('xpath=ancestor::div[.//button[normalize-space()="Update"]][1]');
+        await expect(form).toBeVisible({ timeout: 15000 });
+        const fields = await form.locator('input, select, button').evaluateAll(es => es.map(e => `${e.getAttribute('aria-label') || e.placeholder || e.name || e.innerText || e.tagName}=${e.value ?? ''}`.replace(/\s+/g, ' ').slice(0, 60)));
+        s.observe(`${clean(await form.innerText()).slice(0, 300)} · fields: ${fields.join(' | ')}`);
+        await k.closeDialog('Edit Delivery').catch(() => page.keyboard.press('Escape'));
       });
     });
     await run.scenario(meta('NPE-REG-10', 'Loads', 'All loads search finds a load by its number', 'Positive'), async s => {
@@ -798,6 +980,69 @@ test('New pages – E2E chain', async ({ page, browserName }) => {
       await s.step('The number of the load deleted in NPE-REG-17 is not given to a later load (NPE-REG-18)', async () => {
         s.observe(`deleted ${R.del?.load}; next load ${R.can?.load}`);
         expect(R.can?.load, 'A deleted load number was reused for the next load').not.toBe(R.del?.load);
+      });
+    });
+
+    // Gap 3 (High): "Correcting a received delivery does not update the load line, discrepancies or accepted quantity".
+    // Last case of the chain because it changes the run receipt: "Correct delivery" (form "Edit Delivery": Expected / Actual
+    // date, Location, Item Name, Required Remaining Qty, QTY, Update – seen 27 Nov) adds 1 piece to the run receipt, as if
+    // one more piece had been found. The load page and the load's discrepancies are compared before and after.
+    await run.scenario(meta('NPE-GAP-03', 'Loads', 'Correcting a received load delivery updates the load and its discrepancies (dev review gap 3)', 'Integration'), async s => {
+      if (!R.rcv || !R.loadUrl) throw new Error('No receipt in this run (NPE-SMK-03)');
+      const loadView = async () => { await go(R.loadUrl); return clean(await main.innerText()).replace(/\d{1,2}:\d{2}/g, ''); };
+      const discView = async () => { await go('/discrepancies'); await select('Resolved').selectOption({ label: 'All' }); await k.settle(2500); await main.getByRole('searchbox').first().fill(R.load); await k.settle(3000); return (await discRow().allInnerTexts()).map(clean).map(r => r.replace(/ · \d+ d/, '')).sort(); };
+      const B = {}, A = {};
+      let oldQty;
+      await s.step(`Record ${R.load} (load page) and its discrepancies before the correction`, async () => {
+        B.load = await loadView(); B.disc = await discView();
+        s.observe(`load: ${B.load.slice(0, 300)} ¦ discrepancies: ${B.disc.join(' | ')}`);
+      }, { critical: true });
+      await s.step(`Procurement Log › ${LINE} › component 43 Inches › ${R.rcv} › "Correct delivery" › QTY +1 › Update → the correction is saved (row shows the new quantity)`, async () => {
+        await openLineComponent();
+        const rcvRow = async () => { const t = await rowTexts(); const i = t.findIndex(r => r.startsWith(R.rcv)); return { i, text: t[i] || '' }; };
+        const { i, text: before } = await rcvRow();
+        expect(i, `${R.rcv} on the component page`).toBeGreaterThanOrEqual(0);
+        s.observe(`row before: ${before}`);
+        await rowAction(i, 'Correct delivery');
+        const form = page.getByRole('heading', { name: 'Edit Delivery', exact: true }).locator('xpath=ancestor::div[.//button[normalize-space()="Update"]][1]');
+        await expect(form).toBeVisible({ timeout: 15000 });
+        const item = form.getByRole('button', { name: 'Choose Item Name' });
+        if (await item.count()) { await item.click(); await k.listbox().getByRole('option', { name: '43 Inches', exact: true }).first().click(); }
+        const qty = form.locator('input').last();
+        oldQty = Number(await qty.inputValue());
+        await qty.fill(String(oldQty + 1));
+        // "Note*" (required) appears once the item is chosen (27 Nov).
+        const note = form.locator('textarea').first();
+        if (await note.count()) await note.fill(`${TAG} gap 3: one more piece found at receipt`);
+        await form.getByRole('button', { name: 'Update', exact: true }).click(); await k.settle(2000);
+        // Confirmation "Save the correction?" lists what the correction does not change (27 Nov: "A First Delivery
+        // Inspection exists for this delivery; editing the delivery doesn't change it.") › Save.
+        const confirm = page.getByRole('heading', { name: 'Save the correction?', exact: true });
+        if (await confirm.isVisible().catch(() => false)) {
+          const box = confirm.locator('xpath=ancestor::div[.//button[normalize-space()="Save"]][1]');
+          R.gap3Warn = clean(await box.innerText()).replace(/^Save the correction\? ?/, '').replace(/ ?Save$/, '');
+          s.observe(`confirmation: "${R.gap3Warn}"`);
+          await box.getByRole('button', { name: 'Save', exact: true }).click(); await k.settle(3000);
+        }
+        const msg = clean(await page.locator('[role="alert"], .Toastify__toast, [class*="toast"]').allInnerTexts().then(a => a.join(' ')).catch(() => ''));
+        const open = await page.getByRole('heading', { name: 'Edit Delivery', exact: true }).isVisible().catch(() => false);
+        if (open) {
+          const vals = await form.locator('input').evaluateAll(es => es.map(e => e.value).join(' | '));
+          s.observe(`form after Update: ${clean(await form.innerText()).slice(0, 400)} · values: ${vals}`);
+          await page.screenshot({ path: require('path').join(process.env.PM_FLOW_OUT || require('os').tmpdir(), `npe-gap-03-form-${Date.now()}.png`) }).catch(() => null);
+          await k.closeDialog('Edit Delivery').catch(() => page.keyboard.press('Escape'));
+        }
+        await page.reload(); await k.settle(5000);
+        const after = (await rcvRow()).text;
+        s.observe(`QTY ${oldQty} → ${oldQty + 1}; form ${open ? 'stayed open' : 'closed'}; message "${msg || '(none)'}"; row after: ${after}`);
+        expect(after, 'the corrected quantity is not shown on the receipt row').not.toBe(before);
+      }, { critical: true, attempts: 1 }); // a write: never repeated
+      await s.step(`${R.load} load page and discrepancies → follow the correction (received +1; the Short delivery discrepancy shrinks or closes)`, async () => {
+        A.load = await loadView(); A.disc = await discView();
+        s.observe(`load: ${A.load.slice(0, 300)} ¦ discrepancies: ${A.disc.join(' | ')}`);
+        const loadChanged = A.load !== B.load, discChanged = JSON.stringify(A.disc) !== JSON.stringify(B.disc);
+        s.observe(`load page changed: ${loadChanged}; discrepancies changed: ${discChanged}`);
+        expect(loadChanged || discChanged, `Correcting ${R.rcv} (QTY ${oldQty} → ${oldQty + 1}) changed neither ${R.load} nor its discrepancies (gap 3)`).toBe(true);
       });
     });
 
