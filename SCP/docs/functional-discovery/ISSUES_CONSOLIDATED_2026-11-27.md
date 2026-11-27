@@ -1,13 +1,13 @@
 # SCP – consolidated issues, bugs, blockers and skipped cases (27 Nov 2026)
 
-_Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 · latest result of every case from the 26 Nov full regression, its re-runs and the new-module suites (Loads, NCRs, My Work, TOV, EPD, Excel Import, Inventory Rebuild, Messages) up to 27 Nov 03:00 IST · 879 cases, 710 passed._
+_Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 · latest result of every case from the 26 Nov full regression, its re-runs and the new-module suites (Loads, NCRs, My Work, TOV, EPD, Excel Import, Inventory Rebuild, Messages) up to 27 Nov 03:00 IST · 886 cases, 714 passed._
 
 ## 1. Summary
 
 | Category | Cases | Meaning | Who acts |
 |---|---|---|---|
 | Bug – Known Defect | 44 | Registered application defect that still reproduces | Dev team |
-| Bug – new defect candidate | 21 | Application behaviour that looks wrong; dev team to confirm | Dev team |
+| Bug – new defect candidate | 24 | Application behaviour that looks wrong; dev team to confirm | Dev team |
 | Blocker / question | 8 | Test cannot complete until the environment changes or the dev team answers | Dev / platform team |
 | Withdrawn after feedback | 1 | Not an issue per the 27 Nov issue justification; the test will be updated | QA |
 | Answered – test update | 0 | The dev review answers the question; the test will follow the described flow | QA |
@@ -19,7 +19,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 | # | Module | Known Defects | New defect candidates | Blockers / questions | Skipped |
 |---|---|---|---|---|---|
 | 1 | Procurement Log | 7 | 0 | 0 | 2 |
-| 2 | Loads, Discrepancies & NCRs | 0 | 9 | 2 | 1 |
+| 2 | Loads, Discrepancies & NCRs | 0 | 11 | 2 | 1 |
 | 3 | My Work | 0 | 1 | 0 | 0 |
 | 4 | Management Dashboard | 4 | 0 | 1 | 0 |
 | 5 | Alerts, Notifications & Tasks | 0 | 1 | 0 | 0 |
@@ -27,7 +27,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 | 7 | Project Management | 19 | 1 | 1 | 36 |
 | 8 | User Management | 4 | 0 | 0 | 5 |
 | 9 | Roles & Access | 0 | 2 | 1 | 7 |
-| 10 | Inventory | 0 | 0 | 0 | 23 |
+| 10 | Inventory | 0 | 1 | 0 | 23 |
 | 11 | Inventory Rebuild | 0 | 1 | 0 | 0 |
 | 12 | Excel Import | 0 | 1 | 1 | 0 |
 | 13 | International Shipments | 1 | 3 | 0 | 3 |
@@ -55,25 +55,28 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 | N-09 | NPE-GAP-13 | Loads, Discrepancies & NCRs | Defect candidate | Gap 13: the component page shows a load receipt of 2 as received 3 |
 | N-10 | NPE-GAP-08 | Loads, Discrepancies & NCRs | Defect candidate | Gap 8: a Subcontractor can raise an NCR on the discrepancies of a load |
 | N-11 | NPE-GAP-03 | Loads, Discrepancies & NCRs | Defect candidate | Gap 3: correcting a received load delivery does not update the load or its discrepancies |
-| N-12 | NPE-REG-12 | Loads, Discrepancies & NCRs | Defect candidate | "Received after ROJ" discrepancy shows the UTC date, not the project date (IST) |
-| N-13 | MW-REG-07 | My Work | Defect candidate | My Work › Submittals: Project filter shows "All my projects (0)" |
-| N-14 | DSH-REG-10 | Management Dashboard | Question | Daily alert batch – which alerts it creates is not defined |
-| N-15 | TC-23B | Alerts, Notifications & Tasks | Defect candidate | No "First delivery of <material> received" task after the first delivery of a new material |
-| N-16 | PM-REG-FDI-50 | Project Management | Question | FDI question list – API endpoint and organisation scope not confirmed |
-| N-17 | PM-REG-SITE-10 | Project Management | Defect candidate | ADD LOCATION accepts a duplicate location name in the same site |
-| N-18 | PM-REG-ROLE-08 | Roles & Access | Defect candidate | Supplier menu shows Project Management although the role does not enable it |
-| N-19 | PM-REG-ROLE-05 | Roles & Access | Defect candidate | Supplier / Subcontractor without Project Management access can open Material Master by URL |
-| N-20 | PM-REG-ROLE-09 | Roles & Access | Question | Menu vs permission keys – session permission list not available to the tests |
-| N-21 | IR-REG-01 | Inventory Rebuild | Defect candidate | Inventory Rebuild shows dates as MM/DD/YYYY with 12-hour time |
-| N-22 | XI-REG-04 | Excel Import | Question | Excel Import is not listed in Bulk Upload Status |
-| N-23 | XI-GAP-05 | Excel Import | Defect candidate | Gap 5: Excel import accepts quantity 0 and a negative lead time |
-| N-24 | SHP-REG-18 | International Shipments | Defect candidate | "N at risk" counter ignores the Destination filter |
-| N-25 | SHP-REG-20 | International Shipments | Defect candidate | Active Delay Alerts: 272 cards but only 2 distinct alerts |
-| N-26 | SHP-REG-15 | International Shipments | Defect candidate | Delay Alerts: every affected shipment lists the same alert 136 times |
-| N-27 | ANV-AGG-10 | Analytics | Defect candidate | Aggregate Stats values in $ on an INR project |
-| N-28 | TV-REG-08 | TOV Analytics | Defect candidate | TOV Invoiced Orders / Outflow Projection: search does not filter |
-| N-29 | ET-REG-07 | EPD Tracker | Question | EPD Tracker: no way to give an EPD an expiry date, so Expiring / Expired cannot be tested |
-| N-30 | MS-REG-03 | Messages | Blocker | Messages cannot be tested – Delivery Management / Booking Integration not connected on staging |
+| N-12 | DG-GAP-09 | Loads, Discrepancies & NCRs | Defect candidate | Gap 9: a load counts Pounds but its receipt is multiplied by the item conversion |
+| N-13 | DG-GAP-14 | Loads, Discrepancies & NCRs | Defect candidate | Gap 14: NCR routed by the spec-section division, FDI grouped by the category division |
+| N-14 | NPE-REG-12 | Loads, Discrepancies & NCRs | Defect candidate | "Received after ROJ" discrepancy shows the UTC date, not the project date (IST) |
+| N-15 | MW-REG-07 | My Work | Defect candidate | My Work › Submittals: Project filter shows "All my projects (0)" |
+| N-16 | DSH-REG-10 | Management Dashboard | Question | Daily alert batch – which alerts it creates is not defined |
+| N-17 | TC-23B | Alerts, Notifications & Tasks | Defect candidate | No "First delivery of <material> received" task after the first delivery of a new material |
+| N-18 | PM-REG-FDI-50 | Project Management | Question | FDI question list – API endpoint and organisation scope not confirmed |
+| N-19 | PM-REG-SITE-10 | Project Management | Defect candidate | ADD LOCATION accepts a duplicate location name in the same site |
+| N-20 | PM-REG-ROLE-08 | Roles & Access | Defect candidate | Supplier menu shows Project Management although the role does not enable it |
+| N-21 | PM-REG-ROLE-05 | Roles & Access | Defect candidate | Supplier / Subcontractor without Project Management access can open Material Master by URL |
+| N-22 | PM-REG-ROLE-09 | Roles & Access | Question | Menu vs permission keys – session permission list not available to the tests |
+| N-23 | DG-GAP-01 | Inventory | Defect candidate | Gap 1: material on NCR hold can still be issued from stock |
+| N-24 | IR-REG-01 | Inventory Rebuild | Defect candidate | Inventory Rebuild shows dates as MM/DD/YYYY with 12-hour time |
+| N-25 | XI-REG-04 | Excel Import | Question | Excel Import is not listed in Bulk Upload Status |
+| N-26 | XI-GAP-05 | Excel Import | Defect candidate | Gap 5: Excel import accepts quantity 0 and a negative lead time |
+| N-27 | SHP-REG-18 | International Shipments | Defect candidate | "N at risk" counter ignores the Destination filter |
+| N-28 | SHP-REG-20 | International Shipments | Defect candidate | Active Delay Alerts: 272 cards but only 2 distinct alerts |
+| N-29 | SHP-REG-15 | International Shipments | Defect candidate | Delay Alerts: every affected shipment lists the same alert 136 times |
+| N-30 | ANV-AGG-10 | Analytics | Defect candidate | Aggregate Stats values in $ on an INR project |
+| N-31 | TV-REG-08 | TOV Analytics | Defect candidate | TOV Invoiced Orders / Outflow Projection: search does not filter |
+| N-32 | ET-REG-07 | EPD Tracker | Question | EPD Tracker: no way to give an EPD an expiry date, so Expiring / Expired cannot be tested |
+| N-33 | MS-REG-03 | Messages | Blocker | Messages cannot be tested – Delivery Management / Booking Integration not connected on staging |
 
 ## 3. Details by module
 
@@ -226,6 +229,39 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.2 Loads, Discrepancies & NCRs
 
+#### N-12 · DG-GAP-09 – Gap 9: a load counts Pounds but its receipt is multiplied by the item conversion
+
+**Type:** Defect candidate · **Evidence:** demo-gaps-2026-11-27T16-08-31-208Z
+
+**Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NeuralRays_Demo · site "Location 1". Material White_Cement (UoM Pounds; item "White Cement", conversion 25). Run submittal DG2611272132 (spec 321216) with one White_Cement component of 10 Pounds and a PO.
+
+**Steps to reproduce:**
+
+1. Loads › Build load › DG2611272132 › quantity 3 (the line reads "Pounds") › Save load (LD-0003) › Mark as expected (today).
+2. Receive › Received 2, Damaged 1, Stored at Cntr_Area_One › Confirm receipt.
+3. Raise the component to 250 Pounds, receive again the same way.
+4. Procurement Log › Inventory › White_Cement › History; the submittal page.
+
+**Expected:** The load, the receipt, the component and the stock use one unit (or convert it once): 2 Pounds received adds 2 Pounds to stock.
+
+**Actual:** First receipt refused: "Cannot receive: scheduled quantity is 10.00, already received 0, this receipt of 25.00 exceeds the schedule by 15.00 units." After raising the component to 250 Pounds, RCV-000003 was accepted and added +25 Pounds to stock as "1 × White Cement"; the submittal shows Received 25, Damaged 1, and the NCR holds "1 Pounds". The load stays in Pounds (3), the receipt counts items × 25 (27 Nov, 21:40 IST).
+
+#### N-13 · DG-GAP-14 – Gap 14: NCR routed by the spec-section division, FDI grouped by the category division
+
+**Type:** Defect candidate · **Evidence:** demo-gaps-2026-11-27T16-08-31-208Z
+
+**Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NeuralRays_Demo · site "Location 1". Run submittal DG2611272132 with spec section 321216 (Div 32) for White_Cement, whose category "Cements" is Division 34 · Transportation. NCR-001 raised on its receipt.
+
+**Steps to reproduce:**
+
+1. Project Management › Materials › Material Category › find "Cements" › note the division.
+2. NCRs › NCR-001 › note the division filter / "GC project managers by CSI division".
+3. First Delivery Inspections › "Group by material category".
+
+**Expected:** Routing (NCR) and grouping (FDI) use the same CSI division for the same material.
+
+**Actual:** NCR-001 is filed under "Div 32" (from spec section 321216); the material category Cements is Division 34, which is what the FDI page groups by (27 Nov, 21:4x IST).
+
 #### N-08 · NPE-GAP-02 – Gap 2: "Reject and return" leaves the goods in Received and adds a replacement on top of Required
 
 **Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T13-19-07-057Z
@@ -328,7 +364,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Feedback 27 Nov:** Business Logic and Flow Changes (dev review 12→23 Nov), §2 and row 15: load lines are checked against the outstanding quantity (required − received − on other open loads − deliveries not yet arrived). This confirms the expected result.
 
-#### N-12 · NPE-REG-12 – "Received after ROJ" discrepancy shows the UTC date, not the project date (IST)
+#### N-14 · NPE-REG-12 – "Received after ROJ" discrepancy shows the UTC date, not the project date (IST)
 
 **Type:** Defect candidate · **Evidence:** np-e2e-2026-11-27T13-19-07-057Z
 
@@ -420,7 +456,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.3 My Work
 
-#### N-13 · MW-REG-07 – My Work › Submittals: Project filter shows "All my projects (0)"
+#### N-15 · MW-REG-07 – My Work › Submittals: Project filter shows "All my projects (0)"
 
 **Type:** Defect candidate · **Evidence:** my-work-2026-11-26T19-30-58-391Z
 
@@ -534,7 +570,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Status:** registered, pending dev-team confirmation.
 
-#### N-14 · DSH-REG-10 – Daily alert batch – which alerts it creates is not defined
+#### N-16 · DSH-REG-10 – Daily alert batch – which alerts it creates is not defined
 
 **Type:** Question · **Evidence:** app-regression-2026-11-27T07-04-25-704Z
 
@@ -552,7 +588,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.5 Alerts, Notifications & Tasks
 
-#### N-15 · TC-23B – No "First delivery of <material> received" task after the first delivery of a new material
+#### N-17 · TC-23B – No "First delivery of <material> received" task after the first delivery of a new material
 
 **Type:** Defect candidate · **Evidence:** e2e-smoke-2026-11-26T13-09-12-885Z
 
@@ -591,7 +627,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.7 Project Management
 
-#### N-17 · PM-REG-SITE-10 – ADD LOCATION accepts a duplicate location name in the same site
+#### N-19 · PM-REG-SITE-10 – ADD LOCATION accepts a duplicate location name in the same site
 
 **Type:** Defect candidate · **Area:** Site Details · **Evidence:** regression2-2026-11-26T08-59-57-300Z
 
@@ -942,7 +978,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Test message:** Site upload with an existing site name (other case) added a location to that site (3 → 4) instead of rejecting the row (R46)
 
-#### N-16 · PM-REG-FDI-50 – FDI question list – API endpoint and organisation scope not confirmed
+#### N-18 · PM-REG-FDI-50 – FDI question list – API endpoint and organisation scope not confirmed
 
 **Type:** Question · **Area:** FDI settings · **Evidence:** regression-2026-11-27T07-05-29-212Z
 
@@ -1029,7 +1065,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.9 Roles & Access
 
-#### N-19 · PM-REG-ROLE-05 – Supplier / Subcontractor without Project Management access can open Material Master by URL
+#### N-21 · PM-REG-ROLE-05 – Supplier / Subcontractor without Project Management access can open Material Master by URL
 
 **Type:** Defect candidate · **Evidence:** roles-2026-11-26T11-15-43-811Z
 
@@ -1047,7 +1083,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Feedback 27 Nov:** Business Logic and Flow Changes (dev review 12→23 Nov), row 6 / gap 7: role-name check (see PM-REG-ROLE-08).
 
-#### N-18 · PM-REG-ROLE-08 – Supplier menu shows Project Management although the role does not enable it
+#### N-20 · PM-REG-ROLE-08 – Supplier menu shows Project Management although the role does not enable it
 
 **Type:** Defect candidate · **Evidence:** roles-2026-11-26T11-15-43-811Z
 
@@ -1065,7 +1101,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Feedback 27 Nov:** Business Logic and Flow Changes (dev review 12→23 Nov), row 6 / gap 7: the new actions check the ROLE NAME (contains "admin" / "subcontractor"), not the SSO permission codes. The Supplier test role is named "Voyage Control Admin", which contains "admin" – a likely cause. Same for T508-18 (SCP-DEF-076).
 
-#### N-20 · PM-REG-ROLE-09 – Menu vs permission keys – session permission list not available to the tests
+#### N-22 · PM-REG-ROLE-09 – Menu vs permission keys – session permission list not available to the tests
 
 **Type:** Question · **Evidence:** roles-2026-11-27T07-28-34-223Z
 
@@ -1081,9 +1117,27 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Question to the dev team:** Where can the tests read the session permission list of a signed-in user?
 
+### 3.10 Inventory
+
+#### N-23 · DG-GAP-01 – Gap 1: material on NCR hold can still be issued from stock
+
+**Type:** Defect candidate · **Evidence:** demo-gaps-2026-11-27T16-08-31-208Z
+
+**Preconditions:** Staging https://stg-supplychain-app.voyagecontrol.com · Project Admin account · project NeuralRays_Demo · site "Location 1". Receipt RCV-000003 of LD-0003 (White_Cement, 1 damaged) and NCR-001 on the damaged piece: Open, "1 Pounds on hold".
+
+**Steps to reproduce:**
+
+1. Procurement Log › Inventory › White_Cement › Issue.
+2. Look at On hand and the panel: is the held quantity shown?
+3. Issue to construction: item White Cement, from Cntr_Area_One, submittal DG2611272132, its schedule, Quantity 25 (the whole receipt incl. the held piece). Do not record – Cancel.
+
+**Expected:** The held quantity is shown as on hold / not available, and an Issue or Move of held material is refused or warned.
+
+**Actual:** On hand 75 Pounds at Location 1 with no mention of a hold or of NCR-001; with Quantity 25 "Record issue" is enabled and no message is shown (27 Nov, 21:4x IST). The issue was not recorded.
+
 ### 3.11 Inventory Rebuild
 
-#### N-21 · IR-REG-01 – Inventory Rebuild shows dates as MM/DD/YYYY with 12-hour time
+#### N-24 · IR-REG-01 – Inventory Rebuild shows dates as MM/DD/YYYY with 12-hour time
 
 **Type:** Defect candidate · **Evidence:** import-rebuild-2026-11-26T20-24-53-520Z
 
@@ -1100,7 +1154,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.12 Excel Import
 
-#### N-23 · XI-GAP-05 – Gap 5: Excel import accepts quantity 0 and a negative lead time
+#### N-26 · XI-GAP-05 – Gap 5: Excel import accepts quantity 0 and a negative lead time
 
 **Type:** Defect candidate · **Evidence:** import-rebuild-2026-11-27T07-32-35-958Z
 
@@ -1116,7 +1170,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Actual:** Quantity 0 and Lead time −2 weeks: "0 to create · 1 to update · 0 rejected" – the row would be imported. Quantity −5, Unit "ZZZ" and ROJ 31/02/2026 are rejected correctly (27 Nov, Preview only, nothing imported).
 
-#### N-22 · XI-REG-04 – Excel Import is not listed in Bulk Upload Status
+#### N-25 · XI-REG-04 – Excel Import is not listed in Bulk Upload Status
 
 **Type:** Question · **Evidence:** import-rebuild-2026-11-26T20-28-10-971Z
 
@@ -1135,7 +1189,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.13 International Shipments
 
-#### N-26 · SHP-REG-15 – Delay Alerts: every affected shipment lists the same alert 136 times
+#### N-29 · SHP-REG-15 – Delay Alerts: every affected shipment lists the same alert 136 times
 
 **Type:** Defect candidate · **Evidence:** p2-2026-11-26T11-36-53-566Z
 
@@ -1150,7 +1204,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Actual:** 109 of 109 rows repeat an alert – e.g. 136 entries, 1 distinct ("Red Sea route disruptions") in one row.
 
-#### N-24 · SHP-REG-18 – "N at risk" counter ignores the Destination filter
+#### N-27 · SHP-REG-18 – "N at risk" counter ignores the Destination filter
 
 **Type:** Defect candidate · **Evidence:** p2-2026-11-26T11-36-53-566Z
 
@@ -1168,7 +1222,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 **Feedback 27 Nov:** Business Logic and Flow Changes (dev review 12→23 Nov), rows 36 / 41: shipment risk now adds a 7-day port-to-site buffer, so more shipments are at risk; the counter should still follow the Destination filter.
 
-#### N-25 · SHP-REG-20 – Active Delay Alerts: 272 cards but only 2 distinct alerts
+#### N-28 · SHP-REG-20 – Active Delay Alerts: 272 cards but only 2 distinct alerts
 
 **Type:** Defect candidate · **Evidence:** p2-2026-11-26T11-36-53-566Z
 
@@ -1203,7 +1257,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.15 Analytics
 
-#### N-27 · ANV-AGG-10 – Aggregate Stats values in $ on an INR project
+#### N-30 · ANV-AGG-10 – Aggregate Stats values in $ on an INR project
 
 **Type:** Defect candidate · **Evidence:** p2-2026-11-26T11-36-53-566Z
 
@@ -1348,7 +1402,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.16 TOV Analytics
 
-#### N-28 · TV-REG-08 – TOV Invoiced Orders / Outflow Projection: search does not filter
+#### N-31 · TV-REG-08 – TOV Invoiced Orders / Outflow Projection: search does not filter
 
 **Type:** Defect candidate · **Evidence:** tov-epd-2026-11-26T19-58-56-213Z
 
@@ -1366,7 +1420,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.17 EPD Tracker
 
-#### N-29 · ET-REG-07 – EPD Tracker: no way to give an EPD an expiry date, so Expiring / Expired cannot be tested
+#### N-32 · ET-REG-07 – EPD Tracker: no way to give an EPD an expiry date, so Expiring / Expired cannot be tested
 
 **Type:** Question · **Evidence:** tov-epd-2026-11-27T01-49-23-150Z
 
@@ -1406,7 +1460,7 @@ _Staging https://stg-supplychain-app.voyagecontrol.com · build of 24 Nov 2026 �
 
 ### 3.19 Messages
 
-#### N-30 · MS-REG-03 – Messages cannot be tested – Delivery Management / Booking Integration not connected on staging
+#### N-33 · MS-REG-03 – Messages cannot be tested – Delivery Management / Booking Integration not connected on staging
 
 **Type:** Blocker · **Evidence:** import-rebuild-2026-11-26T20-20-24-012Z
 
@@ -1596,7 +1650,7 @@ _Source: "SCP Business Logic and Flow Changes" (develop 12 Nov → 23 Nov, read-
 
 | # | Severity | Gap | Covered by our tests | Next step |
 |---|---|---|---|---|
-| 1 | High | An NCR hold does not touch stock; held material can still be issued or moved | No | Planned: raise an NCR on a received line, then try Issue / Move of the held quantity (needs Inventory to load for the load project – NRVC_Hall fails with "Couldn't load inventory.") |
+| 1 | High | An NCR hold does not touch stock; held material can still be issued or moved | Yes – DG-GAP-01 (27 Nov, NeuralRays_Demo, read-only) | Confirmed: NCR-001 holds 1 Pound, but stock shows 75 Pounds on hand with no hold and Issue accepts the whole receipt (25) without a message (defect candidate; not recorded) |
 | 2 | High | Reject and return leaves goods in stock and in Received QTY; the replacement adds Required again | Yes – NPE-GAP-02a / NPE-GAP-02 (27 Nov) | Confirmed: Received stays 16, Required 20,020 → 20,022 (defect candidate) |
 | 3 | High | Correcting a received delivery does not update the load line, discrepancies or accepted quantity | Yes – NPE-GAP-03 (27 Nov, last case of the chain) | Confirmed: "Correct delivery" (QTY 3 → 4) is saved on the component (3/1/1 → 4/2/1) but the load and its discrepancies do not change; the only warning is about the First Delivery Inspection (defect candidate) |
 | 4 | High | The old delivery screen still receives the same components under older rules, without checking open loads | Yes – NPE-GAP-04 (27 Nov) | Confirmed: "Log delivery" accepted while LD-0014 / LD-0015 were open, no warning (defect candidate) |
@@ -1604,15 +1658,15 @@ _Source: "SCP Business Logic and Flow Changes" (develop 12 Nov → 23 Nov, read-
 | 6 | High | FDIs and discrepancies after a receipt are best effort; failures only logged | Yes – every run checks the discrepancies (NPE-SMK-04) and inspections of its own receipt | Keep |
 | 7 | Medium | Spade actions check role names, not SSO permission codes | Yes – PM-REG-ROLE-05/08, T508-18 fail | Dev decision |
 | 8 | Medium | A trade can receive its own load and resolve its own discrepancies | Yes – NPE-GAP-08 (27 Nov, read-only) | Confirmed: the Subcontractor sees the load’s discrepancies and "Raise NCR" is enabled on Short delivery and Damaged; "Resolve" is not (defect candidate) |
-| 9 | Medium | Oldest item used on loads; item units and base units mix | No | Planned: load a material whose item conversion is not 1; compare booked, received and damaged units |
+| 9 | Medium | Oldest item used on loads; item units and base units mix | Yes – DG-GAP-09 (27 Nov, NeuralRays_Demo) | Confirmed: the load counts Pounds (3) but the receipt multiplies by the item conversion (25): a receipt of 2 on a 10-Pound schedule was refused as “25.00”; after raising the schedule it added +25 Pounds to stock (defect candidate) |
 | 10 | Medium | FDI on every received line; message still says "First delivery" | Yes – TC-23B, FDI-REG-01a | Dev decision; update expected results |
 | 11 | Medium | Inspection result read from the question text | No | Not automated – renaming shared FDI questions changes shared data |
 | 12 | Medium | Email-domain match falls back to the contact-email domain | No | Needs two accounts of different companies sharing a domain (dev team) |
 | 13 | Medium | No GRN (ConditionAtDelivery) record for load receipts; two shortage formulas | Yes – NPE-GAP-13 (27 Nov) | Confirmed: a load receipt of 2 (1 damaged) shows as 3 / 1 / 1 on the component page; GRN actions are offered (defect candidate) |
-| 14 | Low | CSI division from spec section (routing) vs category (FDI grouping) | No | Planned: submittal whose spec section differs from its category division |
+| 14 | Low | CSI division from spec section (routing) vs category (FDI grouping) | Yes – DG-GAP-14 (27 Nov, NeuralRays_Demo) | Confirmed: NCR-001 is under Div 32 (spec section 321216) while White_Cement’s category Cements is Division 34 (defect candidate) |
 | 15 | Low | Ordered = full required quantity once any PO number exists | Related – question 6 (9 over-ordered PLS submittals) | Dev decision |
 | 16 | Low | Unallocated goods not in stock until assigned | Blocked – needs Delivery Management on staging | After DM is connected |
-| 17 | Low | Line history finds moves by component and date, not by delivery | No | Planned with gap 1 |
+| 17 | Low | Line history finds moves by component and date, not by delivery | Yes – DG-GAP-17 (27 Nov, NeuralRays_Demo) | Not reproduced: the stock history entry of RCV-000003 names the receipt, LD-0003 and the submittal – passed |
 | 18 | Low | Void submittals hidden only in the new views | No | Needs a voided Procore submittal (NeuralRays_Demo) |
 
 **Report numbers that change with the new build (expected results to update):** Management Dashboard spend = received quantity × (price ÷ ordered quantity) (BUGS-596, TC-23/24); Supplier / Subcontractor Issues per Responsible person (BUGS-593, ANV-SUB / ANV-SUP); Lead-time analysis drops negative durations (BUGS-613, ANV-LTA); shipment risk adds a 7-day port-to-site buffer (SHP risk counters); GRN shortage = delivery quantity × conversion − good − damaged, historical values rewritten (BUGS-600, PL-REG-DLV).
@@ -1631,7 +1685,7 @@ _Source: "SCP Business Logic and Flow Changes" (develop 12 Nov → 23 Nov, read-
 | TC-23 / TC-24 (E2E smoke) | Expected Dashboard spend = received quantity × (price ÷ ordered quantity) (BUGS-596) | Done – runs with the full E2E smoke (Sunday) |
 | DSH-REG-10, PM-REG-FDI-50, PM-REG-ROLE-09 | Run and fail with the question to the dev team instead of skipping | Done – each fails with its question (27 Nov) |
 | Gaps 2, 3, 4, 5, 8, 13 (section 6) | New test cases NPE-GAP-02a/02, NPE-GAP-03, NPE-GAP-04, XI-GAP-05, NPE-GAP-08, NPE-GAP-13 | Done – 27 Nov; results in section 6 |
-| Gaps 1, 9, 14, 17 (section 6) | Not automated yet | Gaps 1 and 17 need the Inventory tab, which does not load on NRVC_Hall ("Couldn't load inventory."); gaps 9 and 14 need new material / submittal data (a unit conversion other than 1; a spec section that differs from its category) – waiting for your go-ahead to create it |
+| Gaps 1, 9, 14, 17 (section 6) | New suite demo-gaps (DG-GAP-01, -09, -14, -17) on NeuralRays_Demo (your decision 27 Nov); run data: submittal DG2611272132, load LD-0003, receipt RCV-000003, NCR-001 | Done – 27 Nov 21:40 IST; gaps 1, 9, 14 confirmed, gap 17 not reproduced (passed) |
 
 _All feedback, answers and decisions are kept in this document only – nothing is written to Jira._
 
